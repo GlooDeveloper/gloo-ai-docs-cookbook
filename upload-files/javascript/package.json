@@ -1,0 +1,23 @@
+{
+  "name": "upload-files-javascript",
+  "version": "1.0.0",
+  "description": "JavaScript example for Gloo AI Data Engine Files API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "single": "node index.js single ../sample_files/developer_happiness.txt",
+    "batch": "node index.js batch ../sample_files"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "form-data": "^4.0.0",
+    "dotenv": "^16.3.1"
+  },
+  "keywords": [
+    "gloo-ai",
+    "file-upload",
+    "data-engine"
+  ],
+  "author": "Gloo AI",
+  "license": "MIT"
+}

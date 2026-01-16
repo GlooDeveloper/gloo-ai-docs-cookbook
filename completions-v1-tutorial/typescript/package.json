@@ -1,0 +1,23 @@
+{
+  "name": "gloo-completions-tutorial-ts",
+  "version": "1.0.0",
+  "description": "Completions tutorial example in TypeScript",
+  "main": "index.ts",
+  "scripts": {
+    "start": "tsx index.ts",
+    "build": "tsc",
+    "test": "tsx index.ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["gloo", "completions", "chat", "api", "typescript"],
+  "author": "Gloo AI",
+  "license": "MIT"
+}

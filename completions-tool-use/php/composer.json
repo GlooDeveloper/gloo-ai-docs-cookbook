@@ -1,0 +1,14 @@
+{
+    "name": "gloo/completions-tool-use-php",
+    "description": "PHP example for Completions API with Tool Use",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gloo\\": "src/"
+        }
+    }
+}

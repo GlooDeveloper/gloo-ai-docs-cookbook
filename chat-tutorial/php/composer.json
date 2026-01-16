@@ -1,0 +1,32 @@
+{
+    "name": "gloo/chat-message-tutorial-php",
+    "description": "PHP example for Gloo AI Chat Message Tutorial",
+    "type": "project",
+    "keywords": ["gloo", "ai", "chat", "api", "tutorial", "php"],
+    "authors": [
+        {
+            "name": "Gloo AI",
+            "email": "support@gloo.ai"
+        }
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "guzzlehttp/guzzle": "^7.8",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gloo\\ChatTutorial\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

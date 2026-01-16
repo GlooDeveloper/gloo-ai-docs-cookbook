@@ -1,0 +1,17 @@
+{
+  "name": "gloo-auth-tutorial-js",
+  "version": "1.0.0",
+  "description": "Authentication tutorial example in JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node index.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.0"
+  },
+  "keywords": ["gloo", "authentication", "oauth2", "api"],
+  "author": "Gloo AI",
+  "license": "MIT"
+}

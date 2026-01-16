@@ -1,0 +1,35 @@
+{
+    "name": "gloo-ai/realtime-ingestion-php",
+    "description": "PHP example for Gloo AI Realtime Content Ingestion API",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "guzzlehttp/guzzle": "^7.8",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "GlooAI\\RealtimeIngestion\\": "src/"
+        }
+    },
+    "scripts": {
+        "single": "php index.php single ./sample_content/developer_happiness.txt",
+        "batch": "php index.php batch ./sample_content",
+        "watch": "php index.php watch ./sample_content"
+    },
+    "keywords": [
+        "gloo-ai",
+        "content-ingestion",
+        "realtime-api",
+        "php"
+    ],
+    "authors": [
+        {
+            "name": "Gloo AI",
+            "email": "support@gloo.com"
+        }
+    ],
+    "license": "MIT",
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

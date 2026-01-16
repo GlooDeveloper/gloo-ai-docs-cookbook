@@ -1,0 +1,28 @@
+{
+    "name": "gloo/completions-tutorial-php",
+    "description": "Completions tutorial example in PHP",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "vlucas/phpdotenv": "^5.5",
+        "ext-curl": "*",
+        "ext-json": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gloo\\": "src/"
+        }
+    },
+    "scripts": {
+        "start": "php index.php",
+        "test": "php index.php"
+    },
+    "keywords": ["gloo", "completions", "chat", "api", "php"],
+    "authors": [
+        {
+            "name": "Gloo AI",
+            "email": "support@gloo.com"
+        }
+    ],
+    "license": "MIT"
+}
