@@ -18,7 +18,7 @@ var (
 	clientID     string
 	clientSecret string
 	tokenURL     = "https://platform.ai.gloo.com/oauth2/token"
-	apiURL       = "https://platform.ai.gloo.com/ai/v1/chat/completions"
+	apiURL       = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 )
 
 // --- State Management ---
@@ -154,10 +154,10 @@ func createGoalSettingRequest(userGoal string) (*ApiResponse, error) {
 	}
 
 	payload := map[string]interface{}{
-		"model":       "us.anthropic.claude-sonnet-4-20250514-v1:0",
-		"messages":    []map[string]string{{"role": "user", "content": userGoal}},
-		"tools":       tools,
-		"tool_choice": "required",
+		"auto_routing": true,
+		"messages":     []map[string]string{{"role": "user", "content": userGoal}},
+		"tools":        tools,
+		"tool_choice":  "required",
 	}
 	jsonPayload, _ := json.Marshal(payload)
 
