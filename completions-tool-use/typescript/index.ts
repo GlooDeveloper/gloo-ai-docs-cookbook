@@ -44,7 +44,7 @@ interface ApiResponse {
 const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
 const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
 const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const API_URL = "https://platform.ai.gloo.com/ai/v1/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
 // --- State Management ---
 let tokenInfo: TokenInfo | null = null;
@@ -72,7 +72,7 @@ async function createGoalSettingRequest(userGoal: string): Promise<ApiResponse> 
     }
 
     const payload = {
-        model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        auto_routing: true,
         messages: [{ role: "user", content: userGoal }],
         tools: [
             {
