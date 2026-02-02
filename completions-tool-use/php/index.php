@@ -9,7 +9,7 @@ $dotenv->load();
 $CLIENT_ID = $_ENV['GLOO_CLIENT_ID'] ?? 'YOUR_CLIENT_ID';
 $CLIENT_SECRET = $_ENV['GLOO_CLIENT_SECRET'] ?? 'YOUR_CLIENT_SECRET';
 $TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
-$API_URL = 'https://platform.ai.gloo.com/ai/v1/chat/completions';
+$API_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
 
 // Validate credentials
 if ($CLIENT_ID === 'YOUR_CLIENT_ID' || $CLIENT_SECRET === 'YOUR_CLIENT_SECRET' || 
@@ -116,7 +116,7 @@ function createGoalSettingRequest($userGoal, $apiUrl, &$tokenInfo, $clientId, $c
     ];
 
     $payload = json_encode([
-        'model' => 'us.anthropic.claude-sonnet-4-20250514-v1:0',
+        'auto_routing' => true,
         'messages' => [['role' => 'user', 'content' => $userGoal]],
         'tools' => $tools,
         'tool_choice' => 'required'

@@ -55,7 +55,7 @@ class CompletionsToolUse {
     private static final String CLIENT_ID = dotenv.get("GLOO_CLIENT_ID", "YOUR_CLIENT_ID");
     private static final String CLIENT_SECRET = dotenv.get("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET");
     private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v1/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
     private TokenInfo tokenInfo;
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -225,7 +225,7 @@ class CompletionsToolUse {
         messages.add(message);
 
         JsonObject payload = new JsonObject();
-        payload.addProperty("model", "us.anthropic.claude-sonnet-4-20250514-v1:0");
+        payload.addProperty("auto_routing", true);
         payload.add("messages", messages);
         payload.add("tools", tools);
         payload.addProperty("tool_choice", "required");
