@@ -58,4 +58,4 @@ mvn exec:java
 
 - [Completions V2 Tutorial](https://docs.gloo.com/tutorials/completions-v2)
 - [Completions V2 API Guide](https://docs.gloo.com/api-guides/completions-v2)
-- [Supported Models](https://docs.gloo.com/api-guides/supported-models#completions-v2-endpoint)
+- [Supported Models](https://docs.gloo.com/api-guides/supported-models)
