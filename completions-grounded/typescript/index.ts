@@ -170,7 +170,7 @@ async function makeNonGroundedRequest(query: string): Promise<CompletionResponse
 /**
  * Make a grounded completion request using Gloo's default dataset.
  *
- * This retrieves relevant content from Gloo's default religious content
+ * This retrieves relevant content from Gloo's default faith-based content
  * before generating a response. Good for general religious questions,
  * but won't have specific information about your organization.
  *
@@ -289,7 +289,7 @@ async function compareResponses(query: string, publisherName: string): Promise<v
   console.log('\n' + '='.repeat(80) + '\n');
 
   // Default grounded response
-  console.log('🔹 STEP 2: GROUNDED on Default Dataset (Gloo\'s Religious Content):');
+  console.log('🔹 STEP 2: GROUNDED on Default Dataset (Gloo\'s Faith-Based Content):');
   console.log('-'.repeat(80));
   try {
     const defaultGrounded = await makeDefaultGroundedRequest(query);
@@ -350,7 +350,7 @@ async function main(): Promise<void> {
   console.log(`\nPublisher: ${PUBLISHER_NAME}`);
   console.log('This demo shows a 3-step progression:');
   console.log('  1. Non-grounded (generic model knowledge)');
-  console.log('  2. Grounded on default dataset (Gloo\'s religious content)');
+  console.log('  2. Grounded on default dataset (Gloo\'s faith-based content)');
   console.log('  3. Grounded on your publisher (your specific content)');
   console.log('\nNote: For org-specific queries like Bezalel\'s hiring process,');
   console.log('both steps 1 and 2 may lack specific details, while step 3');
@@ -381,7 +381,7 @@ async function main(): Promise<void> {
   console.log('='.repeat(80));
   console.log('\nKey Takeaways:');
   console.log('✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate');
-  console.log('✓ Step 2 (Default grounded): Uses Gloo\'s religious content, better for');
+  console.log('✓ Step 2 (Default grounded): Uses Gloo\'s faith-based content, better for');
   console.log('  general questions but lacks org-specific details');
   console.log('✓ Step 3 (Publisher grounded): Your specific content, accurate and');
   console.log('  source-backed (sources_returned: true)');

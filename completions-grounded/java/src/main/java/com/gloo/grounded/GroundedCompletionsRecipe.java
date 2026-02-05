@@ -271,7 +271,7 @@ public class GroundedCompletionsRecipe {
         System.out.println("\n" + "=".repeat(80) + "\n");
 
         // Step 2: Default grounded
-        System.out.println("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Religious Content):");
+        System.out.println("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):");
         System.out.println("-".repeat(80));
         try {
             JsonObject defaultGrounded = makeDefaultGroundedRequest(query, 3);
@@ -354,7 +354,7 @@ public class GroundedCompletionsRecipe {
         System.out.println("\nPublisher: " + publisherName);
         System.out.println("This demo shows a 3-step progression:");
         System.out.println("  1. Non-grounded (generic model knowledge)");
-        System.out.println("  2. Grounded on default dataset (Gloo's religious content)");
+        System.out.println("  2. Grounded on default dataset (Gloo's faith-based content)");
         System.out.println("  3. Grounded on your publisher (your specific content)");
         System.out.println("\nNote: For org-specific queries like Bezalel's hiring process,");
         System.out.println("both steps 1 and 2 may lack specific details, while step 3");
@@ -385,7 +385,7 @@ public class GroundedCompletionsRecipe {
         System.out.println("=".repeat(80));
         System.out.println("\nKey Takeaways:");
         System.out.println("✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate");
-        System.out.println("✓ Step 2 (Default grounded): Uses Gloo's religious content, better for");
+        System.out.println("✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for");
         System.out.println("  general questions but lacks org-specific details");
         System.out.println("✓ Step 3 (Publisher grounded): Your specific content, accurate and");
         System.out.println("  source-backed (sources_returned: true)");

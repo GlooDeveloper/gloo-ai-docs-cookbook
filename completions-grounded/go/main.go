@@ -282,7 +282,7 @@ func compareResponses(query, publisher string) {
 	fmt.Println("\n" + strings.Repeat("=", 80) + "\n")
 
 	// Step 2: Default grounded
-	fmt.Println("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Religious Content):")
+	fmt.Println("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):")
 	fmt.Println(strings.Repeat("-", 80))
 	defaultGrounded, err := makeDefaultGroundedRequest(query, 3)
 	if err != nil {
@@ -344,7 +344,7 @@ func main() {
 	fmt.Printf("\nPublisher: %s\n", publisherName)
 	fmt.Println("This demo shows a 3-step progression:")
 	fmt.Println("  1. Non-grounded (generic model knowledge)")
-	fmt.Println("  2. Grounded on default dataset (Gloo's religious content)")
+	fmt.Println("  2. Grounded on default dataset (Gloo's faith-based content)")
 	fmt.Println("  3. Grounded on your publisher (your specific content)")
 	fmt.Println("\nNote: For org-specific queries like Bezalel's hiring process,")
 	fmt.Println("both steps 1 and 2 may lack specific details, while step 3")
@@ -373,7 +373,7 @@ func main() {
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Println("\nKey Takeaways:")
 	fmt.Println("✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate")
-	fmt.Println("✓ Step 2 (Default grounded): Uses Gloo's religious content, better for")
+	fmt.Println("✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for")
 	fmt.Println("  general questions but lacks org-specific details")
 	fmt.Println("✓ Step 3 (Publisher grounded): Your specific content, accurate and")
 	fmt.Println("  source-backed (sources_returned: true)")

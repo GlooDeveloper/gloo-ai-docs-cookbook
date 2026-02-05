@@ -135,7 +135,7 @@ function makeNonGroundedRequest($query) {
 /**
  * Make a grounded completion request using Gloo's default dataset.
  *
- * This retrieves relevant content from Gloo's default religious content
+ * This retrieves relevant content from Gloo's default faith-based content
  * before generating a response. Good for general religious questions,
  * but won't have specific information about your organization.
  *
@@ -250,7 +250,7 @@ function compareResponses($query, $publisherName) {
     echo "\n" . str_repeat('=', 80) . "\n\n";
 
     // Default grounded response
-    echo "🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Religious Content):\n";
+    echo "🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):\n";
     echo str_repeat('-', 80) . "\n";
     try {
         $defaultGrounded = makeDefaultGroundedRequest($query);
@@ -306,7 +306,7 @@ function main() {
     echo "\nPublisher: $publisherName\n";
     echo "This demo shows a 3-step progression:\n";
     echo "  1. Non-grounded (generic model knowledge)\n";
-    echo "  2. Grounded on default dataset (Gloo's religious content)\n";
+    echo "  2. Grounded on default dataset (Gloo's faith-based content)\n";
     echo "  3. Grounded on your publisher (your specific content)\n";
     echo "\nNote: For org-specific queries like Bezalel's hiring process,\n";
     echo "both steps 1 and 2 may lack specific details, while step 3\n";
@@ -340,7 +340,7 @@ function main() {
     echo str_repeat('=', 80) . "\n";
     echo "\nKey Takeaways:\n";
     echo "✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate\n";
-    echo "✓ Step 2 (Default grounded): Uses Gloo's religious content, better for\n";
+    echo "✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for\n";
     echo "  general questions but lacks org-specific details\n";
     echo "✓ Step 3 (Publisher grounded): Your specific content, accurate and\n";
     echo "  source-backed (sources_returned: true)\n";

@@ -117,7 +117,7 @@ def make_default_grounded_request(query, sources_limit=3):
     """
     Make a grounded completion request using Gloo's default dataset.
 
-    This retrieves relevant content from Gloo's default religious content
+    This retrieves relevant content from Gloo's default faith-based content
     before generating a response. Good for general religious questions,
     but won't have specific information about your organization.
 
@@ -220,7 +220,7 @@ def compare_responses(query, publisher_name):
     print(f"\n{'='*80}\n")
 
     # Default grounded response
-    print("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Religious Content):")
+    print("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):")
     print("-" * 80)
     try:
         default_grounded = make_default_grounded_request(query)
@@ -263,7 +263,7 @@ def main():
     print(f"\nPublisher: {PUBLISHER_NAME}")
     print("This demo shows a 3-step progression:")
     print("  1. Non-grounded (generic model knowledge)")
-    print("  2. Grounded on default dataset (Gloo's religious content)")
+    print("  2. Grounded on default dataset (Gloo's faith-based content)")
     print("  3. Grounded on your publisher (your specific content)")
     print("\nNote: For org-specific queries like Bezalel's hiring process,")
     print("both steps 1 and 2 may lack specific details, while step 3")
@@ -291,7 +291,7 @@ def main():
     print("="*80)
     print("\nKey Takeaways:")
     print("✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate")
-    print("✓ Step 2 (Default grounded): Uses Gloo's religious content, better for")
+    print("✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for")
     print("  general questions but lacks org-specific details")
     print("✓ Step 3 (Publisher grounded): Your specific content, accurate and")
     print("  source-backed (sources_returned: true)")
