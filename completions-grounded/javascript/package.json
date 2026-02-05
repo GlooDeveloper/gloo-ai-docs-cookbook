@@ -1,0 +1,24 @@
+{
+  "name": "grounded-completions-recipe",
+  "version": "1.0.0",
+  "description": "Grounded Completions Recipe - JavaScript Implementation",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "gloo",
+    "ai",
+    "rag",
+    "grounded-completions",
+    "chatbot"
+  ],
+  "author": "Gloo AI",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

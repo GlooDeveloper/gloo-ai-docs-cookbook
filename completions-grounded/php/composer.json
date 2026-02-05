@@ -1,0 +1,25 @@
+{
+    "name": "gloo/grounded-completions-recipe",
+    "description": "Grounded Completions Recipe - PHP Implementation",
+    "type": "project",
+    "keywords": ["gloo", "ai", "rag", "grounded-completions", "chatbot"],
+    "license": "MIT",
+    "require": {
+        "php": ">=7.4",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gloo\\GroundedCompletions\\": "src/"
+        }
+    },
+    "scripts": {
+        "start": "php index.php"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}
