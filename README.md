@@ -107,6 +107,21 @@ Upload and manage files using the Gloo AI Data Engine Files API.
 
 ---
 
+### 🔍 [Search API](./search-tutorial/)
+Build custom search experiences using the Gloo AI Search API.
+
+**Topics Covered:**
+- Semantic (near-text) search with authentication
+- Search result handling (snippets, metadata, relevance scores)
+- Content type filtering
+- RAG (Retrieval Augmented Generation) with Completions V2
+- Proxy server for browser-based frontends
+- Browser-based search UI example
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ## Repository Structure
 
 ```
@@ -123,6 +138,9 @@ gloo-ai-docs-cookbook/
 │   └── [javascript, typescript, python, php, go, java]
 ├── realtime-ingestion/
 │   └── [javascript, typescript, python, php, go, java]
+├── search-tutorial/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── frontend-example/simple-html/
 └── upload-files/
     └── [javascript, typescript, python, php, go, java]
 ```

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gloo AI Search</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Gloo AI Search</h1>
+            <p class="subtitle">Semantic search powered by Gloo AI</p>
+        </header>
+
+        <div class="search-section">
+            <form id="searchForm" class="search-form">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="How can I know my purpose?"
+                    required
+                >
+                <div class="search-controls">
+                    <label for="limitSelect">Results:</label>
+                    <select id="limitSelect">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                    </select>
+                    <button type="submit" id="searchBtn">Search</button>
+                    <button type="button" id="ragBtn">Ask AI</button>
+                </div>
+            </form>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Searching...</p>
+        </div>
+
+        <div id="error" class="error hidden"></div>
+
+        <div id="ragResponse" class="rag-response hidden">
+            <h2>AI Response</h2>
+            <div id="ragContent" class="rag-content"></div>
+            <div id="ragSources" class="rag-sources"></div>
+        </div>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    <script src="search.js"></script>
+</body>
+</html>

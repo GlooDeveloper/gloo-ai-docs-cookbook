@@ -1,0 +1,9 @@
+{
+    "name": "gloo/search-tutorial-php",
+    "description": "Gloo AI Search API - PHP Example",
+    "require": {
+        "php": "^8.1",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "license": "MIT"
+}
