@@ -138,6 +138,9 @@ gloo-ai-docs-cookbook/
 │   └── [javascript, typescript, python, php, go, java]
 ├── realtime-ingestion/
 │   └── [javascript, typescript, python, php, go, java]
+├── search-tutorial/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── frontend-example/simple-html/
 └── upload-files/
     └── [javascript, typescript, python, php, go, java]
 ```
