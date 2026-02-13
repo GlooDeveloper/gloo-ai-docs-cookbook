@@ -249,7 +249,7 @@ func (rh *RAGHelper) GenerateWithContext(query, context, systemPrompt string) (s
 			{Role: "user", Content: fmt.Sprintf("Context:\n%s\n\nQuestion: %s", context, query)},
 		},
 		AutoRouting: true,
-		MaxTokens:   1000,
+		MaxTokens:   getEnvInt("RAG_MAX_TOKENS", 3000),
 	}
 
 	jsonData, err := json.Marshal(payload)
@@ -379,7 +379,12 @@ func ragSearch(query string, limit int) {
 	fmt.Printf("Found %d results\n\n", len(results.Data))
 
 	fmt.Println("Step 2: Extracting snippets...")
-	snippets := rh.ExtractSnippets(results, limit, 500)
+	snippetLimit := limit
+	maxSnippets := getEnvInt("RAG_CONTEXT_MAX_SNIPPETS", 5)
+	if snippetLimit > maxSnippets {
+		snippetLimit = maxSnippets
+	}
+	snippets := rh.ExtractSnippets(results, snippetLimit, getEnvInt("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", 350))
 	context := rh.FormatContextForLLM(snippets)
 	fmt.Printf("Extracted %d snippets\n\n", len(snippets))
 
@@ -417,6 +422,18 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
+}
+
+func getEnvInt(key string, fallback int) int {
+	value := os.Getenv(key)
+	if value == "" {
+		return fallback
+	}
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
 }
 
 func main() {

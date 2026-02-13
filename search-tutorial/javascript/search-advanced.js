@@ -20,6 +20,7 @@ const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
 const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
 const COMPLETIONS_URL =
   "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const RAG_MAX_TOKENS = parseInt(process.env.RAG_MAX_TOKENS || "3000", 10);
 
 class AdvancedSearchClient {
   constructor(tokenManager) {
@@ -136,7 +137,7 @@ class RAGHelper {
    * @param {string} query - User's question
    * @param {string} context - Formatted context from search results
    * @param {string} [systemPrompt] - Optional custom system prompt
-   * @returns {string} Generated response text
+   * @returns {{responseText: string, finishReason: string | null, usage: object | null, model: string | null}} Generated response data
    */
   async generateWithContext(query, context, systemPrompt) {
     const token = await this.tokenManager.ensureValidToken();
@@ -156,7 +157,7 @@ class RAGHelper {
     const payload = {
       messages,
       auto_routing: true,
-      max_tokens: 1000,
+      max_tokens: RAG_MAX_TOKENS,
     };
 
     try {
@@ -168,7 +169,12 @@ class RAGHelper {
         timeout: 60000,
       });
 
-      return response.data.choices?.[0]?.message?.content || "";
+      return {
+        responseText: response.data.choices?.[0]?.message?.content || "",
+        finishReason: response.data.choices?.[0]?.finish_reason || null,
+        usage: response.data.usage || null,
+        model: response.data.model || null,
+      };
     } catch (error) {
       if (error.response) {
         console.error(`Completions API failed: ${JSON.stringify(error.response.data)}`);
@@ -236,10 +242,17 @@ async function ragSearch(query, limit = 5) {
 
   // Step 3: Generate response with context
   console.log("Step 3: Generating response with context...\n");
-  const response = await ragHelper.generateWithContext(query, context);
+  const generation = await ragHelper.generateWithContext(query, context);
+  const response = generation.responseText;
 
   console.log("=== Generated Response ===");
   console.log(response);
+  console.log("\n=== Generation Metadata ===");
+  console.log(`Finish reason: ${generation.finishReason || "N/A"}`);
+  console.log(`Model: ${generation.model || "N/A"}`);
+  if (generation.usage) {
+    console.log(`Usage: ${JSON.stringify(generation.usage)}`);
+  }
   console.log("\n=== Sources Used ===");
   snippets.forEach((snippet) => {
     console.log(`- ${snippet.title} (${snippet.type})`);

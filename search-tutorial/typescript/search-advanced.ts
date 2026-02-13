@@ -22,6 +22,15 @@ const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
 const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
 const COMPLETIONS_URL =
   "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const RAG_MAX_TOKENS = parseInt(process.env.RAG_MAX_TOKENS || "3000", 10);
+const RAG_CONTEXT_MAX_SNIPPETS = parseInt(
+  process.env.RAG_CONTEXT_MAX_SNIPPETS || "5",
+  10
+);
+const RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseInt(
+  process.env.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET || "350",
+  10
+);
 
 // --- Types ---
 interface SearchResult {
@@ -169,7 +178,7 @@ export class RAGHelper {
     const payload = {
       messages,
       auto_routing: true,
-      max_tokens: 1000,
+      max_tokens: RAG_MAX_TOKENS,
     };
 
     try {
@@ -241,7 +250,12 @@ async function ragSearch(query: string, limit: number = 5): Promise<void> {
   console.log(`Found ${results.data.length} results\n`);
 
   console.log("Step 2: Extracting snippets...");
-  const snippets = ragHelper.extractSnippets(results, limit);
+  const snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+  const snippets = ragHelper.extractSnippets(
+    results,
+    snippetLimit,
+    RAG_CONTEXT_MAX_CHARS_PER_SNIPPET
+  );
   const context = ragHelper.formatContextForLLM(snippets);
   console.log(`Extracted ${snippets.length} snippets\n`);
 

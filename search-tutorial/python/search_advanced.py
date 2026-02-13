@@ -26,6 +26,11 @@ TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
 TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
 SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search"
 COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+RAG_MAX_TOKENS = int(os.getenv("RAG_MAX_TOKENS", "3000"))
+RAG_CONTEXT_MAX_SNIPPETS = int(os.getenv("RAG_CONTEXT_MAX_SNIPPETS", "5"))
+RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = int(
+    os.getenv("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", "350")
+)
 
 class AdvancedSearchClient:
     """Advanced search client with filtering and pagination capabilities."""
@@ -222,7 +227,7 @@ class RAGHelper:
         payload = {
             "messages": messages,
             "auto_routing": True,
-            "max_tokens": 1000
+            "max_tokens": RAG_MAX_TOKENS
         }
 
         try:
@@ -303,7 +308,12 @@ class AdvancedSearchApp:
 
             # Step 2: Extract and format snippets
             print("Step 2: Extracting snippets...")
-            snippets = self.rag_helper.extract_snippets(results, max_snippets=limit)
+            snippet_limit = min(limit, RAG_CONTEXT_MAX_SNIPPETS)
+            snippets = self.rag_helper.extract_snippets(
+                results,
+                max_snippets=snippet_limit,
+                max_chars_per_snippet=RAG_CONTEXT_MAX_CHARS_PER_SNIPPET
+            )
             context = self.rag_helper.format_context_for_llm(snippets)
 
             print(f"Extracted {len(snippets)} snippets\n")

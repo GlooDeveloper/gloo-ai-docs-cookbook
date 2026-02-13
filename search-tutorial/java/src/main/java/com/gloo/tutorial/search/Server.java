@@ -37,6 +37,9 @@ public class Server {
     private static final String CLIENT_SECRET = dotenv.get("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET");
     private static final String TENANT = dotenv.get("GLOO_TENANT", "your-tenant-name");
     private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
+    private static final int RAG_CONTEXT_MAX_SNIPPETS = parseIntOrDefault(dotenv.get("RAG_CONTEXT_MAX_SNIPPETS"), 5);
+    private static final int RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseIntOrDefault(
+            dotenv.get("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET"), 350);
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
@@ -152,7 +155,9 @@ public class Server {
                 }
 
                 // Step 2: Extract snippets and format context
-                List<Main.Snippet> snippets = Main.extractSnippets(results, limit, 500);
+                int snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+                List<Main.Snippet> snippets = Main.extractSnippets(
+                        results, snippetLimit, RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
                 String context = Main.formatContextForLLM(snippets);
 
                 // Step 3: Generate response
@@ -236,5 +241,16 @@ public class Server {
         if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
         if (path.endsWith(".svg")) return "image/svg+xml";
         return "application/octet-stream";
+    }
+
+    private static int parseIntOrDefault(String value, int defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
     }
 }

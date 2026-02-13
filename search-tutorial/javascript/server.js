@@ -25,6 +25,11 @@ const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
 
 const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
 const PORT = process.env.PORT || 3000;
+const RAG_CONTEXT_MAX_SNIPPETS = parseInt(process.env.RAG_CONTEXT_MAX_SNIPPETS || "5", 10);
+const RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseInt(
+  process.env.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET || "350",
+  10
+);
 
 // Validate credentials on startup
 validateCredentials(CLIENT_ID, CLIENT_SECRET);
@@ -81,20 +86,28 @@ app.post("/api/search/rag", async (req, res) => {
     }
 
     // Step 2: Extract snippets and format context
-    const snippets = ragHelper.extractSnippets(results, limit);
+    const snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+    const snippets = ragHelper.extractSnippets(
+      results,
+      snippetLimit,
+      RAG_CONTEXT_MAX_CHARS_PER_SNIPPET
+    );
     const context = ragHelper.formatContextForLLM(snippets);
 
     // Step 3: Generate response
-    const generatedResponse = await ragHelper.generateWithContext(
+    const generation = await ragHelper.generateWithContext(
       query,
       context,
       systemPrompt
     );
+    const generatedResponse = generation.responseText;
 
-    res.json({
+    const payload = {
       response: generatedResponse,
       sources: snippets.map((s) => ({ title: s.title, type: s.type })),
-    });
+    };
+
+    res.json(payload);
   } catch (error) {
     console.error("RAG error:", error.message);
     res.status(500).json({ error: "RAG request failed" });

@@ -138,7 +138,12 @@ func startServer(port string) {
 		}
 
 		// Step 2: Extract snippets and format context
-		snippets := rh.ExtractSnippets(results, body.Limit, 500)
+		snippetLimit := body.Limit
+		maxSnippets := getEnvInt("RAG_CONTEXT_MAX_SNIPPETS", 5)
+		if snippetLimit > maxSnippets {
+			snippetLimit = maxSnippets
+		}
+		snippets := rh.ExtractSnippets(results, snippetLimit, getEnvInt("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", 350))
 		context := rh.FormatContextForLLM(snippets)
 
 		// Step 3: Generate response

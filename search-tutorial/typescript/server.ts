@@ -26,6 +26,14 @@ const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
 
 const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
 const PORT = parseInt(process.env.PORT || "3000", 10);
+const RAG_CONTEXT_MAX_SNIPPETS = parseInt(
+  process.env.RAG_CONTEXT_MAX_SNIPPETS || "5",
+  10
+);
+const RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseInt(
+  process.env.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET || "350",
+  10
+);
 
 // Validate credentials on startup
 validateCredentials(CLIENT_ID, CLIENT_SECRET);
@@ -82,7 +90,12 @@ app.post("/api/search/rag", async (req: Request, res: Response) => {
     }
 
     // Step 2: Extract snippets and format context
-    const snippets = ragHelper.extractSnippets(results, limit);
+    const snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+    const snippets = ragHelper.extractSnippets(
+      results,
+      snippetLimit,
+      RAG_CONTEXT_MAX_CHARS_PER_SNIPPET
+    );
     const context = ragHelper.formatContextForLLM(snippets);
 
     // Step 3: Generate response

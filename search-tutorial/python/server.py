@@ -30,6 +30,10 @@ TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
 
 TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
 PORT = int(os.getenv("PORT", "3000"))
+RAG_CONTEXT_MAX_SNIPPETS = int(os.getenv("RAG_CONTEXT_MAX_SNIPPETS", "5"))
+RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = int(
+    os.getenv("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", "350")
+)
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend-example", "simple-html")
 
@@ -94,7 +98,12 @@ def api_rag():
             return jsonify({"response": "No relevant content found.", "sources": []})
 
         # Step 2: Extract snippets and format context
-        snippets = rag_helper.extract_snippets(results, max_snippets=limit)
+        snippet_limit = min(int(limit), RAG_CONTEXT_MAX_SNIPPETS)
+        snippets = rag_helper.extract_snippets(
+            results,
+            max_snippets=snippet_limit,
+            max_chars_per_snippet=RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+        )
         context = rag_helper.format_context_for_llm(snippets)
 
         # Step 3: Generate response

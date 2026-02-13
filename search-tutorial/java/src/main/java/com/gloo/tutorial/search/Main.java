@@ -31,6 +31,10 @@ public class Main {
     private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
     private static final String SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
     private static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    private static final int RAG_MAX_TOKENS = parseIntOrDefault(dotenv.get("RAG_MAX_TOKENS"), 3000);
+    private static final int RAG_CONTEXT_MAX_SNIPPETS = parseIntOrDefault(dotenv.get("RAG_CONTEXT_MAX_SNIPPETS"), 5);
+    private static final int RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseIntOrDefault(
+            dotenv.get("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET"), 350);
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
@@ -208,7 +212,7 @@ public class Main {
                 new CompletionMessage("user", "Context:\n" + context + "\n\nQuestion: " + query)
         );
         payload.autoRouting = true;
-        payload.maxTokens = 1000;
+        payload.maxTokens = RAG_MAX_TOKENS;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(COMPLETIONS_URL))
@@ -306,7 +310,8 @@ public class Main {
         System.out.printf("Found %d results%n%n", results.data.size());
 
         System.out.println("Step 2: Extracting snippets...");
-        List<Snippet> snippets = extractSnippets(results, limit, 500);
+        int snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+        List<Snippet> snippets = extractSnippets(results, snippetLimit, RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
         String context = formatContextForLLM(snippets);
         System.out.printf("Extracted %d snippets%n%n", snippets.size());
 
@@ -393,6 +398,17 @@ public class Main {
         } catch (Exception e) {
             System.err.println("An error occurred: " + e.getMessage());
             System.exit(1);
+        }
+    }
+
+    private static int parseIntOrDefault(String value, int defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
         }
     }
 }

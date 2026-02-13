@@ -27,6 +27,9 @@ $TENANT = $_ENV['GLOO_TENANT'] ?? 'your-tenant-name';
 $TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
 $SEARCH_URL = 'https://platform.ai.gloo.com/ai/data/v1/search';
 $COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+$RAG_MAX_TOKENS = (int) ($_ENV['RAG_MAX_TOKENS'] ?? 3000);
+$RAG_CONTEXT_MAX_SNIPPETS = (int) ($_ENV['RAG_CONTEXT_MAX_SNIPPETS'] ?? 5);
+$RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = (int) ($_ENV['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'] ?? 350);
 
 class AdvancedSearchClient
 {
@@ -113,11 +116,13 @@ class RAGHelper
 {
     private TokenManager $tokenManager;
     private string $completionsUrl;
+    private int $ragMaxTokens;
 
-    public function __construct(TokenManager $tokenManager, string $completionsUrl)
+    public function __construct(TokenManager $tokenManager, string $completionsUrl, int $ragMaxTokens = 3000)
     {
         $this->tokenManager = $tokenManager;
         $this->completionsUrl = $completionsUrl;
+        $this->ragMaxTokens = $ragMaxTokens > 0 ? $ragMaxTokens : 3000;
     }
 
     /**
@@ -177,7 +182,7 @@ class RAGHelper
         $payload = json_encode([
             'messages' => $messages,
             'auto_routing' => true,
-            'max_tokens' => 1000,
+            'max_tokens' => $this->ragMaxTokens,
         ]);
 
         $ch = curl_init();
@@ -241,6 +246,8 @@ function filteredSearch(AdvancedSearchClient $searchClient, string $query, array
  */
 function ragSearch(AdvancedSearchClient $searchClient, RAGHelper $ragHelper, string $query, int $limit = 5): void
 {
+    global $RAG_CONTEXT_MAX_SNIPPETS, $RAG_CONTEXT_MAX_CHARS_PER_SNIPPET;
+
     echo "RAG Search for: '$query'\n\n";
 
     echo "Step 1: Searching for relevant content...\n";
@@ -254,7 +261,8 @@ function ragSearch(AdvancedSearchClient $searchClient, RAGHelper $ragHelper, str
     echo "Found " . count($results['data']) . " results\n\n";
 
     echo "Step 2: Extracting snippets...\n";
-    $snippets = $ragHelper->extractSnippets($results, $limit);
+    $snippetLimit = min($limit, $RAG_CONTEXT_MAX_SNIPPETS);
+    $snippets = $ragHelper->extractSnippets($results, $snippetLimit, $RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
     $context = $ragHelper->formatContextForLLM($snippets);
     echo "Extracted " . count($snippets) . " snippets\n\n";
 
@@ -294,7 +302,7 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     try {
         $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
         $searchClient = new AdvancedSearchClient($tokenManager, $SEARCH_URL, $TENANT);
-        $ragHelper = new RAGHelper($tokenManager, $COMPLETIONS_URL);
+        $ragHelper = new RAGHelper($tokenManager, $COMPLETIONS_URL, $RAG_MAX_TOKENS);
 
         if ($command === 'filter') {
             if ($argc < 4) {

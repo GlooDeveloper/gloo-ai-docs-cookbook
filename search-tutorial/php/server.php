@@ -35,6 +35,9 @@ $TENANT = $_ENV['GLOO_TENANT'] ?? 'your-tenant-name';
 $TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
 $SEARCH_URL = 'https://platform.ai.gloo.com/ai/data/v1/search';
 $COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+$RAG_MAX_TOKENS = (int) ($_ENV['RAG_MAX_TOKENS'] ?? 3000);
+$RAG_CONTEXT_MAX_SNIPPETS = (int) ($_ENV['RAG_CONTEXT_MAX_SNIPPETS'] ?? 5);
+$RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = (int) ($_ENV['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'] ?? 350);
 
 validateCredentials($CLIENT_ID, $CLIENT_SECRET);
 
@@ -42,7 +45,7 @@ validateCredentials($CLIENT_ID, $CLIENT_SECRET);
 $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
 $searchClient = new SearchClient($tokenManager, $SEARCH_URL, $TENANT);
 $advancedSearchClient = new AdvancedSearchClient($tokenManager, $SEARCH_URL, $TENANT);
-$ragHelper = new RAGHelper($tokenManager, $COMPLETIONS_URL);
+$ragHelper = new RAGHelper($tokenManager, $COMPLETIONS_URL, $RAG_MAX_TOKENS);
 
 $FRONTEND_DIR = realpath(__DIR__ . '/../frontend-example/simple-html');
 
@@ -113,7 +116,8 @@ if ($path === '/api/search/rag' && $method === 'POST') {
         }
 
         // Step 2: Extract snippets and format context
-        $snippets = $ragHelper->extractSnippets($results, $limit);
+        $snippetLimit = min($limit, $RAG_CONTEXT_MAX_SNIPPETS);
+        $snippets = $ragHelper->extractSnippets($results, $snippetLimit, $RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
         $context = $ragHelper->formatContextForLLM($snippets);
 
         // Step 3: Generate response
