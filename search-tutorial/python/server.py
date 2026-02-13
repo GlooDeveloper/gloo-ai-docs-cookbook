@@ -11,29 +11,22 @@ Endpoints:
   POST /api/search/rag                       - Search + RAG with Completions V2
 """
 
-import os
 import sys
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from dotenv import load_dotenv
 from auth import TokenManager, validate_credentials
 from search_basic import SearchClient
 from search_advanced import AdvancedSearchClient, RAGHelper
-
-# Load environment variables from .env file
-load_dotenv()
-
-# --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
-
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
-PORT = int(os.getenv("PORT", "3000"))
-RAG_CONTEXT_MAX_SNIPPETS = int(os.getenv("RAG_CONTEXT_MAX_SNIPPETS", "5"))
-RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = int(
-    os.getenv("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", "350")
+import os
+from config import (
+    CLIENT_ID,
+    CLIENT_SECRET,
+    TOKEN_URL,
+    PORT,
+    RAG_CONTEXT_MAX_SNIPPETS,
+    RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
 )
+from utils import normalize_limit
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend-example", "simple-html")
 
@@ -69,7 +62,7 @@ def api_search():
     if not query:
         return jsonify({"error": "Query parameter 'q' is required"}), 400
 
-    limit = int(request.args.get("limit", "10"))
+    limit = normalize_limit(request.args.get("limit", "10"), 10)
 
     try:
         results = search_client.search(query, limit)
@@ -87,7 +80,7 @@ def api_rag():
         return jsonify({"error": "Field 'query' is required"}), 400
 
     query = body["query"]
-    limit = body.get("limit", 5)
+    limit = normalize_limit(body.get("limit", 5), 5)
     system_prompt = body.get("systemPrompt")
 
     try:
@@ -98,7 +91,7 @@ def api_rag():
             return jsonify({"response": "No relevant content found.", "sources": []})
 
         # Step 2: Extract snippets and format context
-        snippet_limit = min(int(limit), RAG_CONTEXT_MAX_SNIPPETS)
+        snippet_limit = min(limit, RAG_CONTEXT_MAX_SNIPPETS)
         snippets = rag_helper.extract_snippets(
             results,
             max_snippets=snippet_limit,

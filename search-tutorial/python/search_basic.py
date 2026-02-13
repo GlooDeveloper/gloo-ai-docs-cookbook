@@ -7,22 +7,11 @@ to perform semantic search on your ingested content.
 """
 
 import requests
-import os
 import sys
 from typing import Dict, Any
-from dotenv import load_dotenv
 from auth import TokenManager, validate_credentials
-
-# Load environment variables from .env file
-load_dotenv()
-
-# --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
-
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
-SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search"
+from config import CLIENT_ID, CLIENT_SECRET, TENANT, TOKEN_URL, SEARCH_URL
+from utils import normalize_limit
 
 
 class SearchClient:
@@ -144,7 +133,7 @@ def main():
         sys.exit(1)
 
     query = sys.argv[1]
-    limit = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+    limit = normalize_limit(sys.argv[2], 10) if len(sys.argv) > 2 else 10
 
     try:
         app.basic_search(query, limit)

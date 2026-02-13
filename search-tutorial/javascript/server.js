@@ -13,23 +13,18 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-require("dotenv").config();
 const { TokenManager, validateCredentials } = require("./auth");
 const { SearchClient } = require("./search-basic");
 const { AdvancedSearchClient, RAGHelper } = require("./search-advanced");
-
-// --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
-
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const PORT = process.env.PORT || 3000;
-const RAG_CONTEXT_MAX_SNIPPETS = parseInt(process.env.RAG_CONTEXT_MAX_SNIPPETS || "5", 10);
-const RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseInt(
-  process.env.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET || "350",
-  10
-);
+const { normalizeLimit } = require("./utils");
+const {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  TOKEN_URL,
+  PORT,
+  RAG_CONTEXT_MAX_SNIPPETS,
+  RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+} = require("./config");
 
 // Validate credentials on startup
 validateCredentials(CLIENT_ID, CLIENT_SECRET);
@@ -58,7 +53,8 @@ app.get("/api/search", async (req, res) => {
   }
 
   try {
-    const results = await searchClient.search(q, parseInt(limit, 10));
+    const safeLimit = normalizeLimit(limit, 10);
+    const results = await searchClient.search(q, safeLimit);
     res.json(results);
   } catch (error) {
     console.error("Search error:", error.message);
@@ -78,15 +74,17 @@ app.post("/api/search/rag", async (req, res) => {
   }
 
   try {
+    const safeLimit = normalizeLimit(limit, 5);
+
     // Step 1: Search
-    const results = await advancedSearchClient.search(query, limit);
+    const results = await advancedSearchClient.search(query, safeLimit);
 
     if (!results.data || results.data.length === 0) {
       return res.json({ response: "No relevant content found.", sources: [] });
     }
 
     // Step 2: Extract snippets and format context
-    const snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+    const snippetLimit = Math.min(safeLimit, RAG_CONTEXT_MAX_SNIPPETS);
     const snippets = ragHelper.extractSnippets(
       results,
       snippetLimit,

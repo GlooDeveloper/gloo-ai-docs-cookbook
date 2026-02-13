@@ -6,18 +6,15 @@
  */
 
 import axios from "axios";
-import dotenv from "dotenv";
 import { TokenManager, validateCredentials } from "./auth";
-
-dotenv.config();
-
-// --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
-
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
+import {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  TENANT,
+  TOKEN_URL,
+  SEARCH_URL,
+} from "./config";
+import { normalizeLimit } from "./utils";
 
 // --- Types ---
 interface SearchMetadata {
@@ -142,7 +139,7 @@ async function main(): Promise<void> {
   }
 
   const query = args[0];
-  const limit = args[1] ? parseInt(args[1], 10) : 10;
+  const limit = normalizeLimit(args[1], 10);
 
   try {
     await basicSearch(query, limit);
@@ -151,9 +148,6 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 }
-
-// Export for use by server
-export { TOKEN_URL, SEARCH_URL, CLIENT_ID, CLIENT_SECRET, TENANT };
 
 // Run if executed directly
 if (require.main === module) {

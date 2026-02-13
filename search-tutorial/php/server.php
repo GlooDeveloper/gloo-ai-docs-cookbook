@@ -20,24 +20,18 @@ require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/search_basic.php';
 require_once __DIR__ . '/search_advanced.php';
+require_once __DIR__ . '/config.php';
 
-use Dotenv\Dotenv;
-
-// Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
-
-// --- Configuration ---
-$CLIENT_ID = $_ENV['GLOO_CLIENT_ID'] ?? 'YOUR_CLIENT_ID';
-$CLIENT_SECRET = $_ENV['GLOO_CLIENT_SECRET'] ?? 'YOUR_CLIENT_SECRET';
-$TENANT = $_ENV['GLOO_TENANT'] ?? 'your-tenant-name';
-
-$TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
-$SEARCH_URL = 'https://platform.ai.gloo.com/ai/data/v1/search';
-$COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
-$RAG_MAX_TOKENS = (int) ($_ENV['RAG_MAX_TOKENS'] ?? 3000);
-$RAG_CONTEXT_MAX_SNIPPETS = (int) ($_ENV['RAG_CONTEXT_MAX_SNIPPETS'] ?? 5);
-$RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = (int) ($_ENV['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'] ?? 350);
+$config = loadConfig();
+$CLIENT_ID = $config['CLIENT_ID'];
+$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$TENANT = $config['TENANT'];
+$TOKEN_URL = $config['TOKEN_URL'];
+$SEARCH_URL = $config['SEARCH_URL'];
+$COMPLETIONS_URL = $config['COMPLETIONS_URL'];
+$RAG_MAX_TOKENS = $config['RAG_MAX_TOKENS'];
+$RAG_CONTEXT_MAX_SNIPPETS = $config['RAG_CONTEXT_MAX_SNIPPETS'];
+$RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = $config['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'];
 
 validateCredentials($CLIENT_ID, $CLIENT_SECRET);
 
@@ -71,7 +65,7 @@ if ($path === '/api/search' && $method === 'GET') {
 
     parse_str(parse_url($uri, PHP_URL_QUERY) ?? '', $queryParams);
     $q = $queryParams['q'] ?? '';
-    $limit = (int) ($queryParams['limit'] ?? 10);
+    $limit = normalizeLimit($queryParams['limit'] ?? 10, 10);
 
     if (empty($q)) {
         http_response_code(400);
@@ -103,7 +97,7 @@ if ($path === '/api/search/rag' && $method === 'POST') {
     }
 
     $query = $body['query'];
-    $limit = (int) ($body['limit'] ?? 5);
+    $limit = normalizeLimit($body['limit'] ?? 5, 5);
     $systemPrompt = $body['systemPrompt'] ?? null;
 
     try {

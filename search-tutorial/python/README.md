@@ -98,6 +98,9 @@ The frontend is served from `../frontend-example/simple-html/` and works with an
 - `GLOO_CLIENT_ID`: Your Gloo AI Client ID (required)
 - `GLOO_CLIENT_SECRET`: Your Gloo AI Client Secret (required)
 - `GLOO_TENANT`: Your tenant (publisher) name (required)
+- `RAG_MAX_TOKENS`: Max completion tokens for RAG generation (optional, default: `3000`)
+- `RAG_CONTEXT_MAX_SNIPPETS`: Max snippets included in RAG context (optional, default: `5`)
+- `RAG_CONTEXT_MAX_CHARS_PER_SNIPPET`: Max chars per snippet in RAG context (optional, default: `350`)
 
 ### Search Parameters
 - `query`: The search query string

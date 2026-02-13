@@ -1,6 +1,5 @@
 package com.gloo.tutorial.search;
 
-import io.github.cdimascio.dotenv.Dotenv;
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 
@@ -21,20 +20,6 @@ import java.util.stream.Collectors;
  * support for filtering, pagination, and RAG.
  */
 public class Main {
-
-    // --- Configuration ---
-    private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-    private static final String CLIENT_ID = dotenv.get("GLOO_CLIENT_ID", "YOUR_CLIENT_ID");
-    private static final String CLIENT_SECRET = dotenv.get("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET");
-    private static final String TENANT = dotenv.get("GLOO_TENANT", "your-tenant-name");
-
-    private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-    private static final String SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
-    private static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
-    private static final int RAG_MAX_TOKENS = parseIntOrDefault(dotenv.get("RAG_MAX_TOKENS"), 3000);
-    private static final int RAG_CONTEXT_MAX_SNIPPETS = parseIntOrDefault(dotenv.get("RAG_CONTEXT_MAX_SNIPPETS"), 5);
-    private static final int RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseIntOrDefault(
-            dotenv.get("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET"), 350);
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
@@ -121,12 +106,12 @@ public class Main {
         SearchRequest payload = new SearchRequest();
         payload.query = query;
         payload.collection = "GlooProd";
-        payload.tenant = TENANT;
+        payload.tenant = AppConfig.TENANT;
         payload.limit = limit;
         payload.certainty = 0.5;
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(SEARCH_URL))
+                .uri(URI.create(AppConfig.SEARCH_URL))
                 .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(payload)))
@@ -212,10 +197,10 @@ public class Main {
                 new CompletionMessage("user", "Context:\n" + context + "\n\nQuestion: " + query)
         );
         payload.autoRouting = true;
-        payload.maxTokens = RAG_MAX_TOKENS;
+        payload.maxTokens = AppConfig.RAG_MAX_TOKENS;
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(COMPLETIONS_URL))
+                .uri(URI.create(AppConfig.COMPLETIONS_URL))
                 .header("Authorization", "Bearer " + token)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(payload)))
@@ -237,7 +222,7 @@ public class Main {
     // --- Commands ---
 
     static void basicSearch(String query, int limit) throws Exception {
-        TokenManager tm = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL, httpClient);
+        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
 
         System.out.printf("Searching for: '%s'%n", query);
         System.out.printf("Limit: %d results%n%n", limit);
@@ -270,7 +255,7 @@ public class Main {
     }
 
     static void filteredSearch(String query, List<String> contentTypes, int limit) throws Exception {
-        TokenManager tm = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL, httpClient);
+        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
 
         System.out.printf("Searching for: '%s'%n", query);
         System.out.printf("Content types: %s%n", String.join(", ", contentTypes));
@@ -295,7 +280,7 @@ public class Main {
     }
 
     static void ragSearch(String query, int limit) throws Exception {
-        TokenManager tm = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL, httpClient);
+        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
 
         System.out.printf("RAG Search for: '%s'%n%n", query);
 
@@ -310,8 +295,8 @@ public class Main {
         System.out.printf("Found %d results%n%n", results.data.size());
 
         System.out.println("Step 2: Extracting snippets...");
-        int snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
-        List<Snippet> snippets = extractSnippets(results, snippetLimit, RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
+        int snippetLimit = Math.min(limit, AppConfig.RAG_CONTEXT_MAX_SNIPPETS);
+        List<Snippet> snippets = extractSnippets(results, snippetLimit, AppConfig.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
         String context = formatContextForLLM(snippets);
         System.out.printf("Extracted %d snippets%n%n", snippets.size());
 
@@ -341,7 +326,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        TokenManager.validateCredentials(CLIENT_ID, CLIENT_SECRET);
+        TokenManager.validateCredentials(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET);
 
         if (args.length < 1) {
             printUsage();
@@ -372,7 +357,8 @@ public class Main {
         try {
             switch (command) {
                 case "search" -> {
-                    int limit = args.length > 2 ? Integer.parseInt(args[2]) : 10;
+                    int limit = args.length > 2 ? AppConfig.parseIntOrDefault(args[2], 10) : 10;
+                    limit = AppConfig.normalizeLimit(limit, 10, 1, 100);
                     basicSearch(query, limit);
                 }
                 case "filter" -> {
@@ -382,11 +368,13 @@ public class Main {
                         System.exit(1);
                     }
                     List<String> types = List.of(args[2].split(","));
-                    int limit = args.length > 3 ? Integer.parseInt(args[3]) : 10;
+                    int limit = args.length > 3 ? AppConfig.parseIntOrDefault(args[3], 10) : 10;
+                    limit = AppConfig.normalizeLimit(limit, 10, 1, 100);
                     filteredSearch(query, types, limit);
                 }
                 case "rag" -> {
-                    int limit = args.length > 2 ? Integer.parseInt(args[2]) : 5;
+                    int limit = args.length > 2 ? AppConfig.parseIntOrDefault(args[2], 5) : 5;
+                    limit = AppConfig.normalizeLimit(limit, 5, 1, 100);
                     ragSearch(query, limit);
                 }
                 default -> {
@@ -401,14 +389,4 @@ public class Main {
         }
     }
 
-    private static int parseIntOrDefault(String value, int defaultValue) {
-        if (value == null || value.isBlank()) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
-    }
 }

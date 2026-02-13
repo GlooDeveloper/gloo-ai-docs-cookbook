@@ -8,19 +8,19 @@
  */
 
 const axios = require("axios");
-require("dotenv").config();
 const { TokenManager, validateCredentials } = require("./auth");
-
-// --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
-
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
-const COMPLETIONS_URL =
-  "https://platform.ai.gloo.com/ai/v2/chat/completions";
-const RAG_MAX_TOKENS = parseInt(process.env.RAG_MAX_TOKENS || "3000", 10);
+const { normalizeLimit } = require("./utils");
+const {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  TENANT,
+  TOKEN_URL,
+  SEARCH_URL,
+  COMPLETIONS_URL,
+  RAG_MAX_TOKENS,
+  RAG_CONTEXT_MAX_SNIPPETS,
+  RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+} = require("./config");
 
 class AdvancedSearchClient {
   constructor(tokenManager) {
@@ -236,7 +236,12 @@ async function ragSearch(query, limit = 5) {
 
   // Step 2: Extract and format snippets
   console.log("Step 2: Extracting snippets...");
-  const snippets = ragHelper.extractSnippets(results, limit);
+  const snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+  const snippets = ragHelper.extractSnippets(
+    results,
+    snippetLimit,
+    RAG_CONTEXT_MAX_CHARS_PER_SNIPPET
+  );
   const context = ragHelper.formatContextForLLM(snippets);
   console.log(`Extracted ${snippets.length} snippets\n`);
 
@@ -294,10 +299,10 @@ async function main() {
         process.exit(1);
       }
       const types = args[2].split(",");
-      const limit = args[3] ? parseInt(args[3], 10) : 10;
+      const limit = normalizeLimit(args[3], 10);
       await filteredSearch(query, types, limit);
     } else if (command === "rag") {
-      const limit = args[2] ? parseInt(args[2], 10) : 5;
+      const limit = normalizeLimit(args[2], 5);
       await ragSearch(query, limit);
     } else {
       console.error(`Error: Unknown command '${command}'`);
@@ -314,7 +319,6 @@ async function main() {
 module.exports = {
   AdvancedSearchClient,
   RAGHelper,
-  COMPLETIONS_URL,
 };
 
 // Run if executed directly

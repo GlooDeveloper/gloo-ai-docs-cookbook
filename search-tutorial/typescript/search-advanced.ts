@@ -8,29 +8,19 @@
  */
 
 import axios from "axios";
-import dotenv from "dotenv";
 import { TokenManager, validateCredentials } from "./auth";
-
-dotenv.config();
-
-// --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
-
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
-const COMPLETIONS_URL =
-  "https://platform.ai.gloo.com/ai/v2/chat/completions";
-const RAG_MAX_TOKENS = parseInt(process.env.RAG_MAX_TOKENS || "3000", 10);
-const RAG_CONTEXT_MAX_SNIPPETS = parseInt(
-  process.env.RAG_CONTEXT_MAX_SNIPPETS || "5",
-  10
-);
-const RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseInt(
-  process.env.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET || "350",
-  10
-);
+import {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  TENANT,
+  TOKEN_URL,
+  SEARCH_URL,
+  COMPLETIONS_URL,
+  RAG_MAX_TOKENS,
+  RAG_CONTEXT_MAX_SNIPPETS,
+  RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+} from "./config";
+import { normalizeLimit } from "./utils";
 
 // --- Types ---
 interface SearchResult {
@@ -305,10 +295,10 @@ async function main(): Promise<void> {
         process.exit(1);
       }
       const types = args[2].split(",");
-      const limit = args[3] ? parseInt(args[3], 10) : 10;
+      const limit = normalizeLimit(args[3], 10);
       await filteredSearch(query, types, limit);
     } else if (command === "rag") {
-      const limit = args[2] ? parseInt(args[2], 10) : 5;
+      const limit = normalizeLimit(args[2], 5);
       await ragSearch(query, limit);
     } else {
       console.error(`Error: Unknown command '${command}'`);
@@ -320,9 +310,6 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 }
-
-// Export for use by server
-export { COMPLETIONS_URL };
 
 // Run if executed directly
 if (require.main === module) {

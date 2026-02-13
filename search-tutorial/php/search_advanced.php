@@ -12,24 +12,18 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/config.php';
 
-use Dotenv\Dotenv;
-
-// Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
-
-// --- Configuration ---
-$CLIENT_ID = $_ENV['GLOO_CLIENT_ID'] ?? 'YOUR_CLIENT_ID';
-$CLIENT_SECRET = $_ENV['GLOO_CLIENT_SECRET'] ?? 'YOUR_CLIENT_SECRET';
-$TENANT = $_ENV['GLOO_TENANT'] ?? 'your-tenant-name';
-
-$TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
-$SEARCH_URL = 'https://platform.ai.gloo.com/ai/data/v1/search';
-$COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
-$RAG_MAX_TOKENS = (int) ($_ENV['RAG_MAX_TOKENS'] ?? 3000);
-$RAG_CONTEXT_MAX_SNIPPETS = (int) ($_ENV['RAG_CONTEXT_MAX_SNIPPETS'] ?? 5);
-$RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = (int) ($_ENV['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'] ?? 350);
+$config = loadConfig();
+$CLIENT_ID = $config['CLIENT_ID'];
+$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$TENANT = $config['TENANT'];
+$TOKEN_URL = $config['TOKEN_URL'];
+$SEARCH_URL = $config['SEARCH_URL'];
+$COMPLETIONS_URL = $config['COMPLETIONS_URL'];
+$RAG_MAX_TOKENS = $config['RAG_MAX_TOKENS'];
+$RAG_CONTEXT_MAX_SNIPPETS = $config['RAG_CONTEXT_MAX_SNIPPETS'];
+$RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = $config['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'];
 
 class AdvancedSearchClient
 {
@@ -311,10 +305,10 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
                 exit(1);
             }
             $types = explode(',', $argv[3]);
-            $limit = isset($argv[4]) ? (int) $argv[4] : 10;
+            $limit = isset($argv[4]) ? normalizeLimit($argv[4], 10) : 10;
             filteredSearch($searchClient, $query, $types, $limit);
         } elseif ($command === 'rag') {
-            $limit = isset($argv[3]) ? (int) $argv[3] : 5;
+            $limit = isset($argv[3]) ? normalizeLimit($argv[3], 5) : 5;
             ragSearch($searchClient, $ragHelper, $query, $limit);
         } else {
             fwrite(STDERR, "Error: Unknown command '$command'\n");

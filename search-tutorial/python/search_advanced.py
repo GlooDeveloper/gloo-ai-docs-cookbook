@@ -9,28 +9,21 @@ This script demonstrates advanced search features including:
 """
 
 import requests
-import os
 import sys
 from typing import Dict, Any, List, Optional
-from dotenv import load_dotenv
 from auth import TokenManager, validate_credentials
-
-# Load environment variables from .env file
-load_dotenv()
-
-# --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
-
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
-SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search"
-COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
-RAG_MAX_TOKENS = int(os.getenv("RAG_MAX_TOKENS", "3000"))
-RAG_CONTEXT_MAX_SNIPPETS = int(os.getenv("RAG_CONTEXT_MAX_SNIPPETS", "5"))
-RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = int(
-    os.getenv("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", "350")
+from config import (
+    CLIENT_ID,
+    CLIENT_SECRET,
+    TENANT,
+    TOKEN_URL,
+    SEARCH_URL,
+    COMPLETIONS_URL,
+    RAG_MAX_TOKENS,
+    RAG_CONTEXT_MAX_SNIPPETS,
+    RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
 )
+from utils import normalize_limit
 
 class AdvancedSearchClient:
     """Advanced search client with filtering and pagination capabilities."""
@@ -367,11 +360,11 @@ def main():
                 sys.exit(1)
 
             types = sys.argv[3].split(',')
-            limit = int(sys.argv[4]) if len(sys.argv) > 4 else 10
+            limit = normalize_limit(sys.argv[4], 10) if len(sys.argv) > 4 else 10
             app.filtered_search(query, types, limit)
 
         elif command == "rag":
-            limit = int(sys.argv[3]) if len(sys.argv) > 3 else 5
+            limit = normalize_limit(sys.argv[3], 5) if len(sys.argv) > 3 else 5
             app.rag_search(query, limit)
 
         else:

@@ -6,16 +6,15 @@
  */
 
 const axios = require("axios");
-require("dotenv").config();
 const { TokenManager, validateCredentials } = require("./auth");
-
-// --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
-
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
+const { normalizeLimit } = require("./utils");
+const {
+  CLIENT_ID,
+  CLIENT_SECRET,
+  TENANT,
+  TOKEN_URL,
+  SEARCH_URL,
+} = require("./config");
 
 class SearchClient {
   constructor(tokenManager) {
@@ -121,7 +120,7 @@ async function main() {
   }
 
   const query = args[0];
-  const limit = args[1] ? parseInt(args[1], 10) : 10;
+  const limit = normalizeLimit(args[1], 10);
 
   try {
     await basicSearch(query, limit);
@@ -132,7 +131,7 @@ async function main() {
 }
 
 // Export for use by server.js
-module.exports = { SearchClient, TOKEN_URL, SEARCH_URL, CLIENT_ID, CLIENT_SECRET, TENANT };
+module.exports = { SearchClient };
 
 // Run if executed directly
 if (require.main === module) {

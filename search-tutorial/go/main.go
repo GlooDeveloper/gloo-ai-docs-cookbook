@@ -25,6 +25,9 @@ var (
 	clientID     string
 	clientSecret string
 	tenant       string
+	ragMaxTokens int
+	ragMaxSnips  int
+	ragMaxChars  int
 
 	tokenURL       = "https://platform.ai.gloo.com/oauth2/token"
 	searchURL      = "https://platform.ai.gloo.com/ai/data/v1/search"
@@ -249,7 +252,7 @@ func (rh *RAGHelper) GenerateWithContext(query, context, systemPrompt string) (s
 			{Role: "user", Content: fmt.Sprintf("Context:\n%s\n\nQuestion: %s", context, query)},
 		},
 		AutoRouting: true,
-		MaxTokens:   getEnvInt("RAG_MAX_TOKENS", 3000),
+		MaxTokens:   ragMaxTokens,
 	}
 
 	jsonData, err := json.Marshal(payload)
@@ -380,11 +383,10 @@ func ragSearch(query string, limit int) {
 
 	fmt.Println("Step 2: Extracting snippets...")
 	snippetLimit := limit
-	maxSnippets := getEnvInt("RAG_CONTEXT_MAX_SNIPPETS", 5)
-	if snippetLimit > maxSnippets {
-		snippetLimit = maxSnippets
+	if snippetLimit > ragMaxSnips {
+		snippetLimit = ragMaxSnips
 	}
-	snippets := rh.ExtractSnippets(results, snippetLimit, getEnvInt("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", 350))
+	snippets := rh.ExtractSnippets(results, snippetLimit, ragMaxChars)
 	context := rh.FormatContextForLLM(snippets)
 	fmt.Printf("Extracted %d snippets\n\n", len(snippets))
 
@@ -436,6 +438,27 @@ func getEnvInt(key string, fallback int) int {
 	return parsed
 }
 
+func normalizeLimit(value int, fallback int, min int, max int) int {
+	if value <= 0 {
+		value = fallback
+	}
+	if value < min {
+		return min
+	}
+	if value > max {
+		return max
+	}
+	return value
+}
+
+func parseLimitArg(value string, fallback int) int {
+	parsed, err := strconv.Atoi(value)
+	if err != nil {
+		return fallback
+	}
+	return parsed
+}
+
 func main() {
 	// Load .env file
 	godotenv.Load()
@@ -443,6 +466,9 @@ func main() {
 	clientID = getEnv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
 	clientSecret = getEnv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
 	tenant = getEnv("GLOO_TENANT", "your-tenant-name")
+	ragMaxTokens = getEnvInt("RAG_MAX_TOKENS", 3000)
+	ragMaxSnips = getEnvInt("RAG_CONTEXT_MAX_SNIPPETS", 5)
+	ragMaxChars = getEnvInt("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", 350)
 
 	ValidateCredentials(clientID, clientSecret)
 
@@ -474,8 +500,9 @@ func main() {
 	case "search":
 		limit := 10
 		if len(os.Args) > 3 {
-			limit, _ = strconv.Atoi(os.Args[3])
+			limit = parseLimitArg(os.Args[3], 10)
 		}
+		limit = normalizeLimit(limit, 10, 1, 100)
 		basicSearch(query, limit)
 
 	case "filter":
@@ -487,15 +514,17 @@ func main() {
 		types := strings.Split(os.Args[3], ",")
 		limit := 10
 		if len(os.Args) > 4 {
-			limit, _ = strconv.Atoi(os.Args[4])
+			limit = parseLimitArg(os.Args[4], 10)
 		}
+		limit = normalizeLimit(limit, 10, 1, 100)
 		filteredSearch(query, types, limit)
 
 	case "rag":
 		limit := 5
 		if len(os.Args) > 3 {
-			limit, _ = strconv.Atoi(os.Args[3])
+			limit = parseLimitArg(os.Args[3], 5)
 		}
+		limit = normalizeLimit(limit, 5, 1, 100)
 		ragSearch(query, limit)
 
 	default:

@@ -10,20 +10,14 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/config.php';
 
-use Dotenv\Dotenv;
-
-// Load environment variables
-$dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->safeLoad();
-
-// --- Configuration ---
-$CLIENT_ID = $_ENV['GLOO_CLIENT_ID'] ?? 'YOUR_CLIENT_ID';
-$CLIENT_SECRET = $_ENV['GLOO_CLIENT_SECRET'] ?? 'YOUR_CLIENT_SECRET';
-$TENANT = $_ENV['GLOO_TENANT'] ?? 'your-tenant-name';
-
-$TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
-$SEARCH_URL = 'https://platform.ai.gloo.com/ai/data/v1/search';
+$config = loadConfig();
+$CLIENT_ID = $config['CLIENT_ID'];
+$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$TENANT = $config['TENANT'];
+$TOKEN_URL = $config['TOKEN_URL'];
+$SEARCH_URL = $config['SEARCH_URL'];
 
 class SearchClient
 {
@@ -137,7 +131,7 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     }
 
     $query = $argv[1];
-    $limit = isset($argv[2]) ? (int) $argv[2] : 10;
+    $limit = isset($argv[2]) ? normalizeLimit($argv[2], 10) : 10;
 
     try {
         $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);

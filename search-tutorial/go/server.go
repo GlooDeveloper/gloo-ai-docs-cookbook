@@ -20,7 +20,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -80,10 +79,9 @@ func startServer(port string) {
 		limitStr := r.URL.Query().Get("limit")
 		limit := 10
 		if limitStr != "" {
-			if parsed, err := strconv.Atoi(limitStr); err == nil {
-				limit = parsed
-			}
+			limit = parseLimitArg(limitStr, 10)
 		}
+		limit = normalizeLimit(limit, 10, 1, 100)
 
 		results, err := sc.Search(q, limit)
 		if err != nil {
@@ -116,9 +114,7 @@ func startServer(port string) {
 			return
 		}
 
-		if body.Limit == 0 {
-			body.Limit = 5
-		}
+		body.Limit = normalizeLimit(body.Limit, 5, 1, 100)
 
 		// Step 1: Search
 		results, err := sc.Search(body.Query, body.Limit)
@@ -139,11 +135,10 @@ func startServer(port string) {
 
 		// Step 2: Extract snippets and format context
 		snippetLimit := body.Limit
-		maxSnippets := getEnvInt("RAG_CONTEXT_MAX_SNIPPETS", 5)
-		if snippetLimit > maxSnippets {
-			snippetLimit = maxSnippets
+		if snippetLimit > ragMaxSnips {
+			snippetLimit = ragMaxSnips
 		}
-		snippets := rh.ExtractSnippets(results, snippetLimit, getEnvInt("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", 350))
+		snippets := rh.ExtractSnippets(results, snippetLimit, ragMaxChars)
 		context := rh.FormatContextForLLM(snippets)
 
 		// Step 3: Generate response

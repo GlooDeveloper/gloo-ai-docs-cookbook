@@ -3,7 +3,6 @@ package com.gloo.tutorial.search;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
-import io.github.cdimascio.dotenv.Dotenv;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -31,15 +30,6 @@ import java.util.stream.Collectors;
  *   POST /api/search/rag               - Search + RAG with Completions V2
  */
 public class Server {
-
-    private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-    private static final String CLIENT_ID = dotenv.get("GLOO_CLIENT_ID", "YOUR_CLIENT_ID");
-    private static final String CLIENT_SECRET = dotenv.get("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET");
-    private static final String TENANT = dotenv.get("GLOO_TENANT", "your-tenant-name");
-    private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-    private static final int RAG_CONTEXT_MAX_SNIPPETS = parseIntOrDefault(dotenv.get("RAG_CONTEXT_MAX_SNIPPETS"), 5);
-    private static final int RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseIntOrDefault(
-            dotenv.get("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET"), 350);
 
     private static final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(30))
@@ -81,9 +71,9 @@ public class Server {
     }
 
     public static void start(int port) throws Exception {
-        TokenManager.validateCredentials(CLIENT_ID, CLIENT_SECRET);
+        TokenManager.validateCredentials(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET);
 
-        TokenManager tm = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL, httpClient);
+        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
 
         Path frontendDir = Path.of(".", "..", "frontend-example", "simple-html").toAbsolutePath().normalize();
 
@@ -109,11 +99,9 @@ public class Server {
 
             int limit = 10;
             if (params.containsKey("limit")) {
-                try {
-                    limit = Integer.parseInt(params.get("limit"));
-                } catch (NumberFormatException ignored) {
-                }
+                limit = AppConfig.parseIntOrDefault(params.get("limit"), 10);
             }
+            limit = AppConfig.normalizeLimit(limit, 10, 1, 100);
 
             try {
                 Main.SearchResponse results = Main.search(tm, q, limit);
@@ -142,7 +130,7 @@ public class Server {
                 return;
             }
 
-            int limit = ragReq.limit > 0 ? ragReq.limit : 5;
+            int limit = AppConfig.normalizeLimit(ragReq.limit, 5, 1, 100);
 
             try {
                 // Step 1: Search
@@ -155,9 +143,9 @@ public class Server {
                 }
 
                 // Step 2: Extract snippets and format context
-                int snippetLimit = Math.min(limit, RAG_CONTEXT_MAX_SNIPPETS);
+                int snippetLimit = Math.min(limit, AppConfig.RAG_CONTEXT_MAX_SNIPPETS);
                 List<Main.Snippet> snippets = Main.extractSnippets(
-                        results, snippetLimit, RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
+                        results, snippetLimit, AppConfig.RAG_CONTEXT_MAX_CHARS_PER_SNIPPET);
                 String context = Main.formatContextForLLM(snippets);
 
                 // Step 3: Generate response
@@ -241,16 +229,5 @@ public class Server {
         if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
         if (path.endsWith(".svg")) return "image/svg+xml";
         return "application/octet-stream";
-    }
-
-    private static int parseIntOrDefault(String value, int defaultValue) {
-        if (value == null || value.isBlank()) {
-            return defaultValue;
-        }
-        try {
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e) {
-            return defaultValue;
-        }
     }
 }
