@@ -113,43 +113,6 @@ def make_non_grounded_request(query):
         raise Exception(f"Non-grounded request failed: {str(e)}")
 
 
-def make_default_grounded_request(query, sources_limit=3):
-    """
-    Make a grounded completion request using Gloo's default dataset.
-
-    This retrieves relevant content from Gloo's default faith-based content
-    before generating a response. Good for general religious questions,
-    but won't have specific information about your organization.
-
-    Args:
-        query (str): The user's question
-        sources_limit (int): Maximum number of sources to use (default: 3)
-
-    Returns:
-        dict: API response with sources_returned flag
-    """
-    token = ensure_valid_token()
-
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
-
-    payload = {
-        "messages": [{"role": "user", "content": query}],
-        "auto_routing": True,
-        "sources_limit": sources_limit,
-        "max_tokens": 500
-    }
-
-    try:
-        response = requests.post(GROUNDED_URL, headers=headers, json=payload)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Default grounded request failed: {str(e)}")
-
-
 def make_publisher_grounded_request(query, publisher_name, sources_limit=3):
     """
     Make a grounded completion request WITH RAG on your specific publisher.
@@ -191,7 +154,7 @@ def make_publisher_grounded_request(query, publisher_name, sources_limit=3):
 
 def compare_responses(query, publisher_name):
     """
-    Compare non-grounded vs default grounded vs publisher grounded responses.
+    Compare non-grounded vs publisher grounded responses.
 
     This is the main demo function that shows the progression from generic
     responses to organization-specific answers through RAG.
@@ -219,23 +182,8 @@ def compare_responses(query, publisher_name):
 
     print(f"\n{'='*80}\n")
 
-    # Default grounded response
-    print("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):")
-    print("-" * 80)
-    try:
-        default_grounded = make_default_grounded_request(query)
-        content = default_grounded['choices'][0]['message']['content']
-        print(content)
-        print(f"\n📊 Metadata:")
-        print(f"   Sources used: {default_grounded.get('sources_returned', False)}")
-        print(f"   Model: {default_grounded.get('model', 'N/A')}")
-    except Exception as e:
-        print(f"❌ Error: {str(e)}")
-
-    print(f"\n{'='*80}\n")
-
     # Publisher grounded response
-    print("🔹 STEP 3: GROUNDED on Your Publisher (Your Specific Content):")
+    print("🔹 STEP 2: GROUNDED on Your Publisher (Your Specific Content):")
     print("-" * 80)
     try:
         publisher_grounded = make_publisher_grounded_request(query, publisher_name)
@@ -261,12 +209,11 @@ def main():
     print("  GROUNDED COMPLETIONS DEMO - Comparing RAG vs Non-RAG Responses")
     print("="*80)
     print(f"\nPublisher: {PUBLISHER_NAME}")
-    print("This demo shows a 3-step progression:")
+    print("This demo shows a 2-step progression:")
     print("  1. Non-grounded (generic model knowledge)")
-    print("  2. Grounded on default dataset (Gloo's faith-based content)")
-    print("  3. Grounded on your publisher (your specific content)")
+    print("  2. Grounded on your publisher (your specific content)")
     print("\nNote: For org-specific queries like Bezalel's hiring process,")
-    print("both steps 1 and 2 may lack specific details, while step 3")
+    print("step 1 may lack specific details, while step 2")
     print("provides accurate, source-backed answers from your content.\n")
 
     # Test queries that demonstrate clear differences
@@ -291,12 +238,10 @@ def main():
     print("="*80)
     print("\nKey Takeaways:")
     print("✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate")
-    print("✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for")
-    print("  general questions but lacks org-specific details")
-    print("✓ Step 3 (Publisher grounded): Your specific content, accurate and")
+    print("✓ Step 2 (Publisher grounded): Your specific content, accurate and")
     print("  source-backed (sources_returned: true)")
-    print("✓ Grounding on relevant content is key - generic grounding may not help")
-    print("  for organization-specific queries")
+    print("✓ Grounding on your publisher content eliminates hallucinations and")
+    print("  provides accurate, organization-specific answers")
     print("\nNext Steps:")
     print("• Upload your own content to a Publisher in Gloo Studio")
     print("• Update PUBLISHER_NAME in .env to use your content")

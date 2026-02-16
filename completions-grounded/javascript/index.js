@@ -120,47 +120,6 @@ async function makeNonGroundedRequest(query) {
 }
 
 /**
- * Make a grounded completion request using Gloo's default dataset.
- *
- * This retrieves relevant content from Gloo's default faith-based content
- * before generating a response. Good for general religious questions,
- * but won't have specific information about your organization.
- *
- * @param {string} query - The user's question
- * @param {number} sourcesLimit - Maximum number of sources to use (default: 3)
- * @returns {Promise<Object>} API response with sources_returned flag
- */
-async function makeDefaultGroundedRequest(query, sourcesLimit = 3) {
-  const token = await ensureValidToken();
-
-  const payload = {
-    messages: [{ role: 'user', content: query }],
-    auto_routing: true,
-    sources_limit: sourcesLimit,
-    max_tokens: 500
-  };
-
-  try {
-    const response = await fetch(GROUNDED_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Request failed: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw new Error(`Default grounded request failed: ${error.message}`);
-  }
-}
-
-/**
  * Make a grounded completion request WITH RAG on your specific publisher.
  *
  * This retrieves relevant content from your publisher before generating
@@ -204,10 +163,10 @@ async function makePublisherGroundedRequest(query, publisherName, sourcesLimit =
 }
 
 /**
- * Compare non-grounded vs default grounded vs publisher grounded responses.
+ * Compare non-grounded vs publisher grounded responses.
  *
- * This is the main demo function that shows the progression from generic
- * responses to organization-specific answers through RAG.
+ * This is the main demo function that shows the difference between generic
+ * responses and organization-specific answers through RAG.
  *
  * @param {string} query - The question to ask
  * @param {string} publisherName - Name of the publisher in Gloo Studio
@@ -233,24 +192,8 @@ async function compareResponses(query, publisherName) {
 
   console.log('\n' + '='.repeat(80) + '\n');
 
-  // Default grounded response
-  console.log('🔹 STEP 2: GROUNDED on Default Dataset (Gloo\'s Faith-Based Content):');
-  console.log('-'.repeat(80));
-  try {
-    const defaultGrounded = await makeDefaultGroundedRequest(query);
-    const content = defaultGrounded.choices[0].message.content;
-    console.log(content);
-    console.log(`\n📊 Metadata:`);
-    console.log(`   Sources used: ${defaultGrounded.sources_returned || false}`);
-    console.log(`   Model: ${defaultGrounded.model || 'N/A'}`);
-  } catch (error) {
-    console.log(`❌ Error: ${error.message}`);
-  }
-
-  console.log('\n' + '='.repeat(80) + '\n');
-
   // Publisher grounded response
-  console.log('🔹 STEP 3: GROUNDED on Your Publisher (Your Specific Content):');
+  console.log('🔹 STEP 2: GROUNDED on Your Publisher (Your Specific Content):');
   console.log('-'.repeat(80));
   try {
     const publisherGrounded = await makePublisherGroundedRequest(query, publisherName);
@@ -293,13 +236,12 @@ async function main() {
   console.log('  GROUNDED COMPLETIONS DEMO - Comparing RAG vs Non-RAG Responses');
   console.log('='.repeat(80));
   console.log(`\nPublisher: ${PUBLISHER_NAME}`);
-  console.log('This demo shows a 3-step progression:');
+  console.log('This demo shows a 2-step comparison:');
   console.log('  1. Non-grounded (generic model knowledge)');
-  console.log('  2. Grounded on default dataset (Gloo\'s faith-based content)');
-  console.log('  3. Grounded on your publisher (your specific content)');
+  console.log('  2. Grounded on your publisher (your specific content)');
   console.log('\nNote: For org-specific queries like Bezalel\'s hiring process,');
-  console.log('both steps 1 and 2 may lack specific details, while step 3');
-  console.log('provides accurate, source-backed answers from your content.\n');
+  console.log('step 1 will lack specific details, while step 2 provides');
+  console.log('accurate, source-backed answers from your content.\n');
 
   // Test queries that demonstrate clear differences
   const queries = [
@@ -326,12 +268,9 @@ async function main() {
   console.log('='.repeat(80));
   console.log('\nKey Takeaways:');
   console.log('✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate');
-  console.log('✓ Step 2 (Default grounded): Uses Gloo\'s faith-based content, better for');
-  console.log('  general questions but lacks org-specific details');
-  console.log('✓ Step 3 (Publisher grounded): Your specific content, accurate and');
+  console.log('✓ Step 2 (Publisher grounded): Your specific content, accurate and');
   console.log('  source-backed (sources_returned: true)');
-  console.log('✓ Grounding on relevant content is key - generic grounding may not help');
-  console.log('  for organization-specific queries');
+  console.log('✓ Grounding on your own content transforms generic AI into an accurate assistant');
   console.log('\nNext Steps:');
   console.log('• Upload your own content to a Publisher in Gloo Studio');
   console.log('• Update PUBLISHER_NAME in .env to use your content');
@@ -352,7 +291,6 @@ module.exports = {
   getAccessToken,
   ensureValidToken,
   makeNonGroundedRequest,
-  makeDefaultGroundedRequest,
   makePublisherGroundedRequest,
   compareResponses
 };
