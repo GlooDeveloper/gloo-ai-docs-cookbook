@@ -7,7 +7,7 @@
  * completions using Gloo AI's RAG (Retrieval-Augmented Generation) capabilities.
  *
  * It compares responses from a standard completion (which may hallucinate)
- * against a grounded completion (which uses your actual content).
+ * against a publisher-grounded completion (which uses your actual content).
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
@@ -133,48 +133,6 @@ function makeNonGroundedRequest($query) {
 }
 
 /**
- * Make a grounded completion request using Gloo's default dataset.
- *
- * This retrieves relevant content from Gloo's default faith-based content
- * before generating a response. Good for general religious questions,
- * but won't have specific information about your organization.
- *
- * @param string $query The user's question
- * @param int $sourcesLimit Maximum number of sources to use (default: 3)
- * @return array API response with sources_returned flag
- * @throws Exception If request fails
- */
-function makeDefaultGroundedRequest($query, $sourcesLimit = 3) {
-    $token = ensureValidToken();
-
-    $payload = [
-        'messages' => [['role' => 'user', 'content' => $query]],
-        'auto_routing' => true,
-        'sources_limit' => $sourcesLimit,
-        'max_tokens' => 500
-    ];
-
-    $ch = curl_init(GROUNDED_URL);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $token",
-        'Content-Type: application/json'
-    ]);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        throw new Exception("Default grounded request failed. HTTP $httpCode");
-    }
-
-    return json_decode($response, true);
-}
-
-/**
  * Make a grounded completion request WITH RAG on your specific publisher.
  *
  * This retrieves relevant content from your publisher before generating
@@ -219,7 +177,7 @@ function makePublisherGroundedRequest($query, $publisherName, $sourcesLimit = 3)
 }
 
 /**
- * Compare non-grounded vs default grounded vs publisher grounded responses.
+ * Compare non-grounded vs publisher grounded responses.
  *
  * This is the main demo function that shows the progression from generic
  * responses to organization-specific answers through RAG.
@@ -249,25 +207,8 @@ function compareResponses($query, $publisherName) {
 
     echo "\n" . str_repeat('=', 80) . "\n\n";
 
-    // Default grounded response
-    echo "🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):\n";
-    echo str_repeat('-', 80) . "\n";
-    try {
-        $defaultGrounded = makeDefaultGroundedRequest($query);
-        $content = $defaultGrounded['choices'][0]['message']['content'];
-        echo $content . "\n";
-        echo "\n📊 Metadata:\n";
-        $sourcesUsed = $defaultGrounded['sources_returned'] ?? false;
-        echo "   Sources used: " . ($sourcesUsed ? 'true' : 'false') . "\n";
-        echo "   Model: " . ($defaultGrounded['model'] ?? 'N/A') . "\n";
-    } catch (Exception $e) {
-        echo "❌ Error: " . $e->getMessage() . "\n";
-    }
-
-    echo "\n" . str_repeat('=', 80) . "\n\n";
-
     // Publisher grounded response
-    echo "🔹 STEP 3: GROUNDED on Your Publisher (Your Specific Content):\n";
+    echo "🔹 STEP 2: GROUNDED on Your Publisher (Your Specific Content):\n";
     echo str_repeat('-', 80) . "\n";
     try {
         $publisherGrounded = makePublisherGroundedRequest($query, $publisherName);
@@ -304,12 +245,11 @@ function main() {
     echo "  GROUNDED COMPLETIONS DEMO - Comparing RAG vs Non-RAG Responses\n";
     echo str_repeat('=', 80) . "\n";
     echo "\nPublisher: $publisherName\n";
-    echo "This demo shows a 3-step progression:\n";
+    echo "This demo shows a 2-step progression:\n";
     echo "  1. Non-grounded (generic model knowledge)\n";
-    echo "  2. Grounded on default dataset (Gloo's faith-based content)\n";
-    echo "  3. Grounded on your publisher (your specific content)\n";
+    echo "  2. Grounded on your publisher (your specific content)\n";
     echo "\nNote: For org-specific queries like Bezalel's hiring process,\n";
-    echo "both steps 1 and 2 may lack specific details, while step 3\n";
+    echo "step 1 may lack specific details, while step 2\n";
     echo "provides accurate, source-backed answers from your content.\n\n";
 
     // Test queries that demonstrate clear differences
@@ -340,12 +280,10 @@ function main() {
     echo str_repeat('=', 80) . "\n";
     echo "\nKey Takeaways:\n";
     echo "✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate\n";
-    echo "✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for\n";
-    echo "  general questions but lacks org-specific details\n";
-    echo "✓ Step 3 (Publisher grounded): Your specific content, accurate and\n";
+    echo "✓ Step 2 (Publisher grounded): Your specific content, accurate and\n";
     echo "  source-backed (sources_returned: true)\n";
-    echo "✓ Grounding on relevant content is key - generic grounding may not help\n";
-    echo "  for organization-specific queries\n";
+    echo "✓ Grounding on your publisher content is key for accurate,\n";
+    echo "  organization-specific responses\n";
     echo "\nNext Steps:\n";
     echo "• Upload your own content to a Publisher in Gloo Studio\n";
     echo "• Update PUBLISHER_NAME in .env to use your content\n";

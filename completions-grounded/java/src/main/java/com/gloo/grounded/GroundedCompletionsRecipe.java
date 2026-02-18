@@ -149,48 +149,6 @@ public class GroundedCompletionsRecipe {
     }
 
     /**
-     * Make a grounded completion request using Gloo's default dataset.
-     *
-     * @param query The user's question
-     * @param sourcesLimit Maximum number of sources to use
-     * @return API response with sources_returned flag
-     * @throws Exception If request fails
-     */
-    private static JsonObject makeDefaultGroundedRequest(String query, int sourcesLimit) throws Exception {
-        String token = ensureValidToken();
-
-        JsonObject message = new JsonObject();
-        message.addProperty("role", "user");
-        message.addProperty("content", query);
-
-        JsonArray messages = new JsonArray();
-        messages.add(message);
-
-        JsonObject payload = new JsonObject();
-        payload.add("messages", messages);
-        payload.addProperty("auto_routing", true);
-        payload.addProperty("sources_limit", sourcesLimit);
-        payload.addProperty("max_tokens", 500);
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(GROUNDED_URL))
-                .header("Authorization", "Bearer " + token)
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
-                .timeout(Duration.ofSeconds(30))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request,
-                HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            throw new Exception("Default grounded request failed. HTTP " + response.statusCode());
-        }
-
-        return JsonParser.parseString(response.body()).getAsJsonObject();
-    }
-
-    /**
      * Make a grounded completion request WITH RAG on your specific publisher.
      *
      * @param query The user's question
@@ -236,7 +194,7 @@ public class GroundedCompletionsRecipe {
     }
 
     /**
-     * Compare non-grounded vs default grounded vs publisher grounded responses.
+     * Compare non-grounded vs publisher grounded responses.
      *
      * @param query The question to ask
      * @param publisherName Name of the publisher in Gloo Studio
@@ -270,32 +228,8 @@ public class GroundedCompletionsRecipe {
 
         System.out.println("\n" + "=".repeat(80) + "\n");
 
-        // Step 2: Default grounded
-        System.out.println("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):");
-        System.out.println("-".repeat(80));
-        try {
-            JsonObject defaultGrounded = makeDefaultGroundedRequest(query, 3);
-            String content = defaultGrounded.getAsJsonArray("choices")
-                    .get(0).getAsJsonObject()
-                    .getAsJsonObject("message")
-                    .get("content").getAsString();
-            System.out.println(content);
-
-            System.out.println("\n📊 Metadata:");
-            boolean sourcesUsed = defaultGrounded.has("sources_returned") &&
-                    defaultGrounded.get("sources_returned").getAsBoolean();
-            System.out.println("   Sources used: " + sourcesUsed);
-            String model = defaultGrounded.has("model") ?
-                    defaultGrounded.get("model").getAsString() : "N/A";
-            System.out.println("   Model: " + model);
-        } catch (Exception e) {
-            System.out.println("❌ Error: " + e.getMessage());
-        }
-
-        System.out.println("\n" + "=".repeat(80) + "\n");
-
-        // Step 3: Publisher grounded
-        System.out.println("🔹 STEP 3: GROUNDED on Your Publisher (Your Specific Content):");
+        // Step 2: Publisher grounded
+        System.out.println("🔹 STEP 2: GROUNDED on Your Publisher (Your Specific Content):");
         System.out.println("-".repeat(80));
         try {
             JsonObject publisherGrounded = makePublisherGroundedRequest(query, publisherName, 3);
@@ -352,12 +286,11 @@ public class GroundedCompletionsRecipe {
         System.out.println("  GROUNDED COMPLETIONS DEMO - Comparing RAG vs Non-RAG Responses");
         System.out.println("=".repeat(80));
         System.out.println("\nPublisher: " + publisherName);
-        System.out.println("This demo shows a 3-step progression:");
+        System.out.println("This demo shows a 2-step progression:");
         System.out.println("  1. Non-grounded (generic model knowledge)");
-        System.out.println("  2. Grounded on default dataset (Gloo's faith-based content)");
-        System.out.println("  3. Grounded on your publisher (your specific content)");
+        System.out.println("  2. Grounded on your publisher (your specific content)");
         System.out.println("\nNote: For org-specific queries like Bezalel's hiring process,");
-        System.out.println("both steps 1 and 2 may lack specific details, while step 3");
+        System.out.println("step 1 may lack specific details, while step 2");
         System.out.println("provides accurate, source-backed answers from your content.\n");
 
         // Test queries that demonstrate clear differences
@@ -385,12 +318,10 @@ public class GroundedCompletionsRecipe {
         System.out.println("=".repeat(80));
         System.out.println("\nKey Takeaways:");
         System.out.println("✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate");
-        System.out.println("✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for");
-        System.out.println("  general questions but lacks org-specific details");
-        System.out.println("✓ Step 3 (Publisher grounded): Your specific content, accurate and");
+        System.out.println("✓ Step 2 (Publisher grounded): Your specific content, accurate and");
         System.out.println("  source-backed (sources_returned: true)");
-        System.out.println("✓ Grounding on relevant content is key - generic grounding may not help");
-        System.out.println("  for organization-specific queries");
+        System.out.println("✓ Grounding on your own content eliminates hallucinations and provides");
+        System.out.println("  accurate, source-backed answers");
         System.out.println("\nNext Steps:");
         System.out.println("• Upload your own content to a Publisher in Gloo Studio");
         System.out.println("• Update PUBLISHER_NAME in .env to use your content");

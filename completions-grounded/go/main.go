@@ -55,14 +55,6 @@ type CompletionRequest struct {
 	MaxTokens   int       `json:"max_tokens"`
 }
 
-// DefaultGroundedRequest represents a grounded request without publisher
-type DefaultGroundedRequest struct {
-	Messages     []Message `json:"messages"`
-	AutoRouting  bool      `json:"auto_routing"`
-	SourcesLimit int       `json:"sources_limit"`
-	MaxTokens    int       `json:"max_tokens"`
-}
-
 // PublisherGroundedRequest represents a grounded completion request
 type PublisherGroundedRequest struct {
 	Messages     []Message `json:"messages"`
@@ -179,44 +171,6 @@ func makeNonGroundedRequest(query string) (*CompletionResponse, error) {
 	return &result, nil
 }
 
-// makeDefaultGroundedRequest makes a grounded request on Gloo's default dataset
-func makeDefaultGroundedRequest(query string, sourcesLimit int) (*CompletionResponse, error) {
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, err
-	}
-
-	payload := DefaultGroundedRequest{
-		Messages: []Message{
-			{Role: "user", Content: query},
-		},
-		AutoRouting:  true,
-		SourcesLimit: sourcesLimit,
-		MaxTokens:    500,
-	}
-
-	jsonData, _ := json.Marshal(payload)
-	req, _ := http.NewRequest("POST", groundedURL, bytes.NewBuffer(jsonData))
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var result CompletionResponse
-	json.NewDecoder(resp.Body).Decode(&result)
-	return &result, nil
-}
-
 // makePublisherGroundedRequest makes a grounded completion request WITH RAG
 func makePublisherGroundedRequest(query, publisher string, sourcesLimit int) (*CompletionResponse, error) {
 	token, err := ensureValidToken()
@@ -256,7 +210,7 @@ func makePublisherGroundedRequest(query, publisher string, sourcesLimit int) (*C
 	return &result, nil
 }
 
-// compareResponses compares all 3 approaches side-by-side
+// compareResponses compares both approaches side-by-side
 func compareResponses(query, publisher string) {
 	fmt.Println("\n" + strings.Repeat("=", 80))
 	fmt.Printf("Query: %s\n", query)
@@ -281,27 +235,8 @@ func compareResponses(query, publisher string) {
 
 	fmt.Println("\n" + strings.Repeat("=", 80) + "\n")
 
-	// Step 2: Default grounded
-	fmt.Println("🔹 STEP 2: GROUNDED on Default Dataset (Gloo's Faith-Based Content):")
-	fmt.Println(strings.Repeat("-", 80))
-	defaultGrounded, err := makeDefaultGroundedRequest(query, 3)
-	if err != nil {
-		fmt.Printf("❌ Error: %v\n", err)
-	} else {
-		fmt.Println(defaultGrounded.Choices[0].Message.Content)
-		fmt.Println("\n📊 Metadata:")
-		fmt.Printf("   Sources used: %v\n", defaultGrounded.SourcesReturned)
-		model := defaultGrounded.Model
-		if model == "" {
-			model = "N/A"
-		}
-		fmt.Printf("   Model: %s\n", model)
-	}
-
-	fmt.Println("\n" + strings.Repeat("=", 80) + "\n")
-
-	// Step 3: Publisher grounded
-	fmt.Println("🔹 STEP 3: GROUNDED on Your Publisher (Your Specific Content):")
+	// Step 2: Publisher grounded
+	fmt.Println("🔹 STEP 2: GROUNDED on Your Publisher (Your Specific Content):")
 	fmt.Println(strings.Repeat("-", 80))
 	publisherGrounded, err := makePublisherGroundedRequest(query, publisher, 3)
 	if err != nil {
@@ -342,12 +277,11 @@ func main() {
 	fmt.Println("  GROUNDED COMPLETIONS DEMO - Comparing RAG vs Non-RAG Responses")
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Printf("\nPublisher: %s\n", publisherName)
-	fmt.Println("This demo shows a 3-step progression:")
+	fmt.Println("This demo shows a 2-step progression:")
 	fmt.Println("  1. Non-grounded (generic model knowledge)")
-	fmt.Println("  2. Grounded on default dataset (Gloo's faith-based content)")
-	fmt.Println("  3. Grounded on your publisher (your specific content)")
+	fmt.Println("  2. Grounded on your publisher (your specific content)")
 	fmt.Println("\nNote: For org-specific queries like Bezalel's hiring process,")
-	fmt.Println("both steps 1 and 2 may lack specific details, while step 3")
+	fmt.Println("step 1 may lack specific details, while step 2")
 	fmt.Println("provides accurate, source-backed answers from your content.\n")
 
 	queries := []string{
@@ -373,11 +307,9 @@ func main() {
 	fmt.Println(strings.Repeat("=", 80))
 	fmt.Println("\nKey Takeaways:")
 	fmt.Println("✓ Step 1 (Non-grounded): Generic model knowledge, may hallucinate")
-	fmt.Println("✓ Step 2 (Default grounded): Uses Gloo's faith-based content, better for")
-	fmt.Println("  general questions but lacks org-specific details")
-	fmt.Println("✓ Step 3 (Publisher grounded): Your specific content, accurate and")
+	fmt.Println("✓ Step 2 (Publisher grounded): Your specific content, accurate and")
 	fmt.Println("  source-backed (sources_returned: true)")
-	fmt.Println("✓ Grounding on relevant content is key - generic grounding may not help")
+	fmt.Println("✓ Grounding on your publisher content ensures accurate, relevant answers")
 	fmt.Println("  for organization-specific queries")
 	fmt.Println("\nNext Steps:")
 	fmt.Println("• Upload your own content to a Publisher in Gloo Studio")
