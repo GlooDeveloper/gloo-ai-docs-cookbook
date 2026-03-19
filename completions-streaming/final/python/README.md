@@ -32,30 +32,44 @@ python main.py
 
 ## Proxy Server (Track B — Steps 8–9)
 
+Start the proxy manually (listens on `PROXY_PORT`, default 3001):
+
 ```bash
 python proxy/server.py
 ```
 
+Once running, send requests to `http://localhost:3001/api/stream` — the proxy relays them to the Gloo AI API and streams the SSE response back to the caller.
+
 ## Checkpoint Validation
 
-Run individual checkpoint tests to validate each step:
+All checkpoint scripts are standalone — no test framework needed. Each script
+makes real API calls and prints `✓`/`✅` on success or `❌` with hints on failure.
+
+**Important:** All commands must be run from `final/python/` with the virtual
+environment activated.
 
 ```bash
-# CP1: Auth & environment
+# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 python tests/step1_auth_test.py
 
-# CP2: Streaming request + SSE parsing
+# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
 python tests/step2_sse_parsing_test.py
 
-# CP3: Token extraction + accumulation
+# CP3: Token extraction + accumulation — delta content extracted, full response assembled
 python tests/step3_accumulation_test.py
 
-# CP4: Error handling
+# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
 python tests/step4_error_handling_test.py
 
-# CP5: CLI typing-effect renderer
+# CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
 python tests/step5_renderer_test.py
+
+# CP6: Proxy server — starts in background thread, relays SSE, CORS headers present
+python tests/step6_proxy_test.py
 ```
+
+CP6 starts the Flask proxy automatically in a background thread — you do not
+need to start the proxy manually before running it.
 
 ## Project Structure
 

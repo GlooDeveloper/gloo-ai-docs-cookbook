@@ -49,10 +49,14 @@ def stream_proxy():
     if request.method == "OPTIONS":
         return Response(status=204)
 
+    # Read request data before entering the generator so Flask's request
+    # context is not needed after streaming begins.
+    request_data = request.get_json() or {}
+
     def generate():
         try:
             auth_token = ensure_valid_token()
-            data = request.get_json() or {}
+            data = request_data
             headers = {
                 "Authorization": f"Bearer {auth_token}",
                 "Content-Type": "application/json",

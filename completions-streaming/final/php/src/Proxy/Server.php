@@ -106,7 +106,7 @@ class Server
 // If this file is executed directly (e.g., via PHP built-in server)
 if (basename($_SERVER['SCRIPT_FILENAME'] ?? '') === basename(__FILE__)) {
     // Load autoloader and env
-    $root = dirname(__DIR__, 3);
+    $root = dirname(__DIR__, 2);
     if (file_exists($root . '/vendor/autoload.php')) {
         require_once $root . '/vendor/autoload.php';
     }

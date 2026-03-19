@@ -27,6 +27,37 @@ java -jar target/completions-streaming-1.0.0.jar
 java -cp target/completions-streaming-1.0.0.jar com.gloo.streaming.proxy.ProxyServer
 ```
 
+## Checkpoint Validation
+
+All checkpoint scripts are standalone — no test framework needed. Each script
+makes real API calls and prints `✓`/`✅` on success or `❌` with hints on failure.
+
+**Important:** All commands must be run from `final/java/` with credentials in
+`.env` (copy from `.env.example`).
+
+```bash
+# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step1AuthTest
+
+# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step2SseParsingTest
+
+# CP3: Token extraction + accumulation — delta content extracted, full response assembled
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step3AccumulationTest
+
+# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step4ErrorHandlingTest
+
+# CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step5RendererTest
+
+# CP6: Proxy server — starts in-process (non-blocking), relays SSE, CORS headers present
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step6ProxyTest
+```
+
+CP6 starts the Java `HttpServer` in-process (non-blocking) — you do not need
+to start the proxy manually before running it.
+
 ## Structure
 
 ```
