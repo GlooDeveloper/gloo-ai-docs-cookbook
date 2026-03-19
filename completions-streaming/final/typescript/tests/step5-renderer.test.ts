@@ -1,5 +1,5 @@
 /**
- * Step 7 Test: Typing-Effect Renderer
+ * Typing-Effect Renderer Test
  *
  * Validates that renderStreamToTerminal() streams tokens to stdout
  * and prints a summary line with token count and finish_reason.
@@ -12,7 +12,7 @@ import { ensureValidToken } from "../src/auth/tokenManager.js";
 import { renderStreamToTerminal } from "../src/browser/renderer.js";
 
 async function testStep5(): Promise<void> {
-  console.log("🧪 Testing Step 7: Typing-Effect Renderer\n");
+  console.log("🧪 Testing: Typing-Effect Renderer\n");
 
   if (!process.env.GLOO_CLIENT_ID) {
     console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
@@ -65,11 +65,11 @@ async function testStep5(): Promise<void> {
 
     console.log(`✓ Token summary found: ${tokenCount} tokens, finish_reason=${finishReason}`);
 
-    console.log("\n✅ Step 7 Complete! Typing-effect renderer working.");
-    console.log("   Continue to Steps 8–9: Server-Side Proxy\n");
+    console.log("\n✅ Typing-effect renderer working.");
+    console.log("   Next: Server-Side Proxy\n");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("\n❌ Step 7 Test Failed");
+    console.error("\n❌ Typing-Effect Renderer Test Failed");
     console.error(`Error: ${message}`);
     console.error("\n💡 Hints:");
     console.error("   - renderStreamToTerminal should use process.stdout.write for each token");

@@ -1,4 +1,4 @@
-// Step 7 Test: Typing-Effect Renderer
+// Typing-Effect Renderer Test
 //
 // Validates that RenderStreamToTerminal() streams tokens to stdout
 // and prints a summary line with token count and finish_reason.
@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing Step 7: Typing-Effect Renderer\n")
+	fmt.Println("🧪 Testing: Typing-Effect Renderer\n")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -90,8 +90,8 @@ func main() {
 
 	fmt.Printf("✓ Token summary found: %d tokens, finish_reason=%s\n", tokenCount, finishReason)
 
-	fmt.Println("\n✅ Step 7 Complete! Typing-effect renderer working.")
-	fmt.Println("   Continue to Steps 8–9: Server-Side Proxy\n")
+	fmt.Println("\n✅ Typing-effect renderer working.")
+	fmt.Println("   Next: Server-Side Proxy\n")
 }
 
 func containsStr(s, substr string) bool {
@@ -108,7 +108,7 @@ func findStr(s, substr string) bool {
 }
 
 func fail(msg string) {
-	fmt.Println("\n❌ Step 7 Test Failed")
+	fmt.Println("\n❌ Typing-Effect Renderer Test Failed")
 	fmt.Printf("Error: %s\n", msg)
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - RenderStreamToTerminal should use fmt.Fprint(os.Stdout, content) for each token")

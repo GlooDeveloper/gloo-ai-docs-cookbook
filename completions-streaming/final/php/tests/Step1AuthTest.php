@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Step 1 Test: Environment Setup & Auth Verification
+ * Environment Setup & Auth Verification Test
  *
  * Validates that credentials load correctly and the streaming endpoint
  * responds with 200 OK and Content-Type: text/event-stream.
@@ -21,7 +21,7 @@ $dotenv->safeLoad();
 
 function testStep1(): void
 {
-    echo "🧪 Testing Step 1: Environment Setup & Auth Verification\n\n";
+    echo "🧪 Testing: Environment Setup & Auth Verification\n\n";
 
     $clientId     = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
     $clientSecret = $_ENV['GLOO_CLIENT_SECRET'] ?? getenv('GLOO_CLIENT_SECRET');
@@ -106,11 +106,11 @@ function testStep1(): void
         echo "✓ Status: 200 OK\n";
         echo "✓ Content-Type: {$contentType}\n";
 
-        echo "\n✅ Step 1 Complete! Auth and streaming endpoint verified.\n";
-        echo "   Continue to Step 2: Making the Streaming Request\n\n";
+        echo "\n✅ Auth and streaming endpoint verified.\n";
+        echo "   Next: Making the Streaming Request\n\n";
 
     } catch (Throwable $e) {
-        echo "\n❌ Step 1 Test Failed\n";
+        echo "\n❌ Auth Test Failed\n";
         echo "Error: " . $e->getMessage() . "\n";
         echo "\n💡 Hints:\n";
         echo "   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET\n";

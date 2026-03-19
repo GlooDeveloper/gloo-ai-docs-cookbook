@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Step 6 Test: Streaming Error Handling
+ * Streaming Error Handling Test
  *
  * Validates that:
  * - handleStreamError() throws the right error for 401, 403, 429
@@ -23,7 +23,7 @@ $dotenv->safeLoad();
 
 function testStep4(): void
 {
-    echo "🧪 Testing Step 6: Streaming Error Handling\n\n";
+    echo "🧪 Testing: Streaming Error Handling\n\n";
 
     $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
     if (!$clientId) {
@@ -99,11 +99,11 @@ function testStep4(): void
             echo "✓ Bad credentials caught: " . $e->getMessage() . "\n";
         }
 
-        echo "\n✅ Step 6 Complete! Two-phase error handling working.\n";
-        echo "   Continue to Step 7: Browser-Based Streaming\n\n";
+        echo "\n✅ Two-phase error handling working.\n";
+        echo "   Next: Browser-Based Streaming\n\n";
 
     } catch (Throwable $e) {
-        echo "\n❌ Step 6 Test Failed\n";
+        echo "\n❌ Streaming Error Handling Test Failed\n";
         echo "Error: " . $e->getMessage() . "\n";
         echo "\n💡 Hints:\n";
         echo "   - handleStreamError should throw RuntimeException for any non-200 status\n";

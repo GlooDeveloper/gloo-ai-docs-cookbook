@@ -1,4 +1,4 @@
-// Step 1 Test: Environment Setup & Auth Verification
+// Environment Setup & Auth Verification Test
 //
 // Validates that credentials load correctly and the streaming endpoint
 // responds with 200 OK and Content-Type: text/event-stream.
@@ -23,7 +23,7 @@ import (
 const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 
 func main() {
-	fmt.Println("🧪 Testing Step 1: Environment Setup & Auth Verification\n")
+	fmt.Println("🧪 Testing: Environment Setup & Auth Verification\n")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -103,12 +103,12 @@ func main() {
 	fmt.Println("✓ Status: 200 OK")
 	fmt.Printf("✓ Content-Type: %s\n", contentType)
 
-	fmt.Println("\n✅ Step 1 Complete! Auth and streaming endpoint verified.")
-	fmt.Println("   Continue to Step 2: Making the Streaming Request\n")
+	fmt.Println("\n✅ Auth and streaming endpoint verified.")
+	fmt.Println("   Next: Making the Streaming Request\n")
 }
 
 func fail(msg string) {
-	fmt.Println("\n❌ Step 1 Test Failed")
+	fmt.Println("\n❌ Auth Test Failed")
 	fmt.Printf("Error: %s\n", msg)
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")

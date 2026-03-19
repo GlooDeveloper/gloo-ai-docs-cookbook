@@ -13,7 +13,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
 /**
- * Steps 8–9 Test: Server-Side Proxy
+ * Server-Side Proxy Test
  *
  * <p>Validates that:
  * <ul>
@@ -29,7 +29,7 @@ import java.time.Duration;
 public class Step6ProxyTest {
 
     public static void main(String[] args) {
-        System.out.println("🧪 Testing Steps 8–9: Server-Side Proxy\n");
+        System.out.println("🧪 Testing: Server-Side Proxy\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
@@ -167,11 +167,11 @@ public class Step6ProxyTest {
                 System.out.println("✓ Access-Control-Allow-Origin: " + corsHeader);
             }
 
-            System.out.println("\n✅ Steps 8–9 Complete! Proxy server relaying SSE end-to-end.");
+            System.out.println("\n✅ Proxy server relaying SSE end-to-end.");
             System.out.println("   Track B complete: credentials stay server-side, client receives SSE.\n");
 
         } catch (Exception e) {
-            System.err.println("\n❌ Steps 8–9 Test Failed");
+            System.err.println("\n❌ Server-Side Proxy Test Failed");
             System.err.println("Error: " + e.getMessage());
             System.err.println("\n💡 Hints:");
             System.err.println("   - Check that Maven dependencies are installed: mvn compile");

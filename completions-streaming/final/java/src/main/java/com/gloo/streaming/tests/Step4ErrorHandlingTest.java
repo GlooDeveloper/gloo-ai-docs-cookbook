@@ -4,7 +4,7 @@ import com.gloo.streaming.streaming.StreamClient;
 import io.github.cdimascio.dotenv.Dotenv;
 
 /**
- * Step 6 Test: Streaming Error Handling
+ * Streaming Error Handling Test
  *
  * <p>Validates that:
  * <ul>
@@ -18,7 +18,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 public class Step4ErrorHandlingTest {
 
     public static void main(String[] args) {
-        System.out.println("🧪 Testing Step 6: Streaming Error Handling\n");
+        System.out.println("🧪 Testing: Streaming Error Handling\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
@@ -94,11 +94,11 @@ public class Step4ErrorHandlingTest {
                 System.out.println("✓ Bad credentials caught: " + e.getMessage());
             }
 
-            System.out.println("\n✅ Step 6 Complete! Two-phase error handling working.");
-            System.out.println("   Continue to Step 7: Browser-Based Streaming\n");
+            System.out.println("\n✅ Two-phase error handling working.");
+            System.out.println("   Next: Browser-Based Streaming\n");
 
         } catch (Exception e) {
-            System.err.println("\n❌ Step 6 Test Failed");
+            System.err.println("\n❌ Streaming Error Handling Test Failed");
             System.err.println("Error: " + e.getMessage());
             System.err.println("\n💡 Hints:");
             System.err.println("   - handleStreamError should throw RuntimeException for non-200 status");

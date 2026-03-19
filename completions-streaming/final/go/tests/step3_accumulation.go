@@ -1,4 +1,4 @@
-// Steps 4–5 Test: Token Extraction & Full Response Assembly
+// Token Extraction & Full Response Assembly Test
 //
 // Validates that:
 // - ExtractTokenContent() safely navigates choices[0].delta.content
@@ -19,7 +19,7 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing Steps 4–5: Token Extraction & Accumulation\n")
+	fmt.Println("🧪 Testing: Token Extraction & Accumulation\n")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -138,12 +138,12 @@ func main() {
 		fail("DurationMs is 0 — timing not tracked")
 	}
 
-	fmt.Println("\n✅ Steps 4–5 Complete! Full response assembled.")
-	fmt.Println("   Continue to Step 6: Streaming Error Handling\n")
+	fmt.Println("\n✅ Full response assembled.")
+	fmt.Println("   Next: Streaming Error Handling\n")
 }
 
 func fail(msg string) {
-	fmt.Println("\n❌ Steps 4–5 Test Failed")
+	fmt.Println("\n❌ Token Extraction & Accumulation Test Failed")
 	fmt.Printf("Error: %s\n", msg)
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - ExtractTokenContent: check chunk.Choices[0].Delta.Content")

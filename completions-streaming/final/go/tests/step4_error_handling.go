@@ -1,4 +1,4 @@
-// Step 6 Test: Streaming Error Handling
+// Streaming Error Handling Test
 //
 // Validates that:
 // - HandleStreamError() returns the right error for 401, 403, 429
@@ -20,7 +20,7 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing Step 6: Streaming Error Handling\n")
+	fmt.Println("🧪 Testing: Streaming Error Handling\n")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -91,12 +91,12 @@ func main() {
 	}
 	fmt.Printf("✓ Bad credentials caught: %s\n", err.Error())
 
-	fmt.Println("\n✅ Step 6 Complete! Two-phase error handling working.")
-	fmt.Println("   Continue to Step 7: Browser-Based Streaming\n")
+	fmt.Println("\n✅ Two-phase error handling working.")
+	fmt.Println("   Next: Browser-Based Streaming\n")
 }
 
 func fail(msg string) {
-	fmt.Println("\n❌ Step 6 Test Failed")
+	fmt.Println("\n❌ Streaming Error Handling Test Failed")
 	fmt.Printf("Error: %s\n", msg)
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - HandleStreamError should return error for any non-200 status")

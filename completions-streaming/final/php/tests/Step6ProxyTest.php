@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Steps 8–9 Test: Server-Side Proxy
+ * Server-Side Proxy Test
  *
  * Validates that:
  * - The PHP built-in server starts and handles requests
@@ -24,7 +24,7 @@ $dotenv->safeLoad();
 
 function testStep6(): void
 {
-    echo "🧪 Testing Steps 8–9: Server-Side Proxy\n\n";
+    echo "🧪 Testing: Server-Side Proxy\n\n";
 
     $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
     if (!$clientId) {
@@ -222,11 +222,11 @@ function testStep6(): void
             echo "✓ Access-Control-Allow-Origin: {$corsHeader}\n";
         }
 
-        echo "\n✅ Steps 8–9 Complete! Proxy server relaying SSE end-to-end.\n";
+        echo "\n✅ Proxy server relaying SSE end-to-end.\n";
         echo "   Track B complete: credentials stay server-side, client receives SSE.\n\n";
 
     } catch (\Throwable $e) {
-        echo "\n❌ Steps 8–9 Test Failed\n";
+        echo "\n❌ Server-Side Proxy Test Failed\n";
         echo "Error: " . $e->getMessage() . "\n";
         echo "\n💡 Hints:\n";
         echo "   - Check that PHP CLI and curl extension are available\n";

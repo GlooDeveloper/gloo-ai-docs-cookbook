@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Steps 8–9 Test: Server-Side Proxy
+Server-Side Proxy Test
 
 Validates that:
 - The Flask proxy server starts and responds to /health
@@ -25,7 +25,7 @@ load_dotenv()
 
 
 def test_step6():
-    print("🧪 Testing Steps 8–9: Server-Side Proxy\n")
+    print("🧪 Testing: Server-Side Proxy\n")
 
     client_id = os.getenv("GLOO_CLIENT_ID")
     if not client_id:
@@ -123,11 +123,11 @@ def test_step6():
         else:
             print(f"✓ Access-Control-Allow-Origin: {cors_header}")
 
-        print("\n✅ Steps 8–9 Complete! Proxy server relaying SSE end-to-end.")
+        print("\n✅ Proxy server relaying SSE end-to-end.")
         print("   Track B complete: credentials stay server-side, client receives SSE.\n")
 
     except Exception as error:
-        print(f"\n❌ Steps 8–9 Test Failed")
+        print(f"\n❌ Server-Side Proxy Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - Check that Flask and requests are installed: pip install flask requests")

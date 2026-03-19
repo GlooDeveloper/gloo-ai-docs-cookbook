@@ -1,5 +1,5 @@
 /**
- * Step 1 Test: Environment Setup & Auth Verification
+ * Environment Setup & Auth Verification Test
  *
  * Validates that credentials load correctly and the streaming endpoint
  * responds with 200 OK and Content-Type: text/event-stream.
@@ -13,7 +13,7 @@ import { getAccessToken, ensureValidToken } from "../src/auth/tokenManager.js";
 const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
 async function testStep1() {
-  console.log("🧪 Testing Step 1: Environment Setup & Auth Verification\n");
+  console.log("🧪 Testing: Environment Setup & Auth Verification\n");
 
   const clientId = process.env.GLOO_CLIENT_ID;
   const clientSecret = process.env.GLOO_CLIENT_SECRET;
@@ -84,10 +84,10 @@ async function testStep1() {
     // Consume/cancel body to avoid leak
     await response.body?.cancel();
 
-    console.log("\n✅ Step 1 Complete! Auth and streaming endpoint verified.");
-    console.log("   Continue to Step 2: Making the Streaming Request\n");
+    console.log("\n✅ Auth and streaming endpoint verified.");
+    console.log("   Next: Making the Streaming Request\n");
   } catch (err) {
-    console.error("\n❌ Step 1 Test Failed");
+    console.error("\n❌ Auth Test Failed");
     console.error(`Error: ${err.message}`);
     console.error("\n💡 Hints:");
     console.error("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET");

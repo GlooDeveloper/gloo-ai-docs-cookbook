@@ -1,4 +1,4 @@
-// Steps 2–3 Test: Streaming Request & SSE Line Parsing
+// Streaming Request & SSE Line Parsing Test
 //
 // Validates that:
 // - MakeStreamingRequest() opens a streaming connection
@@ -21,7 +21,7 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing Steps 2–3: Streaming Request & SSE Line Parsing\n")
+	fmt.Println("🧪 Testing: Streaming Request & SSE Line Parsing\n")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -125,12 +125,12 @@ func main() {
 		fmt.Println("✓ [DONE] sentinel detected — stream terminated cleanly")
 	}
 
-	fmt.Println("\n✅ Steps 2–3 Complete! Streaming request and SSE parsing working.")
-	fmt.Println("   Continue to Step 4: Extracting Token Content\n")
+	fmt.Println("\n✅ Streaming request and SSE parsing working.")
+	fmt.Println("   Next: Extracting Token Content\n")
 }
 
 func fail(msg string) {
-	fmt.Println("\n❌ Steps 2–3 Test Failed")
+	fmt.Println("\n❌ Streaming Request & SSE Parsing Test Failed")
 	fmt.Printf("Error: %s\n", msg)
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - Check MakeStreamingRequest() sets stream:true in the payload")

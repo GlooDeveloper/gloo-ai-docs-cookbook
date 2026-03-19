@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Step 1 Test: Environment Setup & Auth Verification
+Environment Setup & Auth Verification Test
 
 Validates that credentials load correctly and the streaming endpoint
 responds with 200 OK and Content-Type: text/event-stream.
@@ -20,7 +20,7 @@ load_dotenv()
 
 
 def test_step1():
-    print("🧪 Testing Step 1: Environment Setup & Auth Verification\n")
+    print("🧪 Testing: Environment Setup & Auth Verification\n")
 
     # Check environment variables
     client_id = os.getenv("GLOO_CLIENT_ID")
@@ -92,11 +92,11 @@ def test_step1():
             print(f"✓ Status: 200 OK")
             print(f"✓ Content-Type: {content_type}")
 
-        print("\n✅ Step 1 Complete! Auth and streaming endpoint verified.")
-        print("   Continue to Step 2: Making the Streaming Request\n")
+        print("\n✅ Auth and streaming endpoint verified.")
+        print("   Next: Making the Streaming Request\n")
 
     except Exception as error:
-        print(f"\n❌ Step 1 Test Failed")
+        print(f"\n❌ Auth Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")

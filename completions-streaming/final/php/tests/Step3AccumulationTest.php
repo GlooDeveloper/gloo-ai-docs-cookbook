@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Steps 4–5 Test: Token Extraction & Full Response Assembly
+ * Token Extraction & Full Response Assembly Test
  *
  * Validates that:
  * - extractTokenContent() safely navigates choices[0].delta.content
@@ -23,7 +23,7 @@ $dotenv->safeLoad();
 
 function testStep3(): void
 {
-    echo "🧪 Testing Steps 4–5: Token Extraction & Accumulation\n\n";
+    echo "🧪 Testing: Token Extraction & Accumulation\n\n";
 
     $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
     if (!$clientId) {
@@ -109,11 +109,11 @@ function testStep3(): void
             throw new RuntimeException('duration_ms is 0 — timing not tracked');
         }
 
-        echo "\n✅ Steps 4–5 Complete! Full response assembled.\n";
-        echo "   Continue to Step 6: Streaming Error Handling\n\n";
+        echo "\n✅ Full response assembled.\n";
+        echo "   Next: Streaming Error Handling\n\n";
 
     } catch (Throwable $e) {
-        echo "\n❌ Steps 4–5 Test Failed\n";
+        echo "\n❌ Token Extraction & Accumulation Test Failed\n";
         echo "Error: " . $e->getMessage() . "\n";
         echo "\n💡 Hints:\n";
         echo "   - extractTokenContent: use \$chunk['choices'][0]['delta']['content'] ?? ''\n";

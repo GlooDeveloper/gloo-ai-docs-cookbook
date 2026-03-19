@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Step 7 Test: Typing-Effect Renderer
+ * Typing-Effect Renderer Test
  *
  * Validates that renderStreamToTerminal() streams tokens to stdout
  * and prints a summary line with token count and finish_reason.
@@ -22,7 +22,7 @@ $dotenv->safeLoad();
 
 function testStep5(): void
 {
-    echo "🧪 Testing Step 7: Typing-Effect Renderer\n\n";
+    echo "🧪 Testing: Typing-Effect Renderer\n\n";
 
     $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
     if (!$clientId) {
@@ -73,11 +73,11 @@ function testStep5(): void
 
         echo "✓ Token summary found: {$tokenCount} tokens, finish_reason={$finishReason}\n";
 
-        echo "\n✅ Step 7 Complete! Typing-effect renderer working.\n";
-        echo "   Continue to Steps 8–9: Server-Side Proxy\n\n";
+        echo "\n✅ Typing-effect renderer working.\n";
+        echo "   Next: Server-Side Proxy\n\n";
 
     } catch (Throwable $e) {
-        echo "\n❌ Step 7 Test Failed\n";
+        echo "\n❌ Typing-Effect Renderer Test Failed\n";
         echo "Error: " . $e->getMessage() . "\n";
         echo "\n💡 Hints:\n";
         echo "   - renderStreamToTerminal should echo each token directly\n";

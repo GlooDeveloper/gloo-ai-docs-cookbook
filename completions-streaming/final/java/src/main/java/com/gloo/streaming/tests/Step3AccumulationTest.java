@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Steps 4–5 Test: Token Extraction & Full Response Assembly
+ * Token Extraction & Full Response Assembly Test
  *
  * <p>Validates that:
  * <ul>
@@ -28,7 +28,7 @@ public class Step3AccumulationTest {
     }
 
     public static void main(String[] args) {
-        System.out.println("🧪 Testing Steps 4–5: Token Extraction & Accumulation\n");
+        System.out.println("🧪 Testing: Token Extraction & Accumulation\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
@@ -98,11 +98,11 @@ public class Step3AccumulationTest {
             if (streamResult.tokenCount() == 0) throw new RuntimeException("tokenCount is 0 — extractTokenContent may not be working");
             if (streamResult.durationMs() <= 0) throw new RuntimeException("durationMs is 0 — timing not tracked");
 
-            System.out.println("\n✅ Steps 4–5 Complete! Full response assembled.");
-            System.out.println("   Continue to Step 6: Streaming Error Handling\n");
+            System.out.println("\n✅ Full response assembled.");
+            System.out.println("   Next: Streaming Error Handling\n");
 
         } catch (Exception e) {
-            System.err.println("\n❌ Steps 4–5 Test Failed");
+            System.err.println("\n❌ Token Extraction & Accumulation Test Failed");
             System.err.println("Error: " + e.getMessage());
             System.err.println("\n💡 Hints:");
             System.err.println("   - extractTokenContent: cast choices, then delta, then get 'content'");

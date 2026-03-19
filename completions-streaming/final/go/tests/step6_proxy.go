@@ -1,4 +1,4 @@
-// Steps 8–9 Test: Server-Side Proxy
+// Server-Side Proxy Test
 //
 // Validates that:
 // - The Go proxy server starts and responds to /health
@@ -27,7 +27,7 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing Steps 8–9: Server-Side Proxy\n")
+	fmt.Println("🧪 Testing: Server-Side Proxy\n")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -163,12 +163,12 @@ func main() {
 		}
 	}
 
-	fmt.Println("\n✅ Steps 8–9 Complete! Proxy server relaying SSE end-to-end.")
+	fmt.Println("\n✅ Proxy server relaying SSE end-to-end.")
 	fmt.Println("   Track B complete: credentials stay server-side, client receives SSE.\n")
 }
 
 func failProxy(msg, port string) {
-	fmt.Println("\n❌ Steps 8–9 Test Failed")
+	fmt.Println("\n❌ Server-Side Proxy Test Failed")
 	fmt.Printf("Error: %s\n", msg)
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - Check that all dependencies are installed: go mod tidy")

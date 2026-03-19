@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import java.nio.charset.StandardCharsets;
 
 /**
- * Step 7 Test: Typing-Effect Renderer
+ * Typing-Effect Renderer Test
  *
  * <p>Validates that renderStreamToTerminal() streams tokens to stdout
  * and prints a summary line with token count and finish_reason.
@@ -21,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 public class Step5RendererTest {
 
     public static void main(String[] args) {
-        System.out.println("🧪 Testing Step 7: Typing-Effect Renderer\n");
+        System.out.println("🧪 Testing: Typing-Effect Renderer\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
@@ -71,11 +71,11 @@ public class Step5RendererTest {
 
             System.out.printf("✓ Token summary found: %d tokens, finish_reason=%s%n", tokenCount, finishReason);
 
-            System.out.println("\n✅ Step 7 Complete! Typing-effect renderer working.");
-            System.out.println("   Continue to Steps 8–9: Server-Side Proxy\n");
+            System.out.println("\n✅ Typing-effect renderer working.");
+            System.out.println("   Next: Server-Side Proxy\n");
 
         } catch (Exception e) {
-            System.err.println("\n❌ Step 7 Test Failed");
+            System.err.println("\n❌ Typing-Effect Renderer Test Failed");
             System.err.println("Error: " + e.getMessage());
             System.err.println("\n💡 Hints:");
             System.err.println("   - renderStreamToTerminal should use System.out.print for each token");

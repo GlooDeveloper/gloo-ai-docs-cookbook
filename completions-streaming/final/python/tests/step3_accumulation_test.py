@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Steps 4–5 Test: Token Extraction & Full Response Assembly
+Token Extraction & Full Response Assembly Test
 
 Validates that:
 - extract_token_content() safely navigates choices[0].delta.content
@@ -20,7 +20,7 @@ load_dotenv()
 
 
 def test_step3():
-    print("🧪 Testing Steps 4–5: Token Extraction & Accumulation\n")
+    print("🧪 Testing: Token Extraction & Accumulation\n")
 
     client_id = os.getenv("GLOO_CLIENT_ID")
     if not client_id:
@@ -94,14 +94,14 @@ def test_step3():
         if result["duration_ms"] <= 0:
             raise Exception("duration_ms is 0 — timing not tracked")
 
-        print("\n✅ Steps 4–5 Complete! Full response assembled.")
-        print("   Continue to Step 6: Streaming Error Handling\n")
+        print("\n✅ Full response assembled.")
+        print("   Next: Streaming Error Handling\n")
 
     except AssertionError as e:
         print(f"\n❌ Assertion failed: {e}")
         sys.exit(1)
     except Exception as error:
-        print(f"\n❌ Steps 4–5 Test Failed")
+        print(f"\n❌ Token Extraction & Accumulation Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - extract_token_content: use chunk.get('choices', [])[0] pattern")

@@ -1,5 +1,5 @@
 /**
- * Steps 2–3 Test: Streaming Request & SSE Line Parsing
+ * Streaming Request & SSE Line Parsing Test
  *
  * Validates that:
  * - makeStreamingRequest() opens a streaming connection
@@ -13,7 +13,7 @@ import { ensureValidToken } from "../src/auth/tokenManager.js";
 import { makeStreamingRequest, parseSseLine } from "../src/streaming/streamClient.js";
 
 async function testStep2() {
-  console.log("🧪 Testing Steps 2–3: Streaming Request & SSE Line Parsing\n");
+  console.log("🧪 Testing: Streaming Request & SSE Line Parsing\n");
 
   if (!process.env.GLOO_CLIENT_ID) {
     console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
@@ -93,10 +93,10 @@ async function testStep2() {
       console.log("✓ [DONE] sentinel detected — stream terminated cleanly");
     }
 
-    console.log("\n✅ Steps 2–3 Complete! Streaming request and SSE parsing working.");
-    console.log("   Continue to Step 4: Extracting Token Content\n");
+    console.log("\n✅ Streaming request and SSE parsing working.");
+    console.log("   Next: Extracting Token Content\n");
   } catch (err) {
-    console.error("\n❌ Steps 2–3 Test Failed");
+    console.error("\n❌ Streaming Request & SSE Parsing Test Failed");
     console.error(`Error: ${err.message}`);
     console.error("\n💡 Hints:");
     console.error("   - Check makeStreamingRequest() sets stream:true in the payload");

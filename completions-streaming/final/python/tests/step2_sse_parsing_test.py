@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Step 2–3 Test: Streaming Request & SSE Line Parsing
+Streaming Request & SSE Line Parsing Test
 
 Validates that:
 - make_streaming_request() opens a streaming connection
@@ -20,7 +20,7 @@ load_dotenv()
 
 
 def test_step2():
-    print("🧪 Testing Steps 2–3: Streaming Request & SSE Line Parsing\n")
+    print("🧪 Testing: Streaming Request & SSE Line Parsing\n")
 
     client_id = os.getenv("GLOO_CLIENT_ID")
     if not client_id:
@@ -95,14 +95,14 @@ def test_step2():
         else:
             print("✓ [DONE] sentinel detected — stream terminated cleanly")
 
-        print("\n✅ Steps 2–3 Complete! Streaming request and SSE parsing working.")
-        print("   Continue to Step 4: Extracting Token Content\n")
+        print("\n✅ Streaming request and SSE parsing working.")
+        print("   Next: Extracting Token Content\n")
 
     except AssertionError as e:
         print(f"\n❌ Assertion failed: {e}")
         sys.exit(1)
     except Exception as error:
-        print(f"\n❌ Steps 2–3 Test Failed")
+        print(f"\n❌ Streaming Request & SSE Parsing Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - Check make_streaming_request() sets stream=True in the payload")

@@ -1,5 +1,5 @@
 /**
- * Step 6 Test: Streaming Error Handling
+ * Streaming Error Handling Test
  *
  * Validates that:
  * - handleStreamError() throws the right error for 401, 403, 429
@@ -13,7 +13,7 @@ import "dotenv/config";
 import { handleStreamError, makeStreamingRequest } from "../src/streaming/streamClient.js";
 
 async function testStep4(): Promise<void> {
-  console.log("🧪 Testing Step 6: Streaming Error Handling\n");
+  console.log("🧪 Testing: Streaming Error Handling\n");
 
   if (!process.env.GLOO_CLIENT_ID) {
     console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
@@ -86,11 +86,11 @@ async function testStep4(): Promise<void> {
       console.log(`✓ Bad credentials caught: ${message}`);
     }
 
-    console.log("\n✅ Step 6 Complete! Two-phase error handling working.");
-    console.log("   Continue to Step 7: Browser-Based Streaming\n");
+    console.log("\n✅ Two-phase error handling working.");
+    console.log("   Next: Browser-Based Streaming\n");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("\n❌ Step 6 Test Failed");
+    console.error("\n❌ Streaming Error Handling Test Failed");
     console.error(`Error: ${message}`);
     console.error("\n💡 Hints:");
     console.error("   - handleStreamError should throw for any non-200 status");

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Step 6 Test: Streaming-Aware Error Handling
+Streaming-Aware Error Handling Test
 
 Validates that:
 - handle_stream_error() raises specific exceptions for 401/403/429
@@ -21,7 +21,7 @@ load_dotenv()
 
 
 def test_step4():
-    print("🧪 Testing Step 6: Streaming-Aware Error Handling\n")
+    print("🧪 Testing: Streaming-Aware Error Handling\n")
 
     try:
         from streaming.stream_client import handle_stream_error, stream_completion
@@ -83,11 +83,11 @@ def test_step4():
                 # Still an exception — acceptable if it's a connection/API error
                 print(f"✓ Bad credentials caught: {msg[:100]}")
 
-        print("\n✅ Step 6 Complete! Error handling working correctly.")
-        print("   Continue to Step 7: Browser-Based Streaming\n")
+        print("\n✅ Error handling working correctly.")
+        print("   Next: Browser-Based Streaming\n")
 
     except Exception as error:
-        print(f"\n❌ Step 6 Test Failed")
+        print(f"\n❌ Streaming Error Handling Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - handle_stream_error should check status_code BEFORE reading stream")

@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
- * Steps 2–3 Test: Streaming Request & SSE Line Parsing
+ * Streaming Request & SSE Line Parsing Test
  *
  * <p>Validates that:
  * <ul>
@@ -24,7 +24,7 @@ import java.util.Map;
 public class Step2SseParsingTest {
 
     public static void main(String[] args) {
-        System.out.println("🧪 Testing Steps 2–3: Streaming Request & SSE Line Parsing\n");
+        System.out.println("🧪 Testing: Streaming Request & SSE Line Parsing\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
@@ -109,11 +109,11 @@ public class Step2SseParsingTest {
                 System.out.println("✓ [DONE] sentinel detected — stream terminated cleanly");
             }
 
-            System.out.println("\n✅ Steps 2–3 Complete! Streaming request and SSE parsing working.");
-            System.out.println("   Continue to Step 4: Extracting Token Content\n");
+            System.out.println("\n✅ Streaming request and SSE parsing working.");
+            System.out.println("   Next: Extracting Token Content\n");
 
         } catch (Exception e) {
-            System.err.println("\n❌ Steps 2–3 Test Failed");
+            System.err.println("\n❌ Streaming Request & SSE Parsing Test Failed");
             System.err.println("Error: " + e.getMessage());
             System.err.println("\n💡 Hints:");
             System.err.println("   - Check makeStreamingRequest() sets stream:true in the payload");

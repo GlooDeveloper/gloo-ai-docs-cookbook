@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 /**
- * Steps 2–3 Test: Streaming Request & SSE Line Parsing
+ * Streaming Request & SSE Line Parsing Test
  *
  * Validates that:
  * - makeStreamingRequest() opens a streaming connection
@@ -23,7 +23,7 @@ $dotenv->safeLoad();
 
 function testStep2(): void
 {
-    echo "🧪 Testing Steps 2–3: Streaming Request & SSE Line Parsing\n\n";
+    echo "🧪 Testing: Streaming Request & SSE Line Parsing\n\n";
 
     $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
     if (!$clientId) {
@@ -113,11 +113,11 @@ function testStep2(): void
             echo "✓ [DONE] sentinel detected — stream terminated cleanly\n";
         }
 
-        echo "\n✅ Steps 2–3 Complete! Streaming request and SSE parsing working.\n";
-        echo "   Continue to Step 4: Extracting Token Content\n\n";
+        echo "\n✅ Streaming request and SSE parsing working.\n";
+        echo "   Next: Extracting Token Content\n\n";
 
     } catch (Throwable $e) {
-        echo "\n❌ Steps 2–3 Test Failed\n";
+        echo "\n❌ Streaming Request & SSE Parsing Test Failed\n";
         echo "Error: " . $e->getMessage() . "\n";
         echo "\n💡 Hints:\n";
         echo "   - Check makeStreamingRequest() sets stream=>true in the payload\n";

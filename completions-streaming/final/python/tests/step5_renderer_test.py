@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Step 7 Test: CLI Typing-Effect Renderer
+CLI Typing-Effect Renderer Test
 
 Validates that:
 - render_stream_to_terminal() prints tokens without newlines as they arrive
@@ -23,7 +23,7 @@ load_dotenv()
 
 
 def test_step5():
-    print("🧪 Testing Step 7: CLI Typing-Effect Renderer\n")
+    print("🧪 Testing: CLI Typing-Effect Renderer\n")
 
     client_id = os.getenv("GLOO_CLIENT_ID")
     if not client_id:
@@ -81,11 +81,11 @@ def test_step5():
             print("✓ Tokens written to stdout without buffering")
             print("✓ Terminal shows typing effect (no mid-stream newlines in content)")
 
-        print("\n✅ Step 7 Complete! Tokens render live in the terminal.")
-        print("   Continue to Step 8: Server-Side Proxy\n")
+        print("\n✅ Tokens render live in the terminal.")
+        print("   Next: Server-Side Proxy\n")
 
     except Exception as error:
-        print(f"\n❌ Step 7 Test Failed")
+        print(f"\n❌ Typing-Effect Renderer Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - render_stream_to_terminal should call make_streaming_request")

@@ -1,5 +1,5 @@
 /**
- * Steps 4–5 Test: Token Extraction & Full Response Assembly
+ * Token Extraction & Full Response Assembly Test
  *
  * Validates that:
  * - extractTokenContent() safely navigates choices[0].delta.content
@@ -14,7 +14,7 @@ import { ensureValidToken } from "../src/auth/tokenManager.js";
 import { extractTokenContent, streamCompletion } from "../src/streaming/streamClient.js";
 
 async function testStep3(): Promise<void> {
-  console.log("🧪 Testing Steps 4–5: Token Extraction & Accumulation\n");
+  console.log("🧪 Testing: Token Extraction & Accumulation\n");
 
   if (!process.env.GLOO_CLIENT_ID) {
     console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
@@ -88,11 +88,11 @@ async function testStep3(): Promise<void> {
       throw new Error("duration_ms is 0 — timing not tracked");
     }
 
-    console.log("\n✅ Steps 4–5 Complete! Full response assembled.");
-    console.log("   Continue to Step 6: Streaming Error Handling\n");
+    console.log("\n✅ Full response assembled.");
+    console.log("   Next: Streaming Error Handling\n");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("\n❌ Steps 4–5 Test Failed");
+    console.error("\n❌ Token Extraction & Accumulation Test Failed");
     console.error(`Error: ${message}`);
     console.error("\n💡 Hints:");
     console.error("   - extractTokenContent: use chunk?.choices?.[0]?.delta?.content pattern");

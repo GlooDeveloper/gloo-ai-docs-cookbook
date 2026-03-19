@@ -10,7 +10,7 @@ import java.net.http.HttpResponse;
 import java.util.Map;
 
 /**
- * Step 1 Test: Environment Setup & Auth Verification
+ * Environment Setup & Auth Verification Test
  *
  * <p>Validates that credentials load correctly and the streaming endpoint
  * responds with 200 OK and Content-Type: text/event-stream.
@@ -22,7 +22,7 @@ public class Step1AuthTest {
     private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
     public static void main(String[] args) {
-        System.out.println("🧪 Testing Step 1: Environment Setup & Auth Verification\n");
+        System.out.println("🧪 Testing: Environment Setup & Auth Verification\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
         String clientId = dotenv.get("GLOO_CLIENT_ID", "");
@@ -91,11 +91,11 @@ public class Step1AuthTest {
             System.out.println("✓ Status: 200 OK");
             System.out.println("✓ Content-Type: " + contentType);
 
-            System.out.println("\n✅ Step 1 Complete! Auth and streaming endpoint verified.");
-            System.out.println("   Continue to Step 2: Making the Streaming Request\n");
+            System.out.println("\n✅ Auth and streaming endpoint verified.");
+            System.out.println("   Next: Making the Streaming Request\n");
 
         } catch (Exception e) {
-            System.err.println("\n❌ Step 1 Test Failed");
+            System.err.println("\n❌ Auth Test Failed");
             System.err.println("Error: " + e.getMessage());
             System.err.println("\n💡 Hints:");
             System.err.println("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET");

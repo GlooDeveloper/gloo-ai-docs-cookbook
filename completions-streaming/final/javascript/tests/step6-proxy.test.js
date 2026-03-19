@@ -1,5 +1,5 @@
 /**
- * Steps 8–9 Test: Server-Side Proxy
+ * Server-Side Proxy Test
  *
  * Validates that:
  * - The Express proxy server starts and responds to /health
@@ -16,7 +16,7 @@ import { spawn } from "child_process";
 import { setTimeout as sleep } from "timers/promises";
 
 async function testStep6() {
-  console.log("🧪 Testing Steps 8–9: Server-Side Proxy\n");
+  console.log("🧪 Testing: Server-Side Proxy\n");
 
   if (!process.env.GLOO_CLIENT_ID) {
     console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
@@ -134,10 +134,10 @@ async function testStep6() {
       console.log(`✓ Access-Control-Allow-Origin: ${corsHeader}`);
     }
 
-    console.log("\n✅ Steps 8–9 Complete! Proxy server relaying SSE end-to-end.");
+    console.log("\n✅ Proxy server relaying SSE end-to-end.");
     console.log("   Track B complete: credentials stay server-side, client receives SSE.\n");
   } catch (err) {
-    console.error("\n❌ Steps 8–9 Test Failed");
+    console.error("\n❌ Server-Side Proxy Test Failed");
     console.error(`Error: ${err.message}`);
     console.error("\n💡 Hints:");
     console.error("   - Check that express is installed: npm install");
