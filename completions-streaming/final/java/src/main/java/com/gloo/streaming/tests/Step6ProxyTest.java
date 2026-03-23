@@ -23,7 +23,7 @@ import java.time.Duration;
  * <ul>
  *   <li>The Java proxy server starts and responds to /health</li>
  *   <li>POST /api/stream relays SSE from Gloo AI back to the client</li>
- *   <li>SSE lines arrive with correct format and [DONE] is detected</li>
+ *   <li>SSE lines arrive with correct format and stream terminates cleanly</li>
  * </ul>
  *
  * <p>Usage: mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step6ProxyTest

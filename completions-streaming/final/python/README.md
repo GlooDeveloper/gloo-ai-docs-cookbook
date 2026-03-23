@@ -72,7 +72,7 @@ environment activated.
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 python tests/step1_auth_test.py
 
-# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
+# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
 python tests/step2_sse_parsing_test.py
 
 # CP3: Token extraction + accumulation — delta content extracted, full response assembled

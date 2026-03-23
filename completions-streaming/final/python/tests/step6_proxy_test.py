@@ -5,7 +5,7 @@ Server-Side Proxy Test
 Validates that:
 - The Flask proxy server starts and responds to /health
 - POST /api/stream relays SSE from Gloo AI back to the client
-- SSE lines arrive with correct format and [DONE] is detected
+- SSE lines arrive with correct format and stream terminates cleanly
 
 Usage: python tests/step6_proxy_test.py
 

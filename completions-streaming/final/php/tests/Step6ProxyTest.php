@@ -8,7 +8,7 @@ declare(strict_types=1);
  * Validates that:
  * - The PHP built-in server starts and handles requests
  * - POST /api/stream relays SSE from Gloo AI back to the client
- * - SSE lines arrive with correct format and [DONE] is detected
+ * - SSE lines arrive with correct format and stream terminates cleanly
  *
  * Usage: php tests/Step6ProxyTest.php
  *
@@ -148,7 +148,7 @@ function testStep6(): void
         }
         echo "✓ Content-Type: {$contentType}\n";
 
-        // Test 4: SSE line format (data: prefix) and [DONE] detection
+        // Test 4: SSE line format (data: prefix) and stream termination
         echo "\nTest 4: SSE line format (data: prefix)...\n";
 
         $dataLines        = 0;

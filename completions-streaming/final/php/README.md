@@ -57,7 +57,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 php tests/Step1AuthTest.php
 
-# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
+# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
 php tests/Step2SseParsingTest.php
 
 # CP3: Token extraction + accumulation — delta content extracted, full response assembled

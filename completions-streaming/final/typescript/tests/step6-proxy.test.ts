@@ -4,7 +4,7 @@
  * Validates that:
  * - The Express proxy server starts and responds to /health
  * - POST /api/stream relays SSE from Gloo AI back to the client
- * - SSE lines arrive with correct format and [DONE] is detected
+ * - SSE lines arrive with correct format and stream terminates cleanly
  *
  * Usage: node --loader ts-node/esm --no-warnings tests/step6-proxy.test.ts
  *

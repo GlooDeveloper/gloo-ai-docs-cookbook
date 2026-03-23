@@ -59,7 +59,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 node tests/step1-auth.test.js
 
-# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
+# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
 node tests/step2-sse-parsing.test.js
 
 # CP3: Token extraction + accumulation — delta content extracted, full response assembled

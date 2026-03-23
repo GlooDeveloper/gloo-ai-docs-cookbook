@@ -56,7 +56,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 go run tests/step1_auth.go
 
-# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
+# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
 go run tests/step2_sse_parsing.go
 
 # CP3: Token extraction + accumulation — delta content extracted, full response assembled

@@ -55,7 +55,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 node --loader ts-node/esm --no-warnings tests/step1-auth.test.ts
 
-# CP2: Streaming request + SSE parsing — connection opens, [DONE] detected
+# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
 node --loader ts-node/esm --no-warnings tests/step2-sse-parsing.test.ts
 
 # CP3: Token extraction + accumulation — delta content extracted, full response assembled
