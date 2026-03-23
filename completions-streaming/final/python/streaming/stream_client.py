@@ -75,15 +75,17 @@ def parse_sse_line(line: str):
     """
     Parse one SSE text line from the stream.
 
-    SSE lines follow the format: `data: <json-payload>` or `data: [DONE]`.
-    Blank lines and non-data lines are skipped.
+    SSE lines follow the format: `data: <json-payload>`. The stream ends when
+    a chunk arrives with a non-null `choices[0].finish_reason` (e.g. "stop").
+    Blank lines and non-data lines are skipped. A `data: [DONE]` sentinel is
+    handled for compatibility but is not sent by the Gloo AI API.
 
     Args:
         line: Raw text line from the SSE stream
 
     Returns:
         None: For blank lines or non-data lines
-        '[DONE]': For the stream termination signal
+        '[DONE]': If a [DONE] sentinel is encountered (not sent by Gloo AI)
         dict: Parsed JSON payload for data lines
     """
     if not line or not line.strip():

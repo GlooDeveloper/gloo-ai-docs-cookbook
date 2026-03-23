@@ -61,8 +61,13 @@ export async function makeStreamingRequest(message: string, token: string): Prom
 /**
  * Parse one SSE text line from the stream.
  *
+ * SSE lines follow the format `data: <json-payload>`. The stream ends when a chunk
+ * arrives with a non-null `choices[0].finish_reason` (e.g. "stop"). A `[DONE]`
+ * sentinel is handled for compatibility but is not sent by the Gloo AI API.
+ *
  * @param line - Raw text line from the SSE stream
- * @returns null for blank/non-data lines, '[DONE]' for stream end, or a parsed SSEChunk
+ * @returns null for blank/non-data lines, '[DONE]' if a [DONE] sentinel is encountered
+ *   (not sent by Gloo AI), or a parsed SSEChunk
  */
 export function parseSseLine(line: string): null | "[DONE]" | SSEChunk {
   if (!line || !line.trim()) return null;

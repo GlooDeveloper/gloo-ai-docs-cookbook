@@ -107,8 +107,13 @@ public class StreamClient {
     /**
      * Parse one SSE text line from the stream.
      *
+     * SSE lines follow the format {@code data: <json-payload>}. The stream ends when a
+     * chunk arrives with a non-null {@code choices[0].finish_reason} (e.g. "stop"). A
+     * {@code [DONE]} sentinel is handled for compatibility but is not sent by the Gloo AI API.
+     *
      * @param line Raw text line
-     * @return null for blank/non-data lines; the string "[DONE]"; or a Map (parsed JSON)
+     * @return null for blank/non-data lines; "[DONE]" if a [DONE] sentinel is encountered
+     *   (not sent by Gloo AI); or a Map (parsed JSON)
      */
     @SuppressWarnings("unchecked")
     public static Object parseSseLine(String line) {

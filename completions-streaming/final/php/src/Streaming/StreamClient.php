@@ -100,8 +100,13 @@ class StreamClient
     /**
      * Parse one SSE text line from the stream.
      *
+     * SSE lines follow the format `data: <json-payload>`. The stream ends when a chunk
+     * arrives with a non-null `choices[0].finish_reason` (e.g. "stop"). A `[DONE]`
+     * sentinel is handled for compatibility but is not sent by the Gloo AI API.
+     *
      * @param string $line Raw text line
-     * @return mixed null for blank/non-data lines, '[DONE]' string, or array (parsed JSON)
+     * @return mixed null for blank/non-data lines, '[DONE]' if a [DONE] sentinel is
+     *   encountered (not sent by Gloo AI), or array (parsed JSON)
      */
     public static function parseSseLine(string $line): mixed
     {

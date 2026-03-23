@@ -96,9 +96,13 @@ func MakeStreamingRequest(message, token string) (*http.Response, error) {
 
 // ParseSSELine parses one line from the SSE stream.
 //
+// SSE lines follow the format `data: <json-payload>`. The stream ends when a chunk
+// arrives with a non-null choices[0].FinishReason (e.g. "stop"). A "[DONE]" sentinel
+// is handled for compatibility but is not sent by the Gloo AI API.
+//
 // Returns:
 //   - nil for blank or non-data lines
-//   - the string "[DONE]" for the stream termination signal
+//   - the string "[DONE]" if a [DONE] sentinel is encountered (not sent by Gloo AI)
 //   - a *SSEChunk for valid data lines
 func ParseSSELine(line string) any {
 	if strings.TrimSpace(line) == "" {
