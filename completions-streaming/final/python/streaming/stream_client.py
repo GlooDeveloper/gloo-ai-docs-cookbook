@@ -165,7 +165,7 @@ def stream_completion(message: str, token: str) -> dict:
             choices = chunk.get("choices", [])
             if choices and choices[0].get("finish_reason"):
                 finish_reason = choices[0]["finish_reason"]
-    except Exception as e:
+    except Exception:
         if full_text:
             pass  # preserve partial output on error
         else:

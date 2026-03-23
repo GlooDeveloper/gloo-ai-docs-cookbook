@@ -77,8 +77,8 @@ def test_step3():
         assert "duration_ms" in result, "Missing 'duration_ms' key in result"
         assert "finish_reason" in result, "Missing 'finish_reason' key in result"
 
-        print(f"✓ Delta content extraction working")
-        print(f"✓ Null delta handled gracefully")
+        print("✓ Delta content extraction working")
+        print("✓ Null delta handled gracefully")
         print(f"✓ finish_reason detected: {result['finish_reason']}")
         print(f"✓ Duration tracked: {result['duration_ms']}ms")
         print(f"✓ Token count: {result['token_count']} tokens")
@@ -101,7 +101,7 @@ def test_step3():
         print(f"\n❌ Assertion failed: {e}")
         sys.exit(1)
     except Exception as error:
-        print(f"\n❌ Token Extraction & Accumulation Test Failed")
+        print("\n❌ Token Extraction & Accumulation Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - extract_token_content: use chunk.get('choices', [])[0] pattern")

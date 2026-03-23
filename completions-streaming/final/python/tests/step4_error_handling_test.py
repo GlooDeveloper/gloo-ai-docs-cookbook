@@ -72,7 +72,7 @@ def test_step4():
         # Test 5: Bad credentials → pre-stream error (live test)
         print("\nTest 5: Bad credentials → authentication error before reading stream...")
         try:
-            result = stream_completion("Hello", "invalid-token-xyz")
+            stream_completion("Hello", "invalid-token-xyz")
             print("❌ Should have raised an exception for invalid token")
             sys.exit(1)
         except Exception as e:
@@ -87,7 +87,7 @@ def test_step4():
         print("   Next: Browser-Based Streaming\n")
 
     except Exception as error:
-        print(f"\n❌ Streaming Error Handling Test Failed")
+        print("\n❌ Streaming Error Handling Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - handle_stream_error should check status_code BEFORE reading stream")

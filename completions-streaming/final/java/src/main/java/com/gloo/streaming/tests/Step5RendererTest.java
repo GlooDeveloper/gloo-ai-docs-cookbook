@@ -5,6 +5,8 @@ import com.gloo.streaming.browser.Renderer;
 import io.github.cdimascio.dotenv.Dotenv;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,18 +35,27 @@ public class Step5RendererTest {
             String token = TokenManager.ensureValidToken();
             System.out.println("✓ Token obtained\n");
 
-            // Capture stdout silently, then print the captured content
+            // Tee stdout: write to both terminal (live) and a buffer (for validation)
             PrintStream originalOut = System.out;
             ByteArrayOutputStream captured = new ByteArrayOutputStream();
-            System.setOut(new PrintStream(captured, true, StandardCharsets.UTF_8));
+            OutputStream tee = new OutputStream() {
+                @Override public void write(int b) throws IOException {
+                    originalOut.write(b);
+                    captured.write(b);
+                }
+                @Override public void write(byte[] b, int off, int len) throws IOException {
+                    originalOut.write(b, off, len);
+                    captured.write(b, off, len);
+                }
+                @Override public void flush() throws IOException { originalOut.flush(); }
+            };
+            System.setOut(new PrintStream(tee, true, StandardCharsets.UTF_8));
 
             System.out.println("Test 1: renderStreamToTerminal — streaming to terminal...");
             Renderer.renderStreamToTerminal("Reply with exactly: Hello streaming world", token);
 
             System.setOut(originalOut);
-            String output = captured.toString();
-            // Print the captured content so the user can see it
-            System.out.print(output);
+            String output = captured.toString(StandardCharsets.UTF_8);
 
             if (!output.contains("Prompt:")) {
                 throw new RuntimeException("Output missing 'Prompt:' header");

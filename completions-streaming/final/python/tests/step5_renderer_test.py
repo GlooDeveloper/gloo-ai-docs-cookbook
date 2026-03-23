@@ -13,7 +13,6 @@ Usage: python tests/step5_renderer_test.py
 import os
 import sys
 import io
-import contextlib
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -37,55 +36,57 @@ def test_step5():
         token = ensure_valid_token()
         print("✓ Token obtained\n")
 
-        # Test 1: Capture output from the renderer
-        print("Test 1: render_stream_to_terminal() — capturing output...")
-        print("(Tokens will stream live below this line)")
-        print("-" * 40)
+        # Test 1: Capture output while streaming live to terminal
+        print("Test 1: render_stream_to_terminal() — streaming to terminal...")
 
-        # Capture stdout to validate output structure
-        captured = io.StringIO()
-        with contextlib.redirect_stdout(captured):
-            render_stream_to_terminal(
-                "Reply with exactly: Hello streaming world", token
-            )
+        # Tee: write to both real stdout (live) and a capture buffer (for validation)
+        class _TeeStream(io.StringIO):
+            def __init__(self, real_stdout):
+                super().__init__()
+                self._real = real_stdout
+            def write(self, s):
+                self._real.write(s)
+                self._real.flush()
+                return super().write(s)
+            def flush(self):
+                self._real.flush()
+                super().flush()
 
-        output = captured.getvalue()
-        print("-" * 40)
+        tee = _TeeStream(sys.stdout)
+        orig_stdout = sys.stdout
+        sys.stdout = tee
+        render_stream_to_terminal(
+            "Reply with exactly: Hello streaming world", token
+        )
+        sys.stdout = orig_stdout
+        output = tee.getvalue()
 
-        # Replay captured output so user can see it
-        print(output)
-
-        # Validate output structure
         if "Prompt:" not in output:
             raise Exception("Output missing 'Prompt:' header")
-        print("✓ Prompt header present")
+        print("✓ Prompt header printed")
 
         if "Response:" not in output:
-            raise Exception("Output missing 'Response:' prefix")
-        print("✓ Response prefix present")
+            raise Exception("Output missing 'Response:' label")
+        print("✓ Response label printed")
 
-        if "tokens" not in output.lower() and "finish_reason" not in output.lower():
-            print("⚠️  Token count/finish_reason summary not found in output")
-        else:
-            print("✓ Token count/finish_reason reported")
+        import re
+        match = re.search(r"\[(\d+) tokens, finish_reason=(\w+)\]", output)
+        if not match:
+            raise Exception("Output missing token summary '[N tokens, finish_reason=X]'")
 
-        if len(output.strip()) < 30:
-            raise Exception("Output seems too short — renderer may not be working")
+        token_count = int(match.group(1))
+        finish_reason_out = match.group(2)
 
-        print("\nTest 2: Verifying tokens printed without mid-stream newlines...")
-        # Check that the response section has content (not just headers)
-        lines = output.split("\n")
-        response_lines = [l for l in lines if l.startswith("Response:")]
-        if response_lines:
-            print("✓ fetch() with stream: true opens SSE connection")
-            print("✓ Tokens written to stdout without buffering")
-            print("✓ Terminal shows typing effect (no mid-stream newlines in content)")
+        if token_count == 0:
+            raise Exception("token count is 0 — no tokens were streamed")
 
-        print("\n✅ Tokens render live in the terminal.")
+        print(f"✓ Token summary found: {token_count} tokens, finish_reason={finish_reason_out}")
+
+        print("\n✅ Typing-effect renderer working.")
         print("   Next: Server-Side Proxy\n")
 
     except Exception as error:
-        print(f"\n❌ Typing-Effect Renderer Test Failed")
+        print("\n❌ Typing-Effect Renderer Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - render_stream_to_terminal should call make_streaming_request")

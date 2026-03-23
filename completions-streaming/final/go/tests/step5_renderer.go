@@ -39,7 +39,7 @@ func main() {
 	}
 	fmt.Println("✓ Token obtained\n")
 
-	// Redirect stdout to capture output
+	// Tee stdout: pipe to both original terminal (live) and a buffer (for validation)
 	origStdout := os.Stdout
 	r, w, err := os.Pipe()
 	if err != nil {
@@ -47,12 +47,18 @@ func main() {
 	}
 	os.Stdout = w
 
+	var buf bytes.Buffer
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		io.Copy(io.MultiWriter(origStdout, &buf), r)
+	}()
+
 	fmt.Println("Test 1: RenderStreamToTerminal — streaming to terminal...")
 	renderErr := browser.RenderStreamToTerminal("Reply with exactly: Hello streaming world", token)
 
 	w.Close()
-	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	<-done
 	os.Stdout = origStdout
 	r.Close()
 
@@ -61,9 +67,6 @@ func main() {
 	}
 
 	output := buf.String()
-
-	// Also print the captured output so the user can see it
-	fmt.Print(output)
 
 	if !containsStr(output, "Prompt:") {
 		fail("Output missing 'Prompt:' header")

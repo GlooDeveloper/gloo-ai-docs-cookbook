@@ -71,7 +71,7 @@ def test_step2():
         if response.status_code != 200:
             raise Exception(f"Expected 200, got {response.status_code}")
 
-        print(f"✓ Streaming connection opened (status 200)")
+        print("✓ Streaming connection opened (status 200)")
 
         # Test 7: Iterate lines and detect stream termination via finish_reason
         print("Test 7: Iterating SSE lines and detecting stream termination...")
@@ -105,7 +105,7 @@ def test_step2():
         print(f"\n❌ Assertion failed: {e}")
         sys.exit(1)
     except Exception as error:
-        print(f"\n❌ Streaming Request & SSE Parsing Test Failed")
+        print("\n❌ Streaming Request & SSE Parsing Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - Check make_streaming_request() sets stream=True in the payload")
