@@ -97,21 +97,23 @@ func main() {
 	}
 	fmt.Println("✓ Streaming connection opened (status 200)")
 
-	// Test 7: Iterate lines and detect [DONE]
-	fmt.Println("Test 7: Iterating SSE lines and detecting [DONE]...")
+	// Test 7: Iterate lines and detect stream termination via finish_reason
+	fmt.Println("Test 7: Iterating SSE lines and detecting stream termination...")
 	scanner := bufio.NewScanner(resp.Body)
 	linesProcessed, dataChunks := 0, 0
-	doneDetected := false
+	streamTerminated := false
+	finishReason := ""
 
 	for scanner.Scan() {
 		line := scanner.Text()
 		linesProcessed++
 		parsed := streaming.ParseSSELine(line)
-		if s, ok := parsed.(string); ok && s == "[DONE]" {
-			doneDetected = true
-			break
-		}
-		if _, ok := parsed.(*streaming.SSEChunk); ok {
+		if chunk, ok := parsed.(*streaming.SSEChunk); ok {
+			if len(chunk.Choices) > 0 && chunk.Choices[0].FinishReason != nil {
+				streamTerminated = true
+				finishReason = *chunk.Choices[0].FinishReason
+				break
+			}
 			dataChunks++
 		}
 	}
@@ -119,10 +121,10 @@ func main() {
 
 	fmt.Printf("✓ Processed %d lines, %d data chunks\n", linesProcessed, dataChunks)
 
-	if !doneDetected {
-		fmt.Println("⚠️  [DONE] not detected — stream may have ended without sentinel")
+	if !streamTerminated {
+		fmt.Println("⚠️  Stream ended without a finish_reason chunk")
 	} else {
-		fmt.Println("✓ [DONE] sentinel detected — stream terminated cleanly")
+		fmt.Printf("✓ Stream terminated cleanly (finish_reason=%s)\n", finishReason)
 	}
 
 	fmt.Println("\n✅ Streaming request and SSE parsing working.")

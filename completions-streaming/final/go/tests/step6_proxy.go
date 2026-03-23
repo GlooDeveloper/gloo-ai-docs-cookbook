@@ -13,6 +13,7 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -119,7 +120,8 @@ func main() {
 	// Test 4: SSE line format (data: prefix)
 	fmt.Println("\nTest 4: SSE line format (data: prefix)...")
 	dataLines := 0
-	doneDetected := false
+	streamTerminated := false
+	finishReason := ""
 
 	scanner := bufio.NewScanner(streamResp.Body)
 	for scanner.Scan() {
@@ -132,18 +134,29 @@ func main() {
 		}
 		ssePayload := strings.TrimSpace(line[6:])
 		if ssePayload == "[DONE]" {
-			doneDetected = true
-			break
+			continue
+		}
+		var parsed struct {
+			Choices []struct {
+				FinishReason *string `json:"finish_reason"`
+			} `json:"choices"`
+		}
+		if err := json.Unmarshal([]byte(ssePayload), &parsed); err == nil {
+			if len(parsed.Choices) > 0 && parsed.Choices[0].FinishReason != nil {
+				streamTerminated = true
+				finishReason = *parsed.Choices[0].FinishReason
+				break
+			}
 		}
 		dataLines++
 	}
 
 	fmt.Printf("✓ All lines have 'data: ' prefix (%d data chunks received)\n", dataLines)
 
-	if !doneDetected {
-		fmt.Println("⚠️  [DONE] not detected — stream may have ended without sentinel")
+	if !streamTerminated {
+		fmt.Println("⚠️  Stream ended without a finish_reason chunk")
 	} else {
-		fmt.Println("✓ [DONE] sentinel detected — stream terminated cleanly")
+		fmt.Printf("✓ Stream terminated cleanly (finish_reason=%s)\n", finishReason)
 	}
 
 	// Test 5: CORS headers present

@@ -81,36 +81,44 @@ function testStep2(): void
 
         // Test 6: Live streaming connection
         echo "Test 6: makeStreamingRequest() — live connection...\n";
-        $linesProcessed = 0;
-        $dataChunks     = 0;
-        $doneDetected   = false;
-        $lineBuffer     = '';
+        $linesProcessed   = 0;
+        $dataChunks       = 0;
+        $streamTerminated = false;
+        $finishReason     = null;
+        $lineBuffer       = '';
 
         StreamClient::makeStreamingRequest(
             "Say exactly: 'Stream test OK'",
             $token,
-            function (string $data) use (&$linesProcessed, &$dataChunks, &$doneDetected, &$lineBuffer): void {
-                if ($doneDetected) return;
+            function (string $data) use (&$linesProcessed, &$dataChunks, &$streamTerminated, &$finishReason, &$lineBuffer): void {
+                if ($streamTerminated) return;
                 $lineBuffer .= $data;
                 $lines       = explode("\n", $lineBuffer);
                 $lineBuffer  = array_pop($lines);
                 foreach ($lines as $line) {
                     $linesProcessed++;
                     $chunk = StreamClient::parseSseLine($line);
-                    if ($chunk === '[DONE]') { $doneDetected = true; break; }
-                    if (is_array($chunk)) $dataChunks++;
+                    if (is_array($chunk)) {
+                        $reason = $chunk['choices'][0]['finish_reason'] ?? null;
+                        if ($reason !== null) {
+                            $streamTerminated = true;
+                            $finishReason = $reason;
+                            break;
+                        }
+                        $dataChunks++;
+                    }
                 }
             }
         );
 
         echo "✓ Streaming connection opened\n";
-        echo "Test 7: Iterating SSE lines and detecting [DONE]...\n";
+        echo "Test 7: Iterating SSE lines and detecting stream termination...\n";
         echo "✓ Processed {$linesProcessed} lines, {$dataChunks} data chunks\n";
 
-        if (!$doneDetected) {
-            echo "⚠️  [DONE] not detected — stream may have ended without sentinel\n";
+        if (!$streamTerminated) {
+            echo "⚠️  Stream ended without a finish_reason chunk\n";
         } else {
-            echo "✓ [DONE] sentinel detected — stream terminated cleanly\n";
+            echo "✓ Stream terminated cleanly (finish_reason={$finishReason})\n";
         }
 
         echo "\n✅ Streaming request and SSE parsing working.\n";

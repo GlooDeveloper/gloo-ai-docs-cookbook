@@ -62,14 +62,15 @@ async function testStep2(): Promise<void> {
     }
     console.log("✓ Streaming connection opened (status 200)");
 
-    // Test 7: Iterate chunks and detect [DONE]
-    console.log("Test 7: Iterating SSE lines and detecting [DONE]...");
+    // Test 7: Iterate chunks and detect stream termination via finish_reason
+    console.log("Test 7: Iterating SSE lines and detecting stream termination...");
     const reader = response.body!.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     let linesProcessed = 0;
     let dataChunks = 0;
-    let doneDetected = false;
+    let streamTerminated = false;
+    let finishReason: string | null = null;
 
     outer: while (true) {
       const { done, value } = await reader.read();
@@ -80,18 +81,22 @@ async function testStep2(): Promise<void> {
       for (const line of lines) {
         linesProcessed++;
         const chunk = parseSseLine(line);
-        if (chunk === "[DONE]") { doneDetected = true; break outer; }
-        if (chunk && typeof chunk === "object") dataChunks++;
+        if (chunk && typeof chunk === "object") {
+          const c = chunk as { choices?: Array<{ finish_reason?: string | null }> };
+          const reason = c.choices?.[0]?.finish_reason;
+          if (reason != null) { streamTerminated = true; finishReason = reason; break outer; }
+          dataChunks++;
+        }
       }
     }
     reader.releaseLock();
 
     console.log(`✓ Processed ${linesProcessed} lines, ${dataChunks} data chunks`);
 
-    if (!doneDetected) {
-      console.log("⚠️  [DONE] not detected — stream may have ended without sentinel");
+    if (!streamTerminated) {
+      console.log("⚠️  Stream ended without a finish_reason chunk");
     } else {
-      console.log("✓ [DONE] sentinel detected — stream terminated cleanly");
+      console.log(`✓ Stream terminated cleanly (finish_reason=${finishReason})`);
     }
 
     console.log("\n✅ Streaming request and SSE parsing working.");

@@ -73,27 +73,30 @@ def test_step2():
 
         print(f"✓ Streaming connection opened (status 200)")
 
-        # Test 7: Iterate lines and detect [DONE]
-        print("Test 7: Iterating SSE lines and detecting [DONE]...")
+        # Test 7: Iterate lines and detect stream termination via finish_reason
+        print("Test 7: Iterating SSE lines and detecting stream termination...")
         lines_seen = 0
         data_lines = 0
-        done_detected = False
+        stream_terminated = False
+        finish_reason = None
 
         for raw_line in response.iter_lines(decode_unicode=True):
             lines_seen += 1
             chunk = parse_sse_line(raw_line)
-            if chunk == "[DONE]":
-                done_detected = True
-                break
             if isinstance(chunk, dict):
+                reason = chunk.get("choices", [{}])[0].get("finish_reason") if chunk.get("choices") else None
+                if reason is not None:
+                    stream_terminated = True
+                    finish_reason = reason
+                    break
                 data_lines += 1
 
         print(f"✓ Processed {lines_seen} lines, {data_lines} data chunks")
 
-        if not done_detected:
-            print("⚠️  [DONE] not detected — stream may have ended without sentinel")
+        if not stream_terminated:
+            print("⚠️  Stream ended without a finish_reason chunk")
         else:
-            print("✓ [DONE] sentinel detected — stream terminated cleanly")
+            print(f"✓ Stream terminated cleanly (finish_reason={finish_reason})")
 
         print("\n✅ Streaming request and SSE parsing working.")
         print("   Next: Extracting Token Content\n")

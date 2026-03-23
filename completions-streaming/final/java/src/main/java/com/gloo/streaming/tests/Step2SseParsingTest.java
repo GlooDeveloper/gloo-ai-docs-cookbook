@@ -84,10 +84,11 @@ public class Step2SseParsingTest {
             }
             System.out.println("✓ Streaming connection opened (status 200)");
 
-            // Test 7: Iterate lines and detect [DONE]
-            System.out.println("Test 7: Iterating SSE lines and detecting [DONE]...");
+            // Test 7: Iterate lines and detect stream termination via finish_reason
+            System.out.println("Test 7: Iterating SSE lines and detecting stream termination...");
             int linesProcessed = 0, dataChunks = 0;
-            boolean doneDetected = false;
+            boolean streamTerminated = false;
+            String finishReason = null;
 
             try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(response.body(), StandardCharsets.UTF_8)
@@ -96,17 +97,30 @@ public class Step2SseParsingTest {
                 while ((line = reader.readLine()) != null) {
                     linesProcessed++;
                     Object parsed = StreamClient.parseSseLine(line);
-                    if ("[DONE]".equals(parsed)) { doneDetected = true; break; }
-                    if (parsed instanceof Map) dataChunks++;
+                    if (parsed instanceof Map) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> chunkMap = (Map<String, Object>) parsed;
+                        @SuppressWarnings("unchecked")
+                        var choices = (java.util.List<Map<String, Object>>) chunkMap.get("choices");
+                        if (choices != null && !choices.isEmpty()) {
+                            Object reason = choices.get(0).get("finish_reason");
+                            if (reason != null) {
+                                streamTerminated = true;
+                                finishReason = reason.toString();
+                                break;
+                            }
+                        }
+                        dataChunks++;
+                    }
                 }
             }
 
             System.out.printf("✓ Processed %d lines, %d data chunks%n", linesProcessed, dataChunks);
 
-            if (!doneDetected) {
-                System.out.println("⚠️  [DONE] not detected — stream may have ended without sentinel");
+            if (!streamTerminated) {
+                System.out.println("⚠️  Stream ended without a finish_reason chunk");
             } else {
-                System.out.println("✓ [DONE] sentinel detected — stream terminated cleanly");
+                System.out.println("✓ Stream terminated cleanly (finish_reason=" + finishReason + ")");
             }
 
             System.out.println("\n✅ Streaming request and SSE parsing working.");

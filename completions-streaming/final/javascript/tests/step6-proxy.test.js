@@ -86,7 +86,8 @@ async function testStep6() {
     // Test 4: SSE lines arrive with correct format
     console.log("\nTest 4: SSE line format (data: prefix)...");
     let dataLines = 0;
-    let doneDetected = false;
+    let streamTerminated = false;
+    let finishReason = null;
     const reader = streamRes.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
@@ -103,22 +104,28 @@ async function testStep6() {
           throw new Error(`Expected 'data: ' prefix, got: ${JSON.stringify(line)}`);
         }
         const payload = line.slice(6).trim();
-        if (payload === "[DONE]") {
-          doneDetected = true;
-          break;
-        }
+        if (payload === "[DONE]") continue;
+        try {
+          const parsed = JSON.parse(payload);
+          const reason = parsed.choices?.[0]?.finish_reason;
+          if (reason != null) {
+            streamTerminated = true;
+            finishReason = reason;
+            break;
+          }
+        } catch {}
         dataLines++;
       }
-      if (doneDetected) break;
+      if (streamTerminated) break;
     }
     reader.cancel().catch(() => {});
 
     console.log(`✓ All lines have 'data: ' prefix (${dataLines} data chunks received)`);
 
-    if (!doneDetected) {
-      console.warn("⚠️  [DONE] not detected — stream may have ended without sentinel");
+    if (!streamTerminated) {
+      console.warn("⚠️  Stream ended without a finish_reason chunk");
     } else {
-      console.log("✓ [DONE] sentinel detected — stream terminated cleanly");
+      console.log(`✓ Stream terminated cleanly (finish_reason=${finishReason})`);
     }
 
     // Test 5: CORS headers present

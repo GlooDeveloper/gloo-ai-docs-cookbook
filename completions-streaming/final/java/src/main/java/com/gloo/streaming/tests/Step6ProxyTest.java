@@ -1,5 +1,9 @@
 package com.gloo.streaming.tests;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.gloo.streaming.proxy.ProxyServer;
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -123,7 +127,9 @@ public class Step6ProxyTest {
             // Test 4: SSE line format (data: prefix)
             System.out.println("\nTest 4: SSE line format (data: prefix)...");
             int dataLines = 0;
-            boolean doneDetected = false;
+            boolean streamTerminated = false;
+            String finishReason = null;
+            Gson gson = new Gson();
 
             try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(streamResp.body(), StandardCharsets.UTF_8)
@@ -135,20 +141,29 @@ public class Step6ProxyTest {
                         throw new RuntimeException("Expected 'data: ' prefix, got: " + line);
                     }
                     String ssePayload = line.substring(6).strip();
-                    if ("[DONE]".equals(ssePayload)) {
-                        doneDetected = true;
-                        break;
-                    }
+                    if ("[DONE]".equals(ssePayload)) continue;
+                    try {
+                        JsonObject obj = gson.fromJson(ssePayload, JsonObject.class);
+                        JsonArray choices = obj.getAsJsonArray("choices");
+                        if (choices != null && choices.size() > 0) {
+                            JsonElement reason = choices.get(0).getAsJsonObject().get("finish_reason");
+                            if (reason != null && !reason.isJsonNull()) {
+                                streamTerminated = true;
+                                finishReason = reason.getAsString();
+                                break;
+                            }
+                        }
+                    } catch (Exception ignored) {}
                     dataLines++;
                 }
             }
 
             System.out.printf("✓ All lines have 'data: ' prefix (%d data chunks received)%n", dataLines);
 
-            if (!doneDetected) {
-                System.out.println("⚠️  [DONE] not detected — stream may have ended without sentinel");
+            if (!streamTerminated) {
+                System.out.println("⚠️  Stream ended without a finish_reason chunk");
             } else {
-                System.out.println("✓ [DONE] sentinel detected — stream terminated cleanly");
+                System.out.println("✓ Stream terminated cleanly (finish_reason=" + finishReason + ")");
             }
 
             // Test 5: CORS headers present

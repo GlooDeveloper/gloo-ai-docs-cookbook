@@ -12,6 +12,7 @@ Usage: python tests/step6_proxy_test.py
 Note: Starts the proxy in a background thread; no separate server process needed.
 """
 
+import json
 import os
 import sys
 import time
@@ -91,24 +92,33 @@ def test_step6():
             # Test 4: SSE lines arrive with correct format
             print("\nTest 4: SSE line format (data: prefix)...")
             data_lines = 0
-            done_detected = False
+            stream_terminated = False
+            finish_reason = None
             for raw_line in r.iter_lines(decode_unicode=True):
                 if not raw_line:
                     continue
                 if not raw_line.startswith("data: "):
                     raise Exception(f"Expected 'data: ' prefix, got: {raw_line!r}")
-                payload = raw_line[6:]
-                if payload.strip() == "[DONE]":
-                    done_detected = True
-                    break
+                payload = raw_line[6:].strip()
+                if payload == "[DONE]":
+                    continue
+                try:
+                    parsed = json.loads(payload)
+                    reason = parsed.get("choices", [{}])[0].get("finish_reason") if parsed.get("choices") else None
+                    if reason is not None:
+                        stream_terminated = True
+                        finish_reason = reason
+                        break
+                except Exception:
+                    pass
                 data_lines += 1
 
             print(f"✓ All lines have 'data: ' prefix ({data_lines} data chunks received)")
 
-            if not done_detected:
-                print("⚠️  [DONE] not detected — stream may have ended without sentinel")
+            if not stream_terminated:
+                print("⚠️  Stream ended without a finish_reason chunk")
             else:
-                print("✓ [DONE] sentinel detected — stream terminated cleanly")
+                print(f"✓ Stream terminated cleanly (finish_reason={finish_reason})")
 
         # Test 5: CORS headers present
         print("\nTest 5: CORS headers on response...")

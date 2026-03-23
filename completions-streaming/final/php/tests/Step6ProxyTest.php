@@ -151,9 +151,10 @@ function testStep6(): void
         // Test 4: SSE line format (data: prefix) and [DONE] detection
         echo "\nTest 4: SSE line format (data: prefix)...\n";
 
-        $dataLines   = 0;
-        $doneDetected = false;
-        $lineBuffer  = '';
+        $dataLines        = 0;
+        $streamTerminated = false;
+        $finishReason     = null;
+        $lineBuffer       = '';
 
         $ch = curl_init("http://{$host}/api/stream");
         curl_setopt_array($ch, [
@@ -162,7 +163,7 @@ function testStep6(): void
             CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT        => 30,
-            CURLOPT_WRITEFUNCTION  => function ($ch, $data) use (&$lineBuffer, &$dataLines, &$doneDetected) {
+            CURLOPT_WRITEFUNCTION  => function ($ch, $data) use (&$lineBuffer, &$dataLines, &$streamTerminated, &$finishReason) {
                 $lineBuffer .= $data;
                 $lines = explode("\n", $lineBuffer);
                 $lineBuffer = array_pop($lines); // keep incomplete last line
@@ -177,8 +178,16 @@ function testStep6(): void
                     }
                     $ssePayload = trim(substr($line, 6));
                     if ($ssePayload === '[DONE]') {
-                        $doneDetected = true;
-                        return 0; // returning 0 aborts the curl transfer
+                        continue;
+                    }
+                    $parsed = json_decode($ssePayload, true);
+                    if (is_array($parsed)) {
+                        $reason = $parsed['choices'][0]['finish_reason'] ?? null;
+                        if ($reason !== null) {
+                            $streamTerminated = true;
+                            $finishReason = $reason;
+                            return 0; // returning 0 aborts the curl transfer
+                        }
                     }
                     $dataLines++;
                 }
@@ -191,10 +200,10 @@ function testStep6(): void
 
         echo "✓ All lines have 'data: ' prefix ({$dataLines} data chunks received)\n";
 
-        if (!$doneDetected) {
-            echo "⚠️  [DONE] not detected — stream may have ended without sentinel\n";
+        if (!$streamTerminated) {
+            echo "⚠️  Stream ended without a finish_reason chunk\n";
         } else {
-            echo "✓ [DONE] sentinel detected — stream terminated cleanly\n";
+            echo "✓ Stream terminated cleanly (finish_reason={$finishReason})\n";
         }
 
         // Test 5: CORS headers present

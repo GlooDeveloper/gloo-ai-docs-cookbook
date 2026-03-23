@@ -23,6 +23,28 @@ go run cmd/proxy/main.go
 # or build first: go build ./... && ./completions-streaming-proxy
 ```
 
+Once running, send requests to `http://localhost:3001/api/stream` — the proxy relays them to the Gloo AI API and streams the SSE response back to the caller.
+
+```bash
+# Minimal request — streams the response as SSE to your terminal
+curl -X POST http://localhost:3001/api/stream \
+  -H "Content-Type: application/json" \
+  -d '{"messages": [{"role": "user", "content": "Hello!"}], "auto_routing": true}'
+
+# With a system prompt
+curl -X POST http://localhost:3001/api/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What does it mean to be human?"}
+    ],
+    "auto_routing": true
+  }'
+```
+
+Each response line is an SSE event (`data: {...}`). The final chunk has `"finish_reason": "stop"` (or another stop reason) rather than `null`.
+
 ## Checkpoint Validation
 
 All checkpoint scripts are standalone — no test framework needed. Each script
