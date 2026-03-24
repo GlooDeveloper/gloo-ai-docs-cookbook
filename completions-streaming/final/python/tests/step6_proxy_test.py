@@ -137,7 +137,7 @@ def test_step6():
         print("   Track B complete: credentials stay server-side, client receives SSE.\n")
 
     except Exception as error:
-        print(f"\n❌ Server-Side Proxy Test Failed")
+        print("\n❌ Server-Side Proxy Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - Check that Flask and requests are installed: pip install flask requests")

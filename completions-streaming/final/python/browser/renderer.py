@@ -5,7 +5,6 @@ Prints each token to stdout without newlines as it arrives, creating
 a real-time typing effect in the terminal.
 """
 
-import sys
 from streaming.stream_client import make_streaming_request, parse_sse_line, extract_token_content
 
 
