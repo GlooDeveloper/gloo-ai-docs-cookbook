@@ -115,7 +115,6 @@ public class StreamClient {
      * @return null for blank/non-data lines; "[DONE]" if a [DONE] sentinel is encountered
      *   (not sent by Gloo AI); or a Map (parsed JSON)
      */
-    @SuppressWarnings("unchecked")
     public static Object parseSseLine(String line) {
         if (line == null || line.isBlank()) return null;
         if (!line.startsWith("data: ")) return null;
