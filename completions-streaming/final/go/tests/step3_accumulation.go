@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Token Extraction & Full Response Assembly Test
 //
 // Validates that:
@@ -19,7 +21,8 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing: Token Extraction & Accumulation\n")
+	fmt.Println("🧪 Testing: Token Extraction & Accumulation")
+	fmt.Println("")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -95,10 +98,10 @@ func main() {
 	if result != "" {
 		fail(fmt.Sprintf("Expected '' for finish_reason chunk, got: %q", result))
 	}
-	fmt.Println("✓ finish_reason chunk → '' (no content from finish chunk)\n")
+	fmt.Println("✓ finish_reason chunk → '' (no content from finish chunk)")
 
 	// Test 6: Full StreamCompletion integration test
-	fmt.Println("Test 6: StreamCompletion — full response assembly...")
+	fmt.Println("\nTest 6: StreamCompletion — full response assembly...")
 	token, err := auth.EnsureValidToken()
 	if err != nil {
 		fail(fmt.Sprintf("EnsureValidToken failed: %v", err))
@@ -139,7 +142,7 @@ func main() {
 	}
 
 	fmt.Println("\n✅ Full response assembled.")
-	fmt.Println("   Next: Streaming Error Handling\n")
+	fmt.Println("   Next: Streaming Error Handling")
 }
 
 func fail(msg string) {
@@ -148,6 +151,6 @@ func fail(msg string) {
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - ExtractTokenContent: check chunk.Choices[0].Delta.Content")
 	fmt.Println("   - StreamCompletion: increment tokenCount only when content != \"\"")
-	fmt.Println("   - Capture start := time.Now() before the request\n")
+	fmt.Println("   - Capture start := time.Now() before the request")
 	os.Exit(1)
 }

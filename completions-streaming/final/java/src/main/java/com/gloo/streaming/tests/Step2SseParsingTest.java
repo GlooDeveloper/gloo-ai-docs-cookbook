@@ -101,9 +101,9 @@ public class Step2SseParsingTest {
                         @SuppressWarnings("unchecked")
                         Map<String, Object> chunkMap = (Map<String, Object>) parsed;
                         @SuppressWarnings("unchecked")
-                        var choices = (java.util.List<Map<String, Object>>) chunkMap.get("choices");
-                        if (choices != null && !choices.isEmpty()) {
-                            Object reason = choices.get(0).get("finish_reason");
+                        var lineChoices = (java.util.List<Map<String, Object>>) chunkMap.get("choices");
+                        if (lineChoices != null && !lineChoices.isEmpty()) {
+                            Object reason = lineChoices.get(0).get("finish_reason");
                             if (reason != null) {
                                 streamTerminated = true;
                                 finishReason = reason.toString();

@@ -39,6 +39,10 @@ def test_step6():
 
         port = int(os.getenv("PROXY_PORT", 3001))
 
+        # Suppress Werkzeug access logs and startup banner
+        import logging
+        logging.getLogger("werkzeug").setLevel(logging.ERROR)
+
         # Start the Flask app in a background thread
         print(f"Test 1: Starting proxy server on port {port}...")
         server_thread = threading.Thread(

@@ -57,22 +57,22 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 
 ```bash
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
-node tests/step1-auth.test.js
+npm run test:step1
 
 # CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
-node tests/step2-sse-parsing.test.js
+npm run test:step2
 
 # CP3: Token extraction + accumulation — delta content extracted, full response assembled
-node tests/step3-accumulation.test.js
+npm run test:step3
 
 # CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
-node tests/step4-error-handling.test.js
+npm run test:step4
 
 # CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
-node tests/step5-renderer.test.js
+npm run test:step5
 
 # CP6: Proxy server — starts in child process, relays SSE, CORS headers present
-node tests/step6-proxy.test.js
+npm run test:step6
 ```
 
 CP6 starts the Express proxy automatically as a child process — you do not

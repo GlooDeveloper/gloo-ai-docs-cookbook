@@ -81,7 +81,7 @@ async function testStep4() {
     }
 
     console.log("\n✅ Two-phase error handling working.");
-    console.log("   Next: Browser-Based Streaming\n");
+    console.log("   Next: Typing-Effect Renderer\n");
   } catch (err) {
     console.error("\n❌ Streaming Error Handling Test Failed");
     console.error(`Error: ${err.message}`);

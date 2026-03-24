@@ -33,8 +33,18 @@ public class ProxyServer {
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final Gson GSON = new Gson();
 
+    public static void main(String[] args) throws Exception {
+        io.github.cdimascio.dotenv.Dotenv dotenv =
+            io.github.cdimascio.dotenv.Dotenv.configure().ignoreIfMissing().load();
+        String portStr = dotenv.get("PROXY_PORT", "3001");
+        int port = Integer.parseInt(portStr);
+        start(port);
+        // Block the main thread so the server stays alive
+        Thread.currentThread().join();
+    }
+
     /**
-     * Start the proxy HTTP server on the given port.
+     * Start the proxy HTTP server on the given port (non-blocking).
      *
      * @param port TCP port to listen on
      * @throws Exception if the server cannot start

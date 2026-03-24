@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Typing-Effect Renderer Test
 //
 // Validates that RenderStreamToTerminal() streams tokens to stdout
@@ -22,7 +24,8 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing: Typing-Effect Renderer\n")
+	fmt.Println("🧪 Testing: Typing-Effect Renderer")
+	fmt.Println("")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -37,7 +40,7 @@ func main() {
 	if err != nil {
 		fail(fmt.Sprintf("EnsureValidToken failed: %v", err))
 	}
-	fmt.Println("✓ Token obtained\n")
+	fmt.Println("✓ Token obtained")
 
 	// Tee stdout: pipe to both original terminal (live) and a buffer (for validation)
 	origStdout := os.Stdout
@@ -54,7 +57,7 @@ func main() {
 		io.Copy(io.MultiWriter(origStdout, &buf), r)
 	}()
 
-	fmt.Println("Test 1: RenderStreamToTerminal — streaming to terminal...")
+	fmt.Println("\nTest 1: RenderStreamToTerminal — streaming to terminal...")
 	renderErr := browser.RenderStreamToTerminal("Reply with exactly: Hello streaming world", token)
 
 	w.Close()
@@ -94,7 +97,7 @@ func main() {
 	fmt.Printf("✓ Token summary found: %d tokens, finish_reason=%s\n", tokenCount, finishReason)
 
 	fmt.Println("\n✅ Typing-effect renderer working.")
-	fmt.Println("   Next: Server-Side Proxy\n")
+	fmt.Println("   Next: Server-Side Proxy")
 }
 
 func containsStr(s, substr string) bool {
@@ -116,6 +119,6 @@ func fail(msg string) {
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - RenderStreamToTerminal should use fmt.Fprint(os.Stdout, content) for each token")
 	fmt.Println("   - Print '[N tokens, finish_reason=X]' summary at end")
-	fmt.Println("   - Check that the streaming loop correctly extracts token content\n")
+	fmt.Println("   - Check that the streaming loop correctly extracts token content")
 	os.Exit(1)
 }

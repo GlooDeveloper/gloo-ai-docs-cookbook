@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Streaming Error Handling Test
 //
 // Validates that:
@@ -20,7 +22,8 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing: Streaming Error Handling\n")
+	fmt.Println("🧪 Testing: Streaming Error Handling")
+	fmt.Println("")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -92,7 +95,7 @@ func main() {
 	fmt.Printf("✓ Bad credentials caught: %s\n", err.Error())
 
 	fmt.Println("\n✅ Two-phase error handling working.")
-	fmt.Println("   Next: Browser-Based Streaming\n")
+	fmt.Println("   Next: Typing-Effect Renderer")
 }
 
 func fail(msg string) {
@@ -101,6 +104,6 @@ func fail(msg string) {
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - HandleStreamError should return error for any non-200 status")
 	fmt.Println("   - Specific messages for 401, 403, 429 help users debug auth issues")
-	fmt.Println("   - MakeStreamingRequest calls HandleStreamError after checking StatusCode\n")
+	fmt.Println("   - MakeStreamingRequest calls HandleStreamError after checking StatusCode")
 	os.Exit(1)
 }

@@ -80,6 +80,8 @@ start the proxy manually before running it.
 ```
 go/
 ├── main.go                        # Entry point
+├── cmd/
+│   └── proxy/main.go              # Proxy server entry point
 ├── pkg/
 │   ├── auth/token.go              # OAuth2 token management
 │   ├── streaming/client.go        # SSE parsing + accumulation

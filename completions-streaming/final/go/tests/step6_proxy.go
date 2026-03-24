@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Server-Side Proxy Test
 //
 // Validates that:
@@ -28,7 +30,8 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing: Server-Side Proxy\n")
+	fmt.Println("🧪 Testing: Server-Side Proxy")
+	fmt.Println("")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -177,7 +180,7 @@ func main() {
 	}
 
 	fmt.Println("\n✅ Proxy server relaying SSE end-to-end.")
-	fmt.Println("   Track B complete: credentials stay server-side, client receives SSE.\n")
+	fmt.Println("   Track B complete: credentials stay server-side, client receives SSE.")
 }
 
 func failProxy(msg, port string) {
@@ -187,6 +190,6 @@ func failProxy(msg, port string) {
 	fmt.Println("   - Check that all dependencies are installed: go mod tidy")
 	fmt.Printf("   - Verify port %s is not already in use\n", port)
 	fmt.Println("   - Check pkg/proxy/server.go imports auth.EnsureValidToken correctly")
-	fmt.Println("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n")
+	fmt.Println("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env")
 	os.Exit(1)
 }

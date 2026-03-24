@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Streaming Request & SSE Line Parsing Test
 //
 // Validates that:
@@ -21,7 +23,8 @@ import (
 )
 
 func main() {
-	fmt.Println("🧪 Testing: Streaming Request & SSE Line Parsing\n")
+	fmt.Println("🧪 Testing: Streaming Request & SSE Line Parsing")
+	fmt.Println("")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -36,7 +39,8 @@ func main() {
 	if err != nil {
 		fail(fmt.Sprintf("EnsureValidToken failed: %v", err))
 	}
-	fmt.Println("✓ Token obtained\n")
+	fmt.Println("✓ Token obtained")
+	fmt.Println("")
 
 	// Test 1: ParseSSELine — blank line
 	fmt.Println("Test 1: ParseSSELine — blank line...")
@@ -82,7 +86,8 @@ func main() {
 	if result != nil {
 		fail(fmt.Sprintf("Expected nil for malformed JSON, got: %v", result))
 	}
-	fmt.Println("✓ Malformed JSON → nil (gracefully handled)\n")
+	fmt.Println("✓ Malformed JSON → nil (gracefully handled)")
+	fmt.Println("")
 
 	// Test 6: Live streaming connection
 	fmt.Println("Test 6: MakeStreamingRequest() — live connection...")
@@ -128,7 +133,7 @@ func main() {
 	}
 
 	fmt.Println("\n✅ Streaming request and SSE parsing working.")
-	fmt.Println("   Next: Extracting Token Content\n")
+	fmt.Println("   Next: Extracting Token Content")
 }
 
 func fail(msg string) {
@@ -137,6 +142,6 @@ func fail(msg string) {
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - Check MakeStreamingRequest() sets stream:true in the payload")
 	fmt.Println("   - Check ParseSSELine() strips 'data: ' prefix (line[6:])")
-	fmt.Println("   - Verify [DONE] check: strings.TrimSpace(data) == \"[DONE]\"\n")
+	fmt.Println("   - Verify [DONE] check: strings.TrimSpace(data) == \"[DONE]\"")
 	os.Exit(1)
 }

@@ -95,7 +95,7 @@ public class Step4ErrorHandlingTest {
             }
 
             System.out.println("\n✅ Two-phase error handling working.");
-            System.out.println("   Next: Browser-Based Streaming\n");
+            System.out.println("   Next: Typing-Effect Renderer\n");
 
         } catch (Exception e) {
             System.err.println("\n❌ Streaming Error Handling Test Failed");

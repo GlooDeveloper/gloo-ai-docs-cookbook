@@ -39,6 +39,14 @@ class Server
             exit;
         }
 
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
+        if ($path === '/health') {
+            http_response_code(200);
+            header('Content-Type: application/json');
+            echo json_encode(['status' => 'ok', 'service' => 'completions-streaming-proxy']);
+            exit;
+        }
+
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             http_response_code(405);
             echo json_encode(['error' => 'Method not allowed']);

@@ -63,13 +63,12 @@ function testStep6(): void
             throw new \RuntimeException("Failed to start proxy subprocess");
         }
 
-        // Wait for the server to be ready by polling with an OPTIONS request
+        // Wait for the server to be ready by polling /health
         $ready = false;
         for ($i = 0; $i < 20; $i++) {
             usleep(200_000); // 200ms
-            $ch = curl_init("http://{$host}/api/stream");
+            $ch = curl_init("http://{$host}/health");
             curl_setopt_array($ch, [
-                CURLOPT_CUSTOMREQUEST  => 'OPTIONS',
                 CURLOPT_RETURNTRANSFER => true,
                 CURLOPT_TIMEOUT        => 1,
                 CURLOPT_CONNECTTIMEOUT => 1,
@@ -77,7 +76,7 @@ function testStep6(): void
             curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
             curl_close($ch);
-            if ($httpCode > 0) {
+            if ($httpCode === 200) {
                 $ready = true;
                 break;
             }
@@ -89,23 +88,25 @@ function testStep6(): void
 
         echo "✓ Proxy server running at http://localhost:{$port}\n";
 
-        // Test 2: Note — PHP proxy has no /health endpoint; OPTIONS returns 204
-        echo "\nTest 2: OPTIONS /api/stream returns 204 (server is live)...\n";
-        $ch = curl_init("http://{$host}/api/stream");
+        // Test 2: Health endpoint
+        echo "\nTest 2: /health endpoint...\n";
+        $ch = curl_init("http://{$host}/health");
         curl_setopt_array($ch, [
-            CURLOPT_CUSTOMREQUEST  => 'OPTIONS',
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_TIMEOUT        => 5,
-            CURLOPT_HTTPHEADER     => ['Origin: http://localhost:3000'],
         ]);
-        curl_exec($ch);
-        $optionsCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $body = curl_exec($ch);
+        $healthCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
-        if ($optionsCode !== 204) {
-            throw new \RuntimeException("Expected 204 from OPTIONS /api/stream, got {$optionsCode}");
+        if ($healthCode !== 200) {
+            throw new \RuntimeException("Expected 200 from /health, got {$healthCode}");
         }
-        echo "✓ OPTIONS /api/stream returns 204\n";
+        $healthData = json_decode($body, true);
+        if (($healthData['status'] ?? '') !== 'ok') {
+            throw new \RuntimeException("Expected status=ok, got: {$body}");
+        }
+        echo "✓ /health returns: " . json_encode($healthData) . "\n";
 
         // Test 3: POST /api/stream returns text/event-stream
         echo "\nTest 3: POST /api/stream — Content-Type header...\n";

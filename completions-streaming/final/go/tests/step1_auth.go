@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Environment Setup & Auth Verification Test
 //
 // Validates that credentials load correctly and the streaming endpoint
@@ -23,7 +25,8 @@ import (
 const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 
 func main() {
-	fmt.Println("🧪 Testing: Environment Setup & Auth Verification\n")
+	fmt.Println("🧪 Testing: Environment Setup & Auth Verification")
+	fmt.Println("")
 
 	if err := godotenv.Load(); err != nil {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
@@ -41,10 +44,10 @@ func main() {
 	}
 
 	fmt.Println("✓ GLOO_CLIENT_ID loaded")
-	fmt.Println("✓ GLOO_CLIENT_SECRET loaded\n")
+	fmt.Println("✓ GLOO_CLIENT_SECRET loaded")
 
 	// Test 1: Get access token
-	fmt.Println("Test 1: Obtaining access token...")
+	fmt.Println("\nTest 1: Obtaining access token...")
 	tokenData, err := auth.GetAccessToken()
 	if err != nil {
 		fail(fmt.Sprintf("GetAccessToken failed: %v", err))
@@ -104,7 +107,7 @@ func main() {
 	fmt.Printf("✓ Content-Type: %s\n", contentType)
 
 	fmt.Println("\n✅ Auth and streaming endpoint verified.")
-	fmt.Println("   Next: Making the Streaming Request\n")
+	fmt.Println("   Next: Making the Streaming Request")
 }
 
 func fail(msg string) {
@@ -113,6 +116,6 @@ func fail(msg string) {
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")
 	fmt.Println("   - Verify credentials at https://platform.ai.gloo.com/studio/manage-api-credentials")
-	fmt.Println("   - Ensure you have internet connectivity\n")
+	fmt.Println("   - Ensure you have internet connectivity")
 	os.Exit(1)
 }

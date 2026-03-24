@@ -6,7 +6,13 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "proxy": "node src/proxy/server.js"
+    "proxy": "node src/proxy/server.js",
+    "test:step1": "node tests/step1-auth.test.js",
+    "test:step2": "node tests/step2-sse-parsing.test.js",
+    "test:step3": "node tests/step3-accumulation.test.js",
+    "test:step4": "node tests/step4-error-handling.test.js",
+    "test:step5": "node tests/step5-renderer.test.js",
+    "test:step6": "node tests/step6-proxy.test.js"
   },
   "dependencies": {
     "dotenv": ">=16.0.0",

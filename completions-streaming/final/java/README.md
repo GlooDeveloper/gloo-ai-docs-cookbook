@@ -5,26 +5,20 @@ Java 21 implementation of real-time SSE streaming with the Gloo AI completions A
 ## Setup
 
 ```bash
-mvn package
 cp .env.example .env
-# Edit .env with your credentials (or export env vars)
+# Edit .env with your credentials
 ```
 
 ## Run
 
 ```bash
-# Set credentials in environment
-export GLOO_CLIENT_ID=your_client_id
-export GLOO_CLIENT_SECRET=your_client_secret
-
-# Run the fat jar
-java -jar target/completions-streaming-1.0.0.jar
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.Main
 ```
 
 ## Proxy server (Track B)
 
 ```bash
-java -cp target/completions-streaming-1.0.0.jar com.gloo.streaming.proxy.ProxyServer
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.proxy.ProxyServer
 ```
 
 Once running, send requests to `http://localhost:3001/api/stream` — the proxy relays them to the Gloo AI API and streams the SSE response back to the caller.

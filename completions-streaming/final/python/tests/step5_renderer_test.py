@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-CLI Typing-Effect Renderer Test
+Typing-Effect Renderer Test
 
 Validates that:
 - render_stream_to_terminal() prints tokens without newlines as they arrive
@@ -22,7 +22,7 @@ load_dotenv()
 
 
 def test_step5():
-    print("🧪 Testing: CLI Typing-Effect Renderer\n")
+    print("🧪 Testing: Typing-Effect Renderer\n")
 
     client_id = os.getenv("GLOO_CLIENT_ID")
     if not client_id:

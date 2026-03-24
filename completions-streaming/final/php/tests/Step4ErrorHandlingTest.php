@@ -100,7 +100,7 @@ function testStep4(): void
         }
 
         echo "\n✅ Two-phase error handling working.\n";
-        echo "   Next: Browser-Based Streaming\n\n";
+        echo "   Next: Typing-Effect Renderer\n\n";
 
     } catch (Throwable $e) {
         echo "\n❌ Streaming Error Handling Test Failed\n";

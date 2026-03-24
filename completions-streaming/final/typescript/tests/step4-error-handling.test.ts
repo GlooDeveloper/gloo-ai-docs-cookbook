@@ -87,7 +87,7 @@ async function testStep4(): Promise<void> {
     }
 
     console.log("\n✅ Two-phase error handling working.");
-    console.log("   Next: Browser-Based Streaming\n");
+    console.log("   Next: Typing-Effect Renderer\n");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("\n❌ Streaming Error Handling Test Failed");

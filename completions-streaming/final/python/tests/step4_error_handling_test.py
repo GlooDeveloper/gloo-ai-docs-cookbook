@@ -39,7 +39,7 @@ def test_step4():
             print(f"✓ 401 raises: {e}")
 
         # Test 2: 403 raises auth/permissions error
-        print("\nTest 2: handle_stream_error(403) — insufficient permissions...")
+        print("Test 2: handle_stream_error(403) — insufficient permissions...")
         try:
             handle_stream_error(403, "Forbidden")
             print("❌ Should have raised an exception for 403")
@@ -50,7 +50,7 @@ def test_step4():
             print(f"✓ 403 raises: {e}")
 
         # Test 3: 429 raises rate limit error
-        print("\nTest 3: handle_stream_error(429) — rate limit...")
+        print("Test 3: handle_stream_error(429) — rate limit...")
         try:
             handle_stream_error(429, "Too Many Requests")
             print("❌ Should have raised an exception for 429")
@@ -61,7 +61,7 @@ def test_step4():
             print(f"✓ 429 raises: {e}")
 
         # Test 4: 200 does NOT raise
-        print("\nTest 4: handle_stream_error(200) — success, no exception...")
+        print("Test 4: handle_stream_error(200) — success, no exception...")
         try:
             handle_stream_error(200, "")
             print("✓ 200 OK — no exception raised")
@@ -69,8 +69,19 @@ def test_step4():
             print(f"❌ Should not raise for 200, got: {e}")
             sys.exit(1)
 
-        # Test 5: Bad credentials → pre-stream error (live test)
-        print("\nTest 5: Bad credentials → authentication error before reading stream...")
+        # Test 5: 500 raises generic API error with body
+        print("Test 5: handle_stream_error(500) — generic API error...")
+        try:
+            handle_stream_error(500, "Internal Server Error")
+            print("❌ Should have raised an exception for 500")
+            sys.exit(1)
+        except Exception as e:
+            if "500" not in str(e):
+                raise Exception(f"Expected 500 in error message, got: {e}")
+            print(f"✓ 500 throws with body: {e}")
+
+        # Test 6: Bad credentials → pre-stream error (live test)
+        print("\nTest 6: Bad credentials → authentication error before reading stream...")
         try:
             stream_completion("Hello", "invalid-token-xyz")
             print("❌ Should have raised an exception for invalid token")
@@ -84,7 +95,7 @@ def test_step4():
                 print(f"✓ Bad credentials caught: {msg[:100]}")
 
         print("\n✅ Error handling working correctly.")
-        print("   Next: Browser-Based Streaming\n")
+        print("   Next: Typing-Effect Renderer\n")
 
     except Exception as error:
         print("\n❌ Streaming Error Handling Test Failed")
