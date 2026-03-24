@@ -44,10 +44,12 @@ def test_step5():
             def __init__(self, real_stdout):
                 super().__init__()
                 self._real = real_stdout
+
             def write(self, s):
                 self._real.write(s)
                 self._real.flush()
                 return super().write(s)
+
             def flush(self):
                 self._real.flush()
                 super().flush()
@@ -55,9 +57,7 @@ def test_step5():
         tee = _TeeStream(sys.stdout)
         orig_stdout = sys.stdout
         sys.stdout = tee
-        render_stream_to_terminal(
-            "Reply with exactly: Hello streaming world", token
-        )
+        render_stream_to_terminal("Reply with exactly: Hello streaming world", token)
         sys.stdout = orig_stdout
         output = tee.getvalue()
 
@@ -70,9 +70,12 @@ def test_step5():
         print("✓ Response label printed")
 
         import re
+
         match = re.search(r"\[(\d+) tokens, finish_reason=(\w+)\]", output)
         if not match:
-            raise Exception("Output missing token summary '[N tokens, finish_reason=X]'")
+            raise Exception(
+                "Output missing token summary '[N tokens, finish_reason=X]'"
+            )
 
         token_count = int(match.group(1))
         finish_reason_out = match.group(2)
@@ -80,7 +83,9 @@ def test_step5():
         if token_count == 0:
             raise Exception("token count is 0 — no tokens were streamed")
 
-        print(f"✓ Token summary found: {token_count} tokens, finish_reason={finish_reason_out}")
+        print(
+            f"✓ Token summary found: {token_count} tokens, finish_reason={finish_reason_out}"
+        )
 
         print("\n✅ Typing-effect renderer working.")
         print("   Next: Server-Side Proxy\n")

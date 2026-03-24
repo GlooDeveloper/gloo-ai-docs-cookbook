@@ -81,14 +81,21 @@ def test_step4():
             print(f"✓ 500 throws with body: {e}")
 
         # Test 6: Bad credentials → pre-stream error (live test)
-        print("\nTest 6: Bad credentials → authentication error before reading stream...")
+        print(
+            "\nTest 6: Bad credentials → authentication error before reading stream..."
+        )
         try:
             stream_completion("Hello", "invalid-token-xyz")
             print("❌ Should have raised an exception for invalid token")
             sys.exit(1)
         except Exception as e:
             msg = str(e)
-            if "401" in msg or "auth" in msg.lower() or "token" in msg.lower() or "invalid" in msg.lower():
+            if (
+                "401" in msg
+                or "auth" in msg.lower()
+                or "token" in msg.lower()
+                or "invalid" in msg.lower()
+            ):
                 print(f"✓ Bad credentials caught (pre-stream): {msg}")
             else:
                 # Still an exception — acceptable if it's a connection/API error

@@ -41,12 +41,15 @@ def test_step6():
 
         # Suppress Werkzeug access logs and startup banner
         import logging
+
         logging.getLogger("werkzeug").setLevel(logging.ERROR)
 
         # Start the Flask app in a background thread
         print(f"Test 1: Starting proxy server on port {port}...")
         server_thread = threading.Thread(
-            target=lambda: app.run(host="127.0.0.1", port=port, debug=False, use_reloader=False),
+            target=lambda: app.run(
+                host="127.0.0.1", port=port, debug=False, use_reloader=False
+            ),
             daemon=True,
         )
         server_thread.start()
@@ -64,7 +67,9 @@ def test_step6():
             time.sleep(0.2)
 
         if not ready:
-            raise Exception(f"Proxy server did not start on port {port} within 4 seconds")
+            raise Exception(
+                f"Proxy server did not start on port {port} within 4 seconds"
+            )
 
         print(f"✓ Proxy server running at http://localhost:{port}")
 
@@ -82,7 +87,10 @@ def test_step6():
         print("\nTest 3: POST /api/stream — Content-Type header...")
         with requests.post(
             f"http://127.0.0.1:{port}/api/stream",
-            json={"messages": [{"role": "user", "content": "Hi"}], "auto_routing": True},
+            json={
+                "messages": [{"role": "user", "content": "Hi"}],
+                "auto_routing": True,
+            },
             stream=True,
             timeout=15,
         ) as r:
@@ -108,7 +116,11 @@ def test_step6():
                     continue
                 try:
                     parsed = json.loads(payload)
-                    reason = parsed.get("choices", [{}])[0].get("finish_reason") if parsed.get("choices") else None
+                    reason = (
+                        parsed.get("choices", [{}])[0].get("finish_reason")
+                        if parsed.get("choices")
+                        else None
+                    )
                     if reason is not None:
                         stream_terminated = True
                         finish_reason = reason
@@ -117,7 +129,9 @@ def test_step6():
                     pass
                 data_lines += 1
 
-            print(f"✓ All lines have 'data: ' prefix ({data_lines} data chunks received)")
+            print(
+                f"✓ All lines have 'data: ' prefix ({data_lines} data chunks received)"
+            )
 
             if not stream_terminated:
                 print("⚠️  Stream ended without a finish_reason chunk")
@@ -138,13 +152,17 @@ def test_step6():
             print(f"✓ Access-Control-Allow-Origin: {cors_header}")
 
         print("\n✅ Proxy server relaying SSE end-to-end.")
-        print("   Track B complete: credentials stay server-side, client receives SSE.\n")
+        print(
+            "   Track B complete: credentials stay server-side, client receives SSE.\n"
+        )
 
     except Exception as error:
         print("\n❌ Server-Side Proxy Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
-        print("   - Check that Flask and requests are installed: pip install flask requests")
+        print(
+            "   - Check that Flask and requests are installed: pip install flask requests"
+        )
         print(f"   - Verify port {os.getenv('PROXY_PORT', 3001)} is not already in use")
         print("   - Check proxy/server.py imports ensure_valid_token correctly")
         print("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n")

@@ -51,7 +51,9 @@ def test_step2():
         print("✓ data: [DONE] → '[DONE]'")
 
         print("Test 4: parse_sse_line — valid JSON data line...")
-        sample = 'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}'
+        sample = (
+            'data: {"choices":[{"delta":{"content":"Hello"},"finish_reason":null}]}'
+        )
         result = parse_sse_line(sample)
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         assert result["choices"][0]["delta"]["content"] == "Hello"
@@ -64,9 +66,7 @@ def test_step2():
 
         # Test 6: Live streaming connection
         print("Test 6: make_streaming_request() — live connection...")
-        response = make_streaming_request(
-            "Say exactly: 'Stream test OK'", token
-        )
+        response = make_streaming_request("Say exactly: 'Stream test OK'", token)
 
         if response.status_code != 200:
             raise Exception(f"Expected 200, got {response.status_code}")
@@ -84,7 +84,11 @@ def test_step2():
             lines_seen += 1
             chunk = parse_sse_line(raw_line)
             if isinstance(chunk, dict):
-                reason = chunk.get("choices", [{}])[0].get("finish_reason") if chunk.get("choices") else None
+                reason = (
+                    chunk.get("choices", [{}])[0].get("finish_reason")
+                    if chunk.get("choices")
+                    else None
+                )
                 if reason is not None:
                     stream_terminated = True
                     finish_reason = reason

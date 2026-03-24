@@ -55,7 +55,9 @@ def test_step1():
         token2 = ensure_valid_token()
 
         if token1 != token2:
-            raise Exception("ensure_valid_token returned different tokens on consecutive calls")
+            raise Exception(
+                "ensure_valid_token returned different tokens on consecutive calls"
+            )
 
         print("✓ Token cached correctly — same token returned on consecutive calls")
 
@@ -81,7 +83,9 @@ def test_step1():
             timeout=15,
         ) as resp:
             if resp.status_code != 200:
-                raise Exception(f"Expected 200, got {resp.status_code}: {resp.text[:200]}")
+                raise Exception(
+                    f"Expected 200, got {resp.status_code}: {resp.text[:200]}"
+                )
 
             content_type = resp.headers.get("Content-Type", "")
             if "text/event-stream" not in content_type:
@@ -100,7 +104,9 @@ def test_step1():
         print(f"Error: {error}")
         print("\n💡 Hints:")
         print("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")
-        print("   - Verify your credentials at https://platform.ai.gloo.com/studio/manage-api-credentials")
+        print(
+            "   - Verify your credentials at https://platform.ai.gloo.com/studio/manage-api-credentials"
+        )
         print("   - Ensure you have internet connectivity\n")
         sys.exit(1)
 

@@ -89,7 +89,9 @@ def test_step3():
             print("⚠️  Empty response text — check accumulation loop")
 
         if result["token_count"] == 0:
-            raise Exception("token_count is 0 — extract_token_content may not be working")
+            raise Exception(
+                "token_count is 0 — extract_token_content may not be working"
+            )
 
         if result["duration_ms"] <= 0:
             raise Exception("duration_ms is 0 — timing not tracked")
@@ -106,7 +108,9 @@ def test_step3():
         print("\n💡 Hints:")
         print("   - extract_token_content: use chunk.get('choices', [])[0] pattern")
         print("   - delta.get('content') returns None if key missing — use 'or \"\"'")
-        print("   - stream_completion: increment token_count only when content is non-empty")
+        print(
+            "   - stream_completion: increment token_count only when content is non-empty"
+        )
         print("   - Capture start_time = time.time() before the request\n")
         sys.exit(1)
 
