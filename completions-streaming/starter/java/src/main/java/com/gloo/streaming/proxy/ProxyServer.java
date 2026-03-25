@@ -71,17 +71,13 @@ public class ProxyServer {
         @Override
         public void handle(HttpExchange exchange) {
             // TODO: Implement the Java SSE proxy handler (Step 8):
-            // 1. Add CORS headers to exchange.getResponseHeaders()
-            // 2. Handle OPTIONS: exchange.sendResponseHeaders(204, -1) and return
-            // 3. Reject non-POST with 405
-            // 4. Set SSE headers: Content-Type: text/event-stream, Cache-Control: no-cache, X-Accel-Buffering: no
-            // 5. Call exchange.sendResponseHeaders(200, 0) — 0 means chunked transfer encoding
-            // 6. Get OutputStream out = exchange.getResponseBody()
-            // 7. Get auth token: TokenManager.ensureValidToken()
-            // 8. Read request body, merge with stream: true, POST to API_URL
-            // 9. Use BufferedReader on upstream.body() to read line by line:
-            //    a. For non-blank lines: out.write((line + "\n\n").getBytes(UTF_8)); out.flush()
-            // 10. Close out in a finally block
+            // 1. Add CORS headers and handle OPTIONS preflight requests
+            // 2. Reject non-POST requests with a 405 response
+            // 3. Set SSE response headers and send the 200 response code to begin streaming
+            // 4. Retrieve the server-side auth token and read the incoming request body
+            // 5. Forward the request upstream with stream set to true and handle non-200 upstream responses
+            // 6. Read the upstream SSE stream line by line and write each non-blank line to the client
+            // 7. Flush after each line and close the output stream in a finally block
             try { exchange.sendResponseHeaders(501, -1); } catch (Exception ignored) {}
         }
     }

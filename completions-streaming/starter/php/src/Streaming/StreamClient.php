@@ -24,11 +24,11 @@ class StreamClient
     public static function handleStreamError(int $statusCode, string $responseBody = ''): void
     {
         // TODO: Check $statusCode and throw specific exceptions (Step 6):
-        // 1. $statusCode === 401: throw new \RuntimeException("Authentication failed (401): Invalid or expired token")
-        // 2. $statusCode === 403: throw new \RuntimeException("Authorization failed (403): Insufficient permissions")
-        // 3. $statusCode === 429: throw new \RuntimeException("Rate limit exceeded (429): Too many requests")
-        // 4. $statusCode !== 200: throw new \RuntimeException("API error ($statusCode): " . substr($responseBody, 0, 200))
-        // Do NOT throw for $statusCode === 200 — that is a successful response.
+        // 1. Check if status code is 401 and throw an authentication error
+        // 2. Check if status code is 403 and throw an authorization error
+        // 3. Check if status code is 429 and throw a rate limit error
+        // 4. Check if status code is not 200, throw a generic API error that includes the response body
+        // 5. Return without throwing for status code 200 — that is a successful response
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 
@@ -46,15 +46,12 @@ class StreamClient
     public static function makeStreamingRequest(string $message, string $token, callable $writeCallback): void
     {
         // TODO: Make a streaming cURL request to the completions API (Step 2):
-        // 1. Initialize $statusCode = 0 and $headerBuffer = ''
-        // 2. Build the JSON payload: messages, auto_routing, stream: true
-        // 3. Set up cURL with CURLOPT_URL, CURLOPT_POST, CURLOPT_POSTFIELDS, Authorization header
-        // 4. Set CURLOPT_HEADERFUNCTION to capture the HTTP status code from response headers
-        // 5. Set CURLOPT_WRITEFUNCTION callback that:
-        //    a. On first data chunk: calls handleStreamError($statusCode, '') to fail fast
-        //    b. Calls $writeCallback($data) to forward each chunk
-        //    c. Returns strlen($data) to signal cURL to continue
-        // 6. Execute with curl_exec() and curl_close()
+        // 1. Build Authorization and Content-Type headers using the provided token
+        // 2. Build the request payload with the user message, auto_routing flag, and stream set to true
+        // 3. Set up a cURL handle targeting the API URL with the payload and headers
+        // 4. Set a header callback to capture the HTTP status code from the response headers
+        // 5. Set a write callback that checks the status on the first chunk, then forwards each chunk to $writeCallback
+        // 6. Execute and close the cURL handle
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 
@@ -72,10 +69,11 @@ class StreamClient
     public static function parseSseLine(string $line): mixed
     {
         // TODO: Parse one SSE text line (Step 3):
-        // 1. Return null if $line is blank or does not start with 'data: '
-        // 2. Strip the 'data: ' prefix (6 chars): $data = substr($line, 6)
-        // 3. Return '[DONE]' if trim($data) === '[DONE]'
-        // 4. Try json_decode($data, true); return null on parse failure
+        // 1. Return null if the line is blank or does not start with 'data: '
+        // 2. Extract the data payload by stripping the 'data: ' prefix
+        // 3. Return '[DONE]' if the stripped data equals '[DONE]'
+        // 4. Try to parse the data as JSON and return the result
+        // 5. Return null on parse failure
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 
@@ -88,9 +86,9 @@ class StreamClient
     public static function extractTokenContent(array $chunk): string
     {
         // TODO: Extract delta content from a parsed SSE chunk (Step 4):
-        // 1. Get $choices = $chunk['choices'] ?? [] — return '' if empty
-        // 2. Get $delta = $choices[0]['delta'] ?? []
-        // 3. Return $delta['content'] ?? ''
+        // 1. Get the choices array from the chunk, return empty string if absent or empty
+        // 2. Get the delta array from the first choice
+        // 3. Return the content value from delta, or empty string if absent or null
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 
@@ -104,16 +102,13 @@ class StreamClient
     public static function streamCompletion(string $message, string $token): array
     {
         // TODO: Implement the accumulation loop (Step 5):
-        // 1. Record $startMs = (int)(microtime(true) * 1000)
-        // 2. Initialize $fullText = '', $tokenCount = 0, $finishReason = 'unknown'
-        // 3. Define a $writeCallback closure that:
-        //    a. Splits incoming $data on "\n" and calls parseSseLine() on each line
-        //    b. Skips null; breaks on '[DONE]'
-        //    c. Calls extractTokenContent() — appends to $fullText, increments $tokenCount
-        //    d. Captures $choices[0]['finish_reason'] when non-null
-        // 4. Call makeStreamingRequest($message, $token, $writeCallback)
-        // 5. Return ['text' => $fullText, 'token_count' => $tokenCount,
-        //            'duration_ms' => (int)(microtime(true) * 1000) - $startMs, 'finish_reason' => $finishReason]
+        // 1. Record the start time and initialize accumulators for the full text, token count, and finish reason
+        // 2. Define a write callback closure that receives raw data chunks from the stream
+        // 3. Inside the callback, split each chunk into lines and parse each with parseSseLine
+        // 4. Skip non-content lines; stop processing when the stream termination signal is received
+        // 5. Extract content from each chunk, append to the full text, and update token count and finish reason
+        // 6. Call makeStreamingRequest with the message, token, and callback to execute the stream
+        // 7. Compute elapsed duration and return an array with text, token_count, duration_ms, and finish_reason
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 }

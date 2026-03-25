@@ -39,11 +39,11 @@ type SSEChunk struct {
 // error for 401, 403, 429, and other non-200 statuses. Returns nil on 200.
 func HandleStreamError(statusCode int, responseBody string) error {
 	// TODO: Check statusCode and return specific errors (Step 6):
-	// 1. statusCode == 401: return fmt.Errorf("authentication failed (401): invalid or expired token")
-	// 2. statusCode == 403: return fmt.Errorf("authorization failed (403): insufficient permissions")
-	// 3. statusCode == 429: return fmt.Errorf("rate limit exceeded (429): too many requests")
-	// 4. statusCode != 200: return fmt.Errorf("API error (%d): %s", statusCode, responseBody[:min(len(responseBody), 200)])
-	// Return nil for statusCode == 200 — that is a successful response.
+	// 1. Check if status code is 401 and return an authentication error
+	// 2. Check if status code is 403 and return an authorization error
+	// 3. Check if status code is 429 and return a rate limit error
+	// 4. Check if status code is not 200, return a generic API error that includes the response body
+	// 5. Return nil for status code 200 — that is a successful response
 	return fmt.Errorf("not implemented - see TODO comments")
 }
 
@@ -53,12 +53,11 @@ func HandleStreamError(statusCode int, responseBody string) error {
 // responsible for closing the body.
 func MakeStreamingRequest(message, token string) (*http.Response, error) {
 	// TODO: Make a streaming POST request to the completions API (Step 2):
-	// 1. Build JSON payload: messages, auto_routing: true, stream: true
-	// 2. Create http.NewRequest("POST", APIURL, bytes.NewReader(payloadBytes))
-	// 3. Set headers: Authorization: Bearer <token>, Content-Type: application/json
-	// 4. Execute with http.DefaultClient.Do(req)
-	// 5. Call HandleStreamError(resp.StatusCode, ...) to fail fast on non-200
-	// 6. Return the *http.Response (body not yet read)
+	// 1. Build Authorization and Content-Type headers using the provided token
+	// 2. Build the request payload with the user message, auto_routing flag, and stream set to true
+	// 3. Create and send a POST request to the API URL
+	// 4. Call HandleStreamError to fail fast before reading the response body
+	// 5. Return the raw *http.Response for the caller to iterate
 	return nil, fmt.Errorf("not implemented - see TODO comments")
 }
 
@@ -74,10 +73,12 @@ func MakeStreamingRequest(message, token string) (*http.Response, error) {
 //   - a *SSEChunk for valid data lines
 func ParseSSELine(line string) any {
 	// TODO: Parse one SSE text line (Step 3):
-	// 1. Return nil if line is blank or does not start with "data: "
-	// 2. Strip the "data: " prefix: data := line[6:]
-	// 3. Return "[DONE]" if strings.TrimSpace(data) == "[DONE]"
-	// 4. Try json.Unmarshal into an SSEChunk; return nil on error
+	// 1. Check if line is empty or whitespace only, return nil
+	// 2. Check if line starts with "data: ", return nil if not
+	// 3. Extract the data payload by stripping the "data: " prefix
+	// 4. Check if the stripped data equals "[DONE]" and return it
+	// 5. Try to unmarshal the data into an SSEChunk and return it
+	// 6. Catch unmarshal errors and return nil
 	return nil
 }
 
@@ -87,9 +88,9 @@ func ParseSSELine(line string) any {
 // reason-only deltas).
 func ExtractTokenContent(chunk *SSEChunk) string {
 	// TODO: Extract delta content from a parsed SSE chunk (Step 4):
-	// 1. Return "" if chunk is nil or chunk.Choices is empty
-	// 2. Access chunk.Choices[0].Delta.Content
-	// 3. Return the content string (empty string if nil pointer)
+	// 1. Return empty string if chunk is nil or the Choices slice is empty
+	// 2. Access the Delta field of the first choice
+	// 3. Return the Content value, or empty string if the pointer is nil
 	return ""
 }
 
@@ -101,15 +102,11 @@ func ExtractTokenContent(chunk *SSEChunk) string {
 // the full response text.
 func StreamCompletion(message, token string) (*StreamResult, error) {
 	// TODO: Implement the accumulation loop (Step 5):
-	// 1. Record start := time.Now()
-	// 2. Call MakeStreamingRequest(message, token) to open the stream
-	// 3. Defer resp.Body.Close()
-	// 4. Initialize fullText strings.Builder, tokenCount int, finishReason = "unknown"
-	// 5. Use bufio.NewScanner(resp.Body) to read line by line:
-	//    a. chunk := ParseSSELine(scanner.Text()) — skip nil, break on "[DONE]"
-	//    b. ExtractTokenContent — append to fullText, increment tokenCount
-	//    c. Capture chunk.Choices[0].FinishReason when non-empty
-	// 6. Check scanner.Err() for mid-stream errors
-	// 7. Return &StreamResult{Text, TokenCount, DurationMs, FinishReason}, nil
+	// 1. Record the start time and open the stream by calling MakeStreamingRequest
+	// 2. Defer closing the response body and initialize accumulators for text, token count, and finish reason
+	// 3. Use a bufio.Scanner to read the response body line by line
+	// 4. Parse each line with ParseSSELine, skipping non-content lines and stopping at the termination signal
+	// 5. Extract content from each chunk, append to the text buffer, and update token count and finish reason
+	// 6. Check for scanner errors after the loop and return a populated StreamResult
 	return nil, fmt.Errorf("not implemented - see TODO comments")
 }

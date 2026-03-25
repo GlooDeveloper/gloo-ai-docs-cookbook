@@ -29,17 +29,12 @@ class Server
     public static function handle(): void
     {
         // TODO: Implement the PHP SSE proxy handler (Step 8):
-        // 1. Set SSE response headers: Content-Type: text/event-stream, Cache-Control: no-cache,
-        //    X-Accel-Buffering: no, Access-Control-Allow-Origin: $corsOrigin
-        // 2. Handle OPTIONS preflight: send 204 and exit
-        // 3. Reject non-POST with 405 and exit
-        // 4. Parse request body: $body = json_decode(file_get_contents('php://input'), true) ?? []
-        // 5. Add stream: true to body payload
-        // 6. Get auth token: $token = TokenManager::ensureValidToken()
-        // 7. Set up cURL with CURLOPT_WRITEFUNCTION that for each $data chunk:
-        //    a. Splits on "\n" and forwards non-blank lines as SSE frames: echo "$line\n\n"
-        //    b. Calls ob_flush() + flush() after each chunk
-        // 8. Execute curl_exec() and curl_close()
+        // 1. Set CORS and SSE response headers, then handle OPTIONS preflight requests
+        // 2. Reject non-POST requests with a 405 response
+        // 3. Read and parse the incoming request body, adding stream set to true
+        // 4. Retrieve the server-side auth token
+        // 5. Set up a cURL write callback that forwards each non-blank SSE line to the client and flushes
+        // 6. Execute and close the cURL handle
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 }

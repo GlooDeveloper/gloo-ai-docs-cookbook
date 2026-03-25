@@ -34,17 +34,15 @@ func Handler() http.Handler {
 //   - X-Accel-Buffering: no
 func streamProxy(w http.ResponseWriter, r *http.Request) {
 	// TODO: Implement the Go SSE proxy handler (Step 8):
-	// 1. Set SSE response headers: Content-Type: text/event-stream, Cache-Control: no-cache,
-	//    X-Accel-Buffering: no
-	// 2. Get http.Flusher from w to enable streaming: flusher, ok := w.(http.Flusher)
-	// 3. Reject non-POST requests with 405
-	// 4. Read and parse request body JSON
-	// 5. Get auth token: token, err := auth.EnsureValidToken()
-	// 6. Add stream: true to the upstream payload
-	// 7. POST to API_URL with Authorization header
-	// 8. Use bufio.NewScanner(upstreamResp.Body) to read line by line:
-	//    a. For non-blank lines: fmt.Fprintf(w, "%s\n\n", line); flusher.Flush()
-	// 9. Handle errors by writing SSE error frames
+	// 1. Configure CORS headers based on the PROXY_CORS_ORIGIN env var, handling OPTIONS requests
+	// 2. Reject non-POST requests with a 405 Method Not Allowed error
+	// 3. Set SSE-specific HTTP response headers (Content-Type, Cache-Control, X-Accel-Buffering)
+	// 4. Verify the ResponseWriter supports the http.Flusher interface
+	// 5. Ensure a valid auth token is available via auth.EnsureValidToken()
+	// 6. Read and parse the incoming JSON request body, ensuring the 'stream' flag is set to true
+	// 7. Construct and send the upstream POST request to the Gloo AI API with the token and payload
+	// 8. Handle non-200 upstream responses by flushing an error data event to the client
+	// 9. Read the upstream response body line-by-line using a bufio.Scanner and flush each non-empty line to the client
 	fmt.Fprintf(w, "data: {\"error\": \"not implemented\"}\n\n")
 }
 

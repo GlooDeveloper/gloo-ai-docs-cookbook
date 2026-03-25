@@ -18,11 +18,11 @@ const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
  */
 export function handleStreamError(statusCode: number, responseBody = ""): void {
   // TODO: Check statusCode and throw specific errors (Step 6):
-  // 1. statusCode === 401: throw new Error("Authentication failed (401): Invalid or expired token")
-  // 2. statusCode === 403: throw new Error("Authorization failed (403): Insufficient permissions")
-  // 3. statusCode === 429: throw new Error("Rate limit exceeded (429): Too many requests")
-  // 4. statusCode !== 200: throw new Error(`API error (${statusCode}): ${String(responseBody).slice(0, 200)}`)
-  // Do NOT throw for statusCode === 200 — that is a successful response.
+  // 1. Check if status code is 401 and throw an authentication error
+  // 2. Check if status code is 403 and throw an authorization error
+  // 3. Check if status code is 429 and throw a rate limit error
+  // 4. Check if status code is not 200, throw a generic API error that includes the response body
+  // 5. Return without throwing for status code 200 — that is a successful response
   throw new Error("Not implemented - see TODO comments");
 }
 
@@ -36,10 +36,11 @@ export function handleStreamError(statusCode: number, responseBody = ""): void {
  */
 export async function makeStreamingRequest(message: string, token: string): Promise<Response> {
   // TODO: Make a streaming POST request to the completions API (Step 2):
-  // 1. Call fetch(API_URL, { method: "POST", headers: { Authorization: `Bearer ${token}`, ... }, body: JSON.stringify({...}) })
-  // 2. Include in the body: messages, auto_routing: true, stream: true
-  // 3. If !response.ok: read body text and call handleStreamError(response.status, body)
-  // 4. Return the raw Response object
+  // 1. Build Authorization and Content-Type headers using the provided token
+  // 2. Build the request payload with the user message, auto_routing flag, and stream set to true
+  // 3. Send a POST request to the API URL using fetch
+  // 4. Check the response status and call handleStreamError to fail fast before reading the body
+  // 5. Return the raw Response object for the caller to iterate
   throw new Error("Not implemented - see TODO comments");
 }
 
@@ -56,10 +57,12 @@ export async function makeStreamingRequest(message: string, token: string): Prom
  */
 export function parseSseLine(line: string): null | "[DONE]" | SSEChunk {
   // TODO: Parse one SSE text line (Step 3):
-  // 1. Return null if line is blank or does not start with "data: "
-  // 2. Strip the "data: " prefix (6 chars): const data = line.slice(6)
-  // 3. Return "[DONE]" if data.trim() === "[DONE]"
-  // 4. Try JSON.parse(data) as SSEChunk; return null on parse error
+  // 1. Check if line is empty or whitespace only, return null
+  // 2. Check if line starts with "data: ", return null if not
+  // 3. Extract the data payload by stripping the "data: " prefix
+  // 4. Check if the stripped data equals "[DONE]" and return it
+  // 5. Try to parse the data as JSON and return the result
+  // 6. Catch parse errors and return null
   throw new Error("Not implemented - see TODO comments");
 }
 
@@ -71,10 +74,11 @@ export function parseSseLine(line: string): null | "[DONE]" | SSEChunk {
  */
 export function extractTokenContent(chunk: SSEChunk): string {
   // TODO: Extract delta content from a parsed SSE chunk (Step 4):
-  // 1. Get choices = chunk?.choices — return "" if falsy or empty
-  // 2. Get content = choices[0]?.delta?.content
-  // 3. Return content || ""
-  // Wrap in try/catch and return "" on any error
+  // 1. Start a try block for safe navigation
+  // 2. Get the choices array from the chunk, return empty string if absent or empty
+  // 3. Get the delta object from the first choice
+  // 4. Return the content value from delta, or empty string if absent or null
+  // 5. Catch any errors and return empty string
   throw new Error("Not implemented - see TODO comments");
 }
 
@@ -87,16 +91,12 @@ export function extractTokenContent(chunk: SSEChunk): string {
  */
 export async function streamCompletion(message: string, token: string): Promise<StreamResult> {
   // TODO: Implement the accumulation loop (Step 5):
-  // 1. Record startTime = Date.now()
-  // 2. Call makeStreamingRequest(message, token)
-  // 3. Initialize fullText = "", tokenCount = 0, finishReason = "unknown"
-  // 4. Set up a ReadableStream reader: response.body!.getReader()
-  // 5. Use a TextDecoder and a buffer string to reassemble lines across chunks
-  // 6. In a loop: read chunks, split on "\n", parse each line with parseSseLine
-  //    a. Skip null chunks; break on "[DONE]"
-  //    b. extractTokenContent — append to fullText, increment tokenCount
-  //    c. Capture choices[0].finish_reason when non-null
-  // 7. Call reader.releaseLock() in a finally block
-  // 8. Return { text: fullText, token_count: tokenCount, duration_ms: Date.now() - startTime, finish_reason: finishReason }
+  // 1. Record the start time and open the stream by calling makeStreamingRequest
+  // 2. Initialize accumulators for the full text, token count, and finish reason
+  // 3. Set up a ReadableStream reader, TextDecoder, and line buffer for reassembling chunks
+  // 4. Loop: read chunks, decode, split into lines, and parse each with parseSseLine
+  // 5. Skip non-content lines; break when the stream termination signal is received
+  // 6. Extract content from each chunk, append to the full text, and update token count and finish reason
+  // 7. Release the reader lock in a finally block and return a StreamResult object
   throw new Error("Not implemented - see TODO comments");
 }

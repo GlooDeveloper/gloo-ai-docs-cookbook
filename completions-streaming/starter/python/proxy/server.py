@@ -38,16 +38,11 @@ def add_cors_headers(response):
 @app.route("/api/stream", methods=["POST", "OPTIONS"])
 def stream_proxy():
     # TODO: Implement the Flask SSE proxy handler (Step 8):
-    # 1. Handle OPTIONS preflight: return Response(status=204)
-    # 2. Capture request JSON before streaming: request_data = request.get_json() or {}
-    # 3. Define a generate() inner function that:
-    #    a. Calls ensure_valid_token() to get the server-side auth token
-    #    b. POSTs to API_URL with {**request_data, "stream": True} using requests.post(..., stream=True)
-    #    c. If resp.status_code != 200: yield error SSE frame and return
-    #    d. For each line in resp.iter_lines(): yield f"{line.decode('utf-8')}\n\n"
-    #    e. Wraps everything in try/except to yield errors as SSE frames
-    # 4. Return Response(generate(), mimetype="text/event-stream",
-    #        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
+    # 1. Handle OPTIONS preflight requests and capture the incoming JSON body
+    # 2. Define a generate() inner function that retrieves the server-side auth token
+    # 3. Inside generate(), send the upstream POST request with stream enabled and handle non-200 responses
+    # 4. Yield each SSE line from the upstream response as it arrives, wrapping in try/except for errors
+    # 5. Return a Flask Response with the generator and the required SSE headers
     raise NotImplementedError("Not implemented - see TODO comments")
 
 

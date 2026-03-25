@@ -14,13 +14,9 @@ from streaming.stream_client import (
 
 def render_stream_to_terminal(message: str, token: str) -> None:
     # TODO: Implement the typing-effect terminal renderer (Step 7):
-    # 1. Print the prompt: print(f"Prompt: {message}\n")
-    # 2. Print the response label without newline: print("Response: ", end="", flush=True)
-    # 3. Call make_streaming_request(message, token) to open the stream
-    # 4. Initialize total_tokens = 0, finish_reason = "unknown"
-    # 5. Iterate response.iter_lines(decode_unicode=True):
-    #    a. Parse with parse_sse_line — skip None, break on "[DONE]"
-    #    b. Extract with extract_token_content — print immediately: print(content, end="", flush=True)
-    #    c. Increment total_tokens, capture finish_reason
-    # 6. Print final newline and summary: print(f"\n[{total_tokens} tokens, finish_reason={finish_reason}]")
+    # 1. Print the prompt header and open the streaming request, initializing tracking variables
+    # 2. Iterate over incoming SSE lines, parsing each and breaking on the stream termination signal
+    # 3. Extract content from valid chunks and write each token immediately to stdout without buffering
+    # 4. Track the total token count and capture the finish reason from the final chunk
+    # 5. Print a final newline followed by the token count and finish reason summary
     raise NotImplementedError("Not implemented - see TODO comments")

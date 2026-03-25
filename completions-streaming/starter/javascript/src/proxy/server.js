@@ -37,16 +37,11 @@ app.use((req, res, next) => {
  */
 app.post("/api/stream", async (req, res) => {
   // TODO: Implement the Express SSE proxy handler (Step 8):
-  // 1. Set SSE response headers: Content-Type: text/event-stream, Cache-Control: no-cache,
-  //    X-Accel-Buffering: no, Connection: keep-alive
-  // 2. Call ensureValidToken() to get the server-side auth token
-  // 3. Build payload: { ...req.body, stream: true }
-  // 4. fetch(API_URL, { method: "POST", headers: { Authorization: `Bearer ${token}`, ... }, body: JSON.stringify(payload) })
-  // 5. If !upstream.ok: write SSE error frame and call res.end(); return
-  // 6. Set up upstream.body.getReader() + TextDecoder
-  // 7. Loop: read chunks, decode, split on "\n", for non-blank lines: res.write(`${line}\n\n`)
-  // 8. Call reader.releaseLock() after loop
-  // 9. Wrap in try/catch to write SSE error frames; call res.end() in finally
+  // 1. Set SSE response headers and retrieve the server-side auth token
+  // 2. Build the upstream payload with stream set to true and send the POST request to the API
+  // 3. Handle non-200 upstream responses by writing an error SSE frame and ending the response
+  // 4. Set up a ReadableStream reader and loop to read, decode, and forward each chunk line by line
+  // 5. Write each non-blank line as an SSE frame, handling errors and releasing the reader in finally
   res.write('data: {"error": "Not implemented - see TODO comments"}\n\n');
   res.end();
 });

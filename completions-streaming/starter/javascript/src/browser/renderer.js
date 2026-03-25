@@ -19,14 +19,10 @@ import { makeStreamingRequest, parseSseLine, extractTokenContent } from "../stre
  */
 export async function renderStreamToTerminal(message, token) {
   // TODO: Implement the typing-effect terminal renderer (Step 7):
-  // 1. Write the prompt: process.stdout.write(`Prompt: ${message}\n\nResponse: `)
-  // 2. Call makeStreamingRequest(message, token) to open the stream
-  // 3. Set up ReadableStream reader + TextDecoder + buffer string
-  // 4. Loop: read chunks, split on "\n", parse with parseSseLine
-  //    a. Skip null; break on "[DONE]"
-  //    b. extractTokenContent — write immediately: process.stdout.write(content)
-  //    c. Track totalTokens and finishReason
-  // 5. Release reader lock in finally block
-  // 6. Write summary: process.stdout.write(`\n\n[${totalTokens} tokens, finish_reason=${finishReason}]\n`)
+  // 1. Print the initial prompt, open the streaming request, and initialize the reader, decoder, and tracking variables
+  // 2. Start a try...finally block with a loop to continuously read and decode chunks into a line buffer
+  // 3. Split the buffer into lines (saving the incomplete last line), parse each complete SSE line, and break on the stream end signal
+  // 4. Extract content from valid chunks, write it directly to process.stdout, and update token count and finish reason
+  // 5. Ensure the reader lock is released in the finally block, then print the final summary line
   throw new Error("Not implemented - see TODO comments");
 }

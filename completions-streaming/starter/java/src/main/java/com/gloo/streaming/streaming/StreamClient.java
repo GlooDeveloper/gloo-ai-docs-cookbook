@@ -44,11 +44,11 @@ public class StreamClient {
      */
     public static void handleStreamError(int statusCode, String responseBody) {
         // TODO: Check statusCode and throw specific exceptions (Step 6):
-        // 1. statusCode == 401: throw new RuntimeException("Authentication failed (401): Invalid or expired token")
-        // 2. statusCode == 403: throw new RuntimeException("Authorization failed (403): Insufficient permissions")
-        // 3. statusCode == 429: throw new RuntimeException("Rate limit exceeded (429): Too many requests")
-        // 4. statusCode != 200: throw new RuntimeException("API error (" + statusCode + "): " + responseBody.substring(0, Math.min(200, responseBody.length())))
-        // Do NOT throw for statusCode == 200 — that is a successful response.
+        // 1. Check if status code is 401 and throw an authentication error
+        // 2. Check if status code is 403 and throw an authorization error
+        // 3. Check if status code is 429 and throw a rate limit error
+        // 4. Check if status code is not 200, throw a generic API error that includes the response body
+        // 5. Return without throwing for status code 200 — that is a successful response
         throw new RuntimeException("Not implemented - see TODO comments");
     }
 
@@ -67,12 +67,11 @@ public class StreamClient {
         String message, String token
     ) {
         // TODO: Make a streaming POST request to the completions API (Step 2):
-        // 1. Build JSON payload with GSON: messages, auto_routing: true, stream: true
-        // 2. Build HttpRequest with Authorization: Bearer <token> and Content-Type: application/json
-        // 3. Send with HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofInputStream())
-        // 4. If response.statusCode() != 200: read body and call handleStreamError(statusCode, body)
-        // 5. Return the HttpResponse (body InputStream not yet fully read)
-        // Wrap checked exceptions in RuntimeException
+        // 1. Build Authorization and Content-Type headers using the provided token
+        // 2. Build the request payload with the user message, auto_routing flag, and stream set to true
+        // 3. Send a POST request to the API URL and receive a streaming response
+        // 4. Check the response status and call handleStreamError to fail fast before reading the body
+        // 5. Return the HttpResponse with the streaming body for the caller to iterate
         throw new RuntimeException("Not implemented - see TODO comments");
     }
 
@@ -90,9 +89,10 @@ public class StreamClient {
     public static Object parseSseLine(String line) {
         // TODO: Parse one SSE text line (Step 3):
         // 1. Return null if line is blank or does not start with "data: "
-        // 2. Strip the prefix: String data = line.substring(6)
-        // 3. Return "[DONE]" if data.trim().equals("[DONE]")
-        // 4. Try GSON.fromJson(data, Map.class); return null on exception
+        // 2. Extract the data payload by stripping the "data: " prefix
+        // 3. Return "[DONE]" if the stripped data equals "[DONE]"
+        // 4. Try to parse the data as a JSON map and return the result
+        // 5. Catch parse errors and return null
         return null;
     }
 
@@ -105,10 +105,11 @@ public class StreamClient {
     @SuppressWarnings("unchecked")
     public static String extractTokenContent(Map<String, Object> chunk) {
         // TODO: Extract delta content from a parsed SSE chunk (Step 4):
-        // 1. Get choices = (List<?>) chunk.get("choices") — return "" if null or empty
-        // 2. Get delta = (Map<?,?>) ((Map<?,?>) choices.get(0)).get("delta")
-        // 3. Return (String) delta.get("content"), or "" if null
-        // Wrap in try/catch and return "" on any exception
+        // 1. Start a try block for safe navigation
+        // 2. Get the choices list from the chunk, return empty string if absent or empty
+        // 3. Get the delta map from the first choice
+        // 4. Return the content value from delta, or empty string if absent or null
+        // 5. Catch any exceptions and return empty string
         return "";
     }
 
@@ -122,16 +123,13 @@ public class StreamClient {
     @SuppressWarnings("unchecked")
     public static StreamResult streamCompletion(String message, String token) {
         // TODO: Implement the accumulation loop (Step 5):
-        // 1. Record Instant start = Instant.now()
-        // 2. Call makeStreamingRequest(message, token) to open the stream
-        // 3. Initialize StringBuilder fullText, int tokenCount = 0, String finishReason = "unknown"
-        // 4. Wrap in try-with-resources: new BufferedReader(new InputStreamReader(response.body()))
-        // 5. Read line by line with reader.readLine():
-        //    a. parseSseLine(line) — skip null, break on "[DONE]"
-        //    b. extractTokenContent — append to fullText, increment tokenCount
-        //    c. Capture choices[0].finish_reason when non-null
-        // 6. Compute durationMs = Duration.between(start, Instant.now()).toMillis()
-        // 7. Return new StreamResult(fullText.toString(), tokenCount, (int) durationMs, finishReason)
+        // 1. Record the start time and open the stream by calling makeStreamingRequest
+        // 2. Initialize accumulators for the full text, token count, and finish reason
+        // 3. Wrap the iteration in a try block using BufferedReader on the response body
+        // 4. Read line by line, parsing each with parseSseLine
+        // 5. Skip non-content lines; break when the stream termination signal is received
+        // 6. Extract content from each chunk, append to the full text, and update token count and finish reason
+        // 7. Compute elapsed duration and return a StreamResult with text, tokenCount, durationMs, and finishReason
         throw new RuntimeException("Not implemented - see TODO comments");
     }
 }

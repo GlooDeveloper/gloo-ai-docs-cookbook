@@ -16,15 +16,11 @@ import (
 // appear token-by-token without waiting for the full response.
 func RenderStreamToTerminal(message, token string) error {
 	// TODO: Implement the typing-effect terminal renderer (Step 7):
-	// 1. Print the prompt: fmt.Printf("Prompt: %s\n\nResponse: ", message)
-	// 2. Call MakeStreamingRequest(message, token) to open the stream
-	// 3. Defer resp.Body.Close()
-	// 4. Initialize totalTokens int, finishReason = "unknown"
-	// 5. Use bufio.NewScanner(resp.Body) to read line by line:
-	//    a. ParseSSELine — skip nil, break on "[DONE]"
-	//    b. ExtractTokenContent — print immediately: fmt.Print(content)
-	//    c. Track totalTokens and finishReason
-	// 6. Print final summary: fmt.Printf("\n\n[%d tokens, finish_reason=%s]\n", totalTokens, finishReason)
-	// 7. Return scanner.Err()
+	// 1. Print the prompt header and open the streaming request, deferring body close
+	// 2. Initialize tracking variables for token count and finish reason
+	// 3. Use a bufio.Scanner to read the response body line by line
+	// 4. Parse each SSE line, extract content, and print each token immediately without buffering
+	// 5. Track the token count and capture the finish reason from the final chunk
+	// 6. Print the final summary line and return any scanner error
 	return fmt.Errorf("not implemented - see TODO comments")
 }

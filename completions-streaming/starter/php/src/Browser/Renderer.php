@@ -26,16 +26,13 @@ class Renderer
     public static function renderStreamToTerminal(string $message, string $token): void
     {
         // TODO: Implement the typing-effect terminal renderer (Step 7):
-        // 1. Echo the prompt header: echo "Prompt: {$message}\n\nResponse: "
-        // 2. Flush output buffers: ob_flush(); flush()
-        // 3. Initialize $totalTokens = 0, $finishReason = 'unknown'
-        // 4. Define a $writeCallback that:
-        //    a. Splits $data on "\n", calls parseSseLine() on each line
-        //    b. Skips null; breaks on '[DONE]'
-        //    c. extractTokenContent() — echo immediately and flush: echo $content; ob_flush(); flush()
-        //    d. Increments $totalTokens, captures $finishReason
-        // 5. Call StreamClient::makeStreamingRequest($message, $token, $writeCallback)
-        // 6. Echo summary: echo "\n\n[{$totalTokens} tokens, finish_reason={$finishReason}]\n"
+        // 1. Print the prompt header and flush the output buffer, initializing tracking variables
+        // 2. Define a write callback closure that receives raw data chunks from the stream
+        // 3. Inside the callback, split each chunk into lines, parse each SSE line, and stop on the stream termination signal
+        // 4. Extract content from valid chunks and echo each token immediately, flushing after each one
+        // 5. Track the total token count and capture the finish reason from the final chunk
+        // 6. Call makeStreamingRequest with the message, token, and callback to execute the stream
+        // 7. Print a final newline followed by the token count and finish reason summary
         throw new \RuntimeException('Not implemented - see TODO comments');
     }
 }
