@@ -16,7 +16,7 @@ cp .env.example .env
 npm start
 ```
 
-## Proxy server (Track B)
+## Proxy server
 
 ```bash
 npm run proxy
@@ -46,7 +46,11 @@ Each response line is an SSE event (`data: {...}`). The final chunk has `"finish
 
 ## Browser demo
 
-Open `src/browser/index.html` after starting the proxy server.
+The browser demo is a standalone HTML file shared across all languages — it is not part of this JavaScript project. With the proxy server running, open `../../frontend-example/index.html` directly in a browser, or serve it:
+
+```bash
+npx serve ../../frontend-example
+```
 
 ## Checkpoint Validation
 
@@ -87,8 +91,7 @@ javascript/
 │   ├── auth/tokenManager.js     # OAuth2 token management
 │   ├── streaming/streamClient.js  # SSE parsing + accumulation
 │   ├── browser/
-│   │   ├── renderer.js          # Typing-effect CLI demo
-│   │   └── index.html           # Browser demo page
+│   │   └── renderer.js          # Typing-effect CLI demo
 │   └── proxy/server.js          # Express SSE proxy
 └── package.json
 ```

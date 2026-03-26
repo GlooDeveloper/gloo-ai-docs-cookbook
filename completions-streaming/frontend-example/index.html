@@ -82,11 +82,8 @@
   <div class="meta" id="meta"></div>
 
   <script type="module">
-    // Configuration — update PROXY_URL if using the proxy server (Track B)
-    // For direct API access, you must expose a token endpoint or use the proxy.
+    // Proxy server URL — credentials are kept server-side; never call the Gloo API directly from the browser.
     const PROXY_URL = "http://localhost:3001/api/stream";
-
-    const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
     let isStreaming = false;
 

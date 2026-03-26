@@ -16,7 +16,7 @@ cp .env.example .env
 npm start
 ```
 
-## Proxy server (Track B)
+## Proxy server
 
 ```bash
 npm run proxy
@@ -43,6 +43,15 @@ curl -X POST http://localhost:3001/api/stream \
 ```
 
 Each response line is an SSE event (`data: {...}`). The final chunk has `"finish_reason": "stop"` (or another stop reason) rather than `null`.
+
+
+## Browser demo
+
+The browser demo is a standalone HTML file shared across all languages — it is not part of this project. With the proxy server running, open `../../frontend-example/index.html` directly in a browser, or serve it:
+
+```bash
+npx serve ../../frontend-example
+```
 
 ## Checkpoint Validation
 
