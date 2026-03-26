@@ -233,7 +233,7 @@ function testStep6(): void
         }
 
         echo "\n✅ Proxy server relaying SSE end-to-end.\n";
-        echo "   Track B complete: credentials stay server-side, client receives SSE.\n\n";
+        echo "   Proxy complete: credentials stay server-side, client receives SSE.\n\n";
 
     } catch (\Throwable $e) {
         echo "\n❌ Server-Side Proxy Test Failed\n";

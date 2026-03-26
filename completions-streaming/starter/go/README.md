@@ -65,14 +65,14 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 go run tests/step1_auth.go
 
-# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
-go run tests/step2_sse_parsing.go
+# CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
+go run tests/step2_error_handling.go
 
-# CP3: Token extraction + accumulation — delta content extracted, full response assembled
-go run tests/step3_accumulation.go
+# CP3: Streaming request + SSE parsing — connection opens, stream terminates cleanly
+go run tests/step3_sse_parsing.go
 
-# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
-go run tests/step4_error_handling.go
+# CP4: Token extraction + accumulation — delta content extracted, full response assembled
+go run tests/step4_accumulation.go
 
 # CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
 go run tests/step5_renderer.go

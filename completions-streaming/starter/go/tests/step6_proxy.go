@@ -180,7 +180,7 @@ func main() {
 	}
 
 	fmt.Println("\n✅ Proxy server relaying SSE end-to-end.")
-	fmt.Println("   Track B complete: credentials stay server-side, client receives SSE.")
+	fmt.Println("   Proxy complete: credentials stay server-side, client receives SSE.")
 }
 
 func failProxy(msg, port string) {

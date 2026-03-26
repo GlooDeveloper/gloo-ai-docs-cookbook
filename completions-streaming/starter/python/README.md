@@ -81,14 +81,14 @@ environment activated.
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 python tests/step1_auth_test.py
 
-# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
-python tests/step2_sse_parsing_test.py
+# CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
+python tests/step2_error_handling_test.py
 
-# CP3: Token extraction + accumulation — delta content extracted, full response assembled
-python tests/step3_accumulation_test.py
+# CP3: Streaming request + SSE parsing — connection opens, stream terminates cleanly
+python tests/step3_sse_parsing_test.py
 
-# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
-python tests/step4_error_handling_test.py
+# CP4: Token extraction + accumulation — delta content extracted, full response assembled
+python tests/step4_accumulation_test.py
 
 # CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
 python tests/step5_renderer_test.py

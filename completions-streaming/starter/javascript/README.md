@@ -63,13 +63,13 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 npm run test:step1
 
-# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
+# CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
 npm run test:step2
 
-# CP3: Token extraction + accumulation — delta content extracted, full response assembled
+# CP3: Streaming request + SSE parsing — connection opens, stream terminates cleanly
 npm run test:step3
 
-# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
+# CP4: Token extraction + accumulation — delta content extracted, full response assembled
 npm run test:step4
 
 # CP5: CLI typing-effect renderer — tokens stream to terminal with summary line

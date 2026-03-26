@@ -183,7 +183,7 @@ public class Step6ProxyTest {
             }
 
             System.out.println("\n✅ Proxy server relaying SSE end-to-end.");
-            System.out.println("   Track B complete: credentials stay server-side, client receives SSE.\n");
+            System.out.println("   Proxy complete: credentials stay server-side, client receives SSE.\n");
 
         } catch (Exception e) {
             System.err.println("\n❌ Server-Side Proxy Test Failed");

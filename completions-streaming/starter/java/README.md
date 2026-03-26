@@ -64,14 +64,14 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step1AuthTest
 
-# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
-mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step2SseParsingTest
+# CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step2ErrorHandlingTest
 
-# CP3: Token extraction + accumulation — delta content extracted, full response assembled
-mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step3AccumulationTest
+# CP3: Streaming request + SSE parsing — connection opens, stream terminates cleanly
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step3SseParsingTest
 
-# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
-mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step4ErrorHandlingTest
+# CP4: Token extraction + accumulation — delta content extracted, full response assembled
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step4AccumulationTest
 
 # CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
 mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step5RendererTest

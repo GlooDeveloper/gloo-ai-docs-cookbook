@@ -146,7 +146,7 @@ async function testStep6(): Promise<void> {
     }
 
     console.log("\n✅ Proxy server relaying SSE end-to-end.");
-    console.log("   Track B complete: credentials stay server-side, client receives SSE.\n");
+    console.log("   Proxy complete: credentials stay server-side, client receives SSE.\n");
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("\n❌ Server-Side Proxy Test Failed");

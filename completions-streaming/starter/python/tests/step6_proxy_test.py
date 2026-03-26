@@ -153,7 +153,7 @@ def test_step6():
 
         print("\n✅ Proxy server relaying SSE end-to-end.")
         print(
-            "   Track B complete: credentials stay server-side, client receives SSE.\n"
+            "   Proxy complete: credentials stay server-side, client receives SSE.\n"
         )
 
     except Exception as error:

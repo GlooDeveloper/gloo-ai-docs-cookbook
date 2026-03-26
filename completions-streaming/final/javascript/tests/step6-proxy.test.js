@@ -142,7 +142,7 @@ async function testStep6() {
     }
 
     console.log("\n✅ Proxy server relaying SSE end-to-end.");
-    console.log("   Track B complete: credentials stay server-side, client receives SSE.\n");
+    console.log("   Proxy complete: credentials stay server-side, client receives SSE.\n");
   } catch (err) {
     console.error("\n❌ Server-Side Proxy Test Failed");
     console.error(`Error: ${err.message}`);

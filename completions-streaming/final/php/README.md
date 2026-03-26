@@ -66,14 +66,14 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 # CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
 php tests/Step1AuthTest.php
 
-# CP2: Streaming request + SSE parsing — connection opens, stream terminates cleanly
-php tests/Step2SseParsingTest.php
+# CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
+php tests/Step2ErrorHandlingTest.php
 
-# CP3: Token extraction + accumulation — delta content extracted, full response assembled
-php tests/Step3AccumulationTest.php
+# CP3: Streaming request + SSE parsing — connection opens, stream terminates cleanly
+php tests/Step3SseParsingTest.php
 
-# CP4: Error handling — 401/403/429 raise correct errors, bad credentials caught
-php tests/Step4ErrorHandlingTest.php
+# CP4: Token extraction + accumulation — delta content extracted, full response assembled
+php tests/Step4AccumulationTest.php
 
 # CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
 php tests/Step5RendererTest.php

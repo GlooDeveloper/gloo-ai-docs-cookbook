@@ -9,9 +9,9 @@
     "start": "node --loader ts-node/esm --no-warnings src/index.ts",
     "proxy": "node --loader ts-node/esm --no-warnings src/proxy/server.ts",
     "test:step1": "node --loader ts-node/esm --no-warnings tests/step1-auth.test.ts",
-    "test:step2": "node --loader ts-node/esm --no-warnings tests/step2-sse-parsing.test.ts",
-    "test:step3": "node --loader ts-node/esm --no-warnings tests/step3-accumulation.test.ts",
-    "test:step4": "node --loader ts-node/esm --no-warnings tests/step4-error-handling.test.ts",
+    "test:step3": "node --loader ts-node/esm --no-warnings tests/step2-sse-parsing.test.ts",
+    "test:step4": "node --loader ts-node/esm --no-warnings tests/step3-accumulation.test.ts",
+    "test:step2": "node --loader ts-node/esm --no-warnings tests/step4-error-handling.test.ts",
     "test:step5": "node --loader ts-node/esm --no-warnings tests/step5-renderer.test.ts",
     "test:step6": "node --loader ts-node/esm --no-warnings tests/step6-proxy.test.ts"
   },
