@@ -42,8 +42,7 @@ app.post("/api/stream", async (req, res) => {
   // 3. Handle non-200 upstream responses by writing an error SSE frame and ending the response
   // 4. Set up a ReadableStream reader and loop to read, decode, and forward each chunk line by line
   // 5. Write each non-blank line as an SSE frame, handling errors and releasing the reader in finally
-  res.write('data: {"error": "Not implemented - see TODO comments"}\n\n');
-  res.end();
+  throw new Error("Not implemented - see TODO comments");
 });
 
 app.get("/health", (_req, res) => {

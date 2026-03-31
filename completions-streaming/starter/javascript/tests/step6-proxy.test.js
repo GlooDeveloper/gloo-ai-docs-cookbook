@@ -20,7 +20,7 @@ async function testStep6() {
 
   if (!process.env.GLOO_CLIENT_ID) {
     console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
-    process.exit(1);
+    process.exitCode = 1;
   }
 
   const port = parseInt(process.env.PROXY_PORT ?? "3001", 10);
@@ -151,9 +151,9 @@ async function testStep6() {
     console.error(`   - Verify port ${process.env.PROXY_PORT ?? 3001} is not already in use`);
     console.error("   - Check src/proxy/server.js imports ensureValidToken correctly");
     console.error("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n");
-    process.exit(1);
+    process.exitCode = 1;
   } finally {
-    if (server) server.kill();
+    if (server) server.kill("SIGKILL");
   }
 }
 
