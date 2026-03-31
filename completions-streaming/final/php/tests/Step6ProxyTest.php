@@ -246,7 +246,7 @@ function testStep6(): void
         exit(1);
     } finally {
         if ($proc !== null && is_resource($proc)) {
-            proc_terminate($proc);
+            proc_terminate($proc, 9); // SIGKILL — ensure immediate cleanup
             proc_close($proc);
         }
     }

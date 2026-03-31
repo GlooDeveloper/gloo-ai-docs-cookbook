@@ -47,7 +47,7 @@ function testStep3(): void
         if ($result !== '') {
             throw new RuntimeException("Expected '', got: " . var_export($result, true));
         }
-        echo "✓ Missing content key → ''\n";
+        echo "✓ Null content → ''\n";
 
         echo "Test 3: extractTokenContent — empty delta (role-only chunk)...\n";
         $chunk  = ['choices' => [['delta' => [], 'finish_reason' => null]]];

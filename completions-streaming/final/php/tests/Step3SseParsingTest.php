@@ -111,7 +111,7 @@ function testStep2(): void
             }
         );
 
-        echo "✓ Streaming connection opened\n";
+        echo "✓ Streaming connection opened (status 200)\n";
         echo "Test 7: Iterating SSE lines and detecting stream termination...\n";
         echo "✓ Processed {$linesProcessed} lines, {$dataChunks} data chunks\n";
 
