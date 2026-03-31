@@ -6,7 +6,7 @@
  * - POST /api/stream relays SSE from Gloo AI back to the client
  * - SSE lines arrive with correct format and stream terminates cleanly
  *
- * Usage: node --loader ts-node/esm --no-warnings tests/step6-proxy.test.ts
+ * Usage: tsx tests/step6-proxy.test.ts
  *
  * Note: Starts the proxy in a child process; no separate server process needed.
  */
@@ -29,12 +29,10 @@ async function testStep6(): Promise<void> {
   try {
     // Test 1: Start the proxy server as a child process
     console.log(`Test 1: Starting proxy server on port ${port}...`);
-    server = spawn(
-      "node",
-      ["--loader", "ts-node/esm", "--no-warnings", "src/proxy/server.ts"],
+    server = spawn("tsx", ["src/proxy/server.ts"],
       {
         env: { ...process.env, PROXY_PORT: String(port) },
-        stdio: "pipe",
+        stdio: "ignore",
       }
     );
 

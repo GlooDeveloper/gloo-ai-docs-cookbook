@@ -31,7 +31,7 @@ async function testStep6() {
     console.log(`Test 1: Starting proxy server on port ${port}...`);
     server = spawn("node", ["src/proxy/server.js"], {
       env: { ...process.env, PROXY_PORT: String(port) },
-      stdio: "pipe",
+      stdio: "ignore",
     });
 
     server.stderr?.on("data", () => {}); // suppress stderr
