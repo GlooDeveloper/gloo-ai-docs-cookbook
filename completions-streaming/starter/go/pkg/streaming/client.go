@@ -12,6 +12,16 @@ import (
 	"time"
 )
 
+// Suppress unused-import errors during step-by-step implementation.
+var (
+	_ = bufio.NewScanner
+	_ = bytes.NewBuffer
+	_ = json.Marshal
+	_ = io.ReadAll
+	_ = strings.HasPrefix
+	_ = time.Now
+)
+
 const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 
 // StreamResult holds the accumulated result of a streaming completion.
@@ -79,7 +89,7 @@ func ParseSSELine(line string) any {
 	// 4. Check if the stripped data equals "[DONE]" and return it
 	// 5. Try to unmarshal the data into an SSEChunk and return it
 	// 6. Catch unmarshal errors and return nil
-	return nil
+	return fmt.Errorf("not implemented - see TODO comments")
 }
 
 // ExtractTokenContent safely extracts the text content from a parsed chunk.
@@ -91,7 +101,7 @@ func ExtractTokenContent(chunk *SSEChunk) string {
 	// 1. Return empty string if chunk is nil or the Choices slice is empty
 	// 2. Access the Delta field of the first choice
 	// 3. Return the Content value, or empty string if the pointer is nil
-	return ""
+	panic("not implemented - see TODO comments")
 }
 
 // StreamCompletion runs the accumulation loop: streams a completion and

@@ -33,8 +33,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Helper to build a simple SSEChunk for unit tests
-	makeChunk := func(content string, finishReason *string) *streaming.SSEChunk {
+	// strPtr creates a *string from a string literal.
+	strPtr := func(s string) *string { return &s }
+
+	// Helper to build a simple SSEChunk for unit tests.
+	// content is a *string so callers can pass nil to represent a null/missing content field.
+	makeChunk := func(content *string, finishReason *string) *streaming.SSEChunk {
 		choice := struct {
 			Delta struct {
 				Role    string `json:"role"`
@@ -43,7 +47,9 @@ func main() {
 			FinishReason *string `json:"finish_reason"`
 			Index        int     `json:"index"`
 		}{}
-		choice.Delta.Content = content
+		if content != nil {
+			choice.Delta.Content = *content
+		}
 		choice.FinishReason = finishReason
 		return &streaming.SSEChunk{Choices: []struct {
 			Delta struct {
@@ -57,32 +63,42 @@ func main() {
 
 	// Test 1: ExtractTokenContent — normal chunk
 	fmt.Println("Test 1: ExtractTokenContent — normal chunk...")
-	chunk := makeChunk("Hello", nil)
+	chunk := makeChunk(strPtr("Hello"), nil)
 	result := streaming.ExtractTokenContent(chunk)
 	if result != "Hello" {
 		fail(fmt.Sprintf("Expected 'Hello', got: %q", result))
 	}
 	fmt.Println("✓ Normal chunk → 'Hello'")
 
-	// Test 2: ExtractTokenContent — empty content
-	fmt.Println("Test 2: ExtractTokenContent — empty content...")
-	chunk = makeChunk("", nil)
+	// Test 2: ExtractTokenContent — nil content delta
+	// Simulates {"choices": [{"delta": {"content": null}, "finish_reason": null}]}
+	fmt.Println("Test 2: ExtractTokenContent — nil content delta...")
+	chunk = makeChunk(nil, nil)
 	result = streaming.ExtractTokenContent(chunk)
 	if result != "" {
 		fail(fmt.Sprintf("Expected '', got: %q", result))
 	}
-	fmt.Println("✓ Empty content → ''")
+	fmt.Println("✓ Nil content → ''")
 
-	// Test 3: ExtractTokenContent — nil chunk
-	fmt.Println("Test 3: ExtractTokenContent — nil chunk...")
-	result = streaming.ExtractTokenContent(nil)
+	// Test 3: ExtractTokenContent — empty delta (no content field)
+	// Simulates {"choices": [{"delta": {}, "finish_reason": null}]}
+	fmt.Println("Test 3: ExtractTokenContent — empty delta (role-only chunk)...")
+	emptyDeltaChunk := &streaming.SSEChunk{Choices: []struct {
+		Delta struct {
+			Role    string `json:"role"`
+			Content string `json:"content"`
+		} `json:"delta"`
+		FinishReason *string `json:"finish_reason"`
+		Index        int     `json:"index"`
+	}{{}}}
+	result = streaming.ExtractTokenContent(emptyDeltaChunk)
 	if result != "" {
-		fail(fmt.Sprintf("Expected '' for nil chunk, got: %q", result))
+		fail(fmt.Sprintf("Expected '' for empty delta, got: %q", result))
 	}
-	fmt.Println("✓ Nil chunk → ''")
+	fmt.Println("✓ Empty delta → ''")
 
-	// Test 4: ExtractTokenContent — empty choices
-	fmt.Println("Test 4: ExtractTokenContent — empty choices...")
+	// Test 4: ExtractTokenContent — no choices
+	fmt.Println("Test 4: ExtractTokenContent — no choices...")
 	emptyChunk := &streaming.SSEChunk{}
 	result = streaming.ExtractTokenContent(emptyChunk)
 	if result != "" {
@@ -93,7 +109,7 @@ func main() {
 	// Test 5: ExtractTokenContent — finish_reason chunk
 	fmt.Println("Test 5: ExtractTokenContent — finish_reason chunk...")
 	stopReason := "stop"
-	chunk = makeChunk("", &stopReason)
+	chunk = makeChunk(nil, &stopReason)
 	result = streaming.ExtractTokenContent(chunk)
 	if result != "" {
 		fail(fmt.Sprintf("Expected '' for finish_reason chunk, got: %q", result))

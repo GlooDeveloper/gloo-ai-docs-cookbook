@@ -9,6 +9,13 @@ import (
 	"completions-streaming/pkg/streaming"
 )
 
+// Suppress unused-import errors during step-by-step implementation.
+var (
+	_ = bufio.NewScanner
+	_ = os.Stdout
+	_ = streaming.MakeStreamingRequest
+)
+
 // RenderStreamToTerminal streams a completion and prints tokens to stdout
 // without newlines, creating a typing effect in the terminal.
 //
