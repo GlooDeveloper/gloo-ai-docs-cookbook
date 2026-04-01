@@ -93,7 +93,7 @@ public class StreamClient {
         // 3. Return "[DONE]" if the stripped data equals "[DONE]"
         // 4. Try to parse the data as a JSON map and return the result
         // 5. Catch parse errors and return null
-        return null;
+        throw new RuntimeException("Not implemented - see TODO comments");
     }
 
     /**
@@ -110,7 +110,7 @@ public class StreamClient {
         // 3. Get the delta map from the first choice
         // 4. Return the content value from delta, or empty string if absent or null
         // 5. Catch any exceptions and return empty string
-        return "";
+        throw new RuntimeException("Not implemented - see TODO comments");
     }
 
     /**

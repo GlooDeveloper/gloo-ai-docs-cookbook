@@ -44,12 +44,12 @@ public class Step4AccumulationTest {
             if (!"Hello".equals(result)) throw new RuntimeException("Expected 'Hello', got: " + result);
             System.out.println("✓ Normal chunk → 'Hello'");
 
-            // Test 2: extractTokenContent — empty content
-            System.out.println("Test 2: extractTokenContent — empty content...");
-            chunk = makeChunk("", null);
+            // Test 2: extractTokenContent — null content delta
+            System.out.println("Test 2: extractTokenContent — null content delta...");
+            chunk = makeChunk(null, null);
             result = StreamClient.extractTokenContent(chunk);
             if (!result.isEmpty()) throw new RuntimeException("Expected '', got: " + result);
-            System.out.println("✓ Empty content → ''");
+            System.out.println("✓ Null content → ''");
 
             // Test 3: extractTokenContent — empty delta
             System.out.println("Test 3: extractTokenContent — empty delta...");

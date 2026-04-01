@@ -78,7 +78,7 @@ public class ProxyServer {
             // 5. Forward the request upstream with stream set to true and handle non-200 upstream responses
             // 6. Read the upstream SSE stream line by line and write each non-blank line to the client
             // 7. Flush after each line and close the output stream in a finally block
-            try { exchange.sendResponseHeaders(501, -1); } catch (Exception ignored) {}
+            throw new RuntimeException("Not implemented - see TODO comments");
         }
     }
 
