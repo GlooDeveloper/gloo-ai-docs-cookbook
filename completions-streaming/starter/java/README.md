@@ -1,0 +1,97 @@
+# Streaming AI Responses in Real Time — Java
+
+Java 21 implementation of real-time SSE streaming with the Gloo AI completions API.
+
+## Setup
+
+```bash
+cp .env.example .env
+# Edit .env with your credentials
+```
+
+## Run
+
+```bash
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.Main
+```
+
+## Proxy server
+
+```bash
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.proxy.ProxyServer
+```
+
+Once running, send requests to `http://localhost:3001/api/stream` — the proxy relays them to the Gloo AI API and streams the SSE response back to the caller.
+
+```bash
+# Minimal request — streams the response as SSE to your terminal
+curl -X POST http://localhost:3001/api/stream \
+  -H "Content-Type: application/json" \
+  -d '{"messages": [{"role": "user", "content": "Hello!"}], "auto_routing": true}'
+
+# With a system prompt
+curl -X POST http://localhost:3001/api/stream \
+  -H "Content-Type: application/json" \
+  -d '{
+    "messages": [
+      {"role": "system", "content": "You are a helpful assistant."},
+      {"role": "user", "content": "What does it mean to be human?"}
+    ],
+    "auto_routing": true
+  }'
+```
+
+Each response line is an SSE event (`data: {...}`). The final chunk has `"finish_reason": "stop"` (or another stop reason) rather than `null`.
+
+
+## Browser demo
+
+The browser demo is a standalone HTML file shared across all languages — it is not part of this project. With the proxy server running, open `../../frontend-example/index.html` directly in a browser, or serve it:
+
+```bash
+npx serve ../../frontend-example
+```
+
+## Checkpoint Validation
+
+All checkpoint scripts are standalone — no test framework needed. Each script
+makes real API calls and prints `✓`/`✅` on success or `❌` with hints on failure.
+
+**Important:** All commands must be run from `final/java/` with credentials in
+`.env` (copy from `.env.example`).
+
+```bash
+# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step1AuthTest
+
+# CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step2ErrorHandlingTest
+
+# CP3: Streaming request + SSE parsing — connection opens, stream terminates cleanly
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step3SseParsingTest
+
+# CP4: Token extraction + accumulation — delta content extracted, full response assembled
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step4AccumulationTest
+
+# CP5: CLI typing-effect renderer — tokens stream to terminal with summary line
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step5RendererTest
+
+# CP6: Proxy server — starts in-process (non-blocking), relays SSE, CORS headers present
+mvn -q compile exec:java -Dexec.mainClass=com.gloo.streaming.tests.Step6ProxyTest
+```
+
+CP6 starts the Java `HttpServer` in-process (non-blocking) — you do not need
+to start the proxy manually before running it.
+
+## Structure
+
+```
+java/
+├── src/main/java/com/gloo/streaming/
+│   ├── Main.java                         # Entry point
+│   ├── auth/TokenManager.java            # OAuth2 token management
+│   ├── streaming/StreamClient.java       # SSE parsing + accumulation
+│   ├── browser/Renderer.java             # Typing-effect CLI demo
+│   └── proxy/ProxyServer.java            # HttpExchange chunked SSE proxy
+└── pom.xml
+```
