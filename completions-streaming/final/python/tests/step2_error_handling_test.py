@@ -21,13 +21,13 @@ load_dotenv()
 
 
 def test_step4():
-    print("🧪 Testing: Streaming-Aware Error Handling\n")
+    print("🧪 Testing: Streaming Error Handling\n")
 
     try:
         from streaming.stream_client import handle_stream_error
 
         # Test 1: 401 raises auth error
-        print("Test 1: handle_stream_error(401) — invalid token...")
+        print("Test 1: handle_stream_error(401)...")
         try:
             handle_stream_error(401, "Unauthorized")
             print("❌ Should have raised an exception for 401")
@@ -39,7 +39,7 @@ def test_step4():
             print(f"✓ 401 raises: {e}")
 
         # Test 2: 403 raises auth/permissions error
-        print("Test 2: handle_stream_error(403) — insufficient permissions...")
+        print("Test 2: handle_stream_error(403)...")
         try:
             handle_stream_error(403, "Forbidden")
             print("❌ Should have raised an exception for 403")
@@ -50,7 +50,7 @@ def test_step4():
             print(f"✓ 403 raises: {e}")
 
         # Test 3: 429 raises rate limit error
-        print("Test 3: handle_stream_error(429) — rate limit...")
+        print("Test 3: handle_stream_error(429)...")
         try:
             handle_stream_error(429, "Too Many Requests")
             print("❌ Should have raised an exception for 429")
@@ -70,7 +70,7 @@ def test_step4():
             sys.exit(1)
 
         # Test 5: 500 raises generic API error with body
-        print("Test 5: handle_stream_error(500) — generic API error...")
+        print("Test 5: handle_stream_error(500)...")
         try:
             handle_stream_error(500, "Internal Server Error")
             print("❌ Should have raised an exception for 500")
@@ -80,7 +80,7 @@ def test_step4():
                 raise Exception(f"Expected 500 in error message, got: {e}")
             print(f"✓ 500 throws with body: {e}")
 
-        print("\n✅ Error handling working correctly.")
+        print("\n✅ Two-phase error handling working.")
         print("   Next: Streaming Requests & SSE Parsing\n")
 
     except Exception as error:
