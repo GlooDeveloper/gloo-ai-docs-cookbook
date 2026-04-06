@@ -14,7 +14,7 @@ require('dotenv').config();
 const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
 const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
 const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-const API_URL = "https://platform.ai.gloo.com/ai/v1/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
 // Global token storage
 let tokenInfo = {};
@@ -99,11 +99,11 @@ async function testAuthentication() {
         console.log("2. Testing token validation...");
         const token = await ensureValidToken();
         console.log("   ✓ Token validation successful\n");
-        
+
         // Test 3: API call with authentication
         console.log("3. Testing authenticated API call...");
         const result = await makeAuthenticatedRequest(API_URL, {
-            model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+            auto_routing: true,
             messages: [{ role: "user", content: "Hello! This is a test of the authentication system." }]
         });
         

@@ -19,7 +19,7 @@ load_dotenv()
 CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
 CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
 TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
-API_URL = "https://platform.ai.gloo.com/ai/v1/chat/completions"
+API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 
 # Global token storage
 access_token_info = {}
@@ -101,7 +101,7 @@ def test_authentication():
         # Test 3: API call with authentication
         print("3. Testing authenticated API call...")
         result = make_authenticated_request(API_URL, {
-            "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+            "auto_routing": True,
             "messages": [{"role": "user", "content": "Hello! This is a test of the authentication system."}]
         })
         

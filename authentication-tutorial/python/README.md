@@ -72,7 +72,7 @@ This will run a complete authentication test that:
 
 3. Testing authenticated API call...
    ✓ API call successful
-   Response: Hello! I'm Claude, an AI assistant created by Anthropic...
+   Response: Hello! I'm ready when you are. How can I help you today?...
 
 === All tests passed! ===
 ```
@@ -88,9 +88,9 @@ def example():
     
     # Make authenticated API calls
     result = make_authenticated_request(
-        "https://platform.ai.gloo.com/ai/v1/chat/completions",
+        "https://platform.ai.gloo.com/ai/v2/chat/completions",
         {
-            "model": "us.anthropic.claude-sonnet-4-20250514-v1:0",
+            "auto_routing": True,
             "messages": [{"role": "user", "content": "Your message here"}]
         }
     )

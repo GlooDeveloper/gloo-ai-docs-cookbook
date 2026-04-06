@@ -23,7 +23,7 @@ public class AuthTutorial {
     
     // Configuration
     private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v1/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
     
     // HTTP client and JSON parser
     private static final HttpClient httpClient = HttpClient.newBuilder()
@@ -69,11 +69,11 @@ public class AuthTutorial {
      * ChatCompletionRequest represents the request payload
      */
     public static class ChatCompletionRequest {
-        public String model;
+        public boolean auto_routing;
         public List<ChatMessage> messages;
-        
-        public ChatCompletionRequest(String model, List<ChatMessage> messages) {
-            this.model = model;
+
+        public ChatCompletionRequest(boolean auto_routing, List<ChatMessage> messages) {
+            this.auto_routing = auto_routing;
             this.messages = messages;
         }
     }
@@ -191,7 +191,7 @@ public class AuthTutorial {
             // Test 3: API call with authentication
             System.out.println("3. Testing authenticated API call...");
             ChatCompletionRequest request = new ChatCompletionRequest(
-                "us.anthropic.claude-sonnet-4-20250514-v1:0",
+                true,
                 List.of(new ChatMessage("user", "Hello! This is a test of the authentication system."))
             );
             
