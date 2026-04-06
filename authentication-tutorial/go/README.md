@@ -75,7 +75,7 @@ This will run a complete authentication test that:
 
 3. Testing authenticated API call...
    ✓ API call successful
-   Response: Hello! I'm Claude, an AI assistant created by Anthropic...
+   Response: Hello! I'm ready when you are. How can I help you today?...
 
 === All tests passed! ===
 ```
@@ -99,14 +99,14 @@ func example() {
     
     // Make authenticated API calls
     request := ChatCompletionRequest{
-        Model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+        AutoRouting: true,
         Messages: []ChatMessage{
             {Role: "user", Content: "Your message here"},
         },
     }
-    
+
     result, err := makeAuthenticatedRequest(
-        "https://platform.ai.gloo.com/ai/v1/chat/completions",
+        "https://platform.ai.gloo.com/ai/v2/chat/completions",
         request,
     )
     if err != nil {

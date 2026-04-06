@@ -18,7 +18,7 @@ var (
 	clientID     string
 	clientSecret string
 	tokenURL     = "https://platform.ai.gloo.com/oauth2/token"
-	apiURL       = "https://platform.ai.gloo.com/ai/v1/chat/completions"
+	apiURL       = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 )
 
 // TokenInfo represents the OAuth2 token response
@@ -37,8 +37,8 @@ type ChatMessage struct {
 
 // ChatCompletionRequest represents the request payload
 type ChatCompletionRequest struct {
-	Model    string        `json:"model"`
-	Messages []ChatMessage `json:"messages"`
+	AutoRouting bool          `json:"auto_routing"`
+	Messages    []ChatMessage `json:"messages"`
 }
 
 // ChatCompletionResponse represents the API response
@@ -195,7 +195,7 @@ func testAuthentication() bool {
 	// Test 3: API call with authentication
 	fmt.Println("3. Testing authenticated API call...")
 	request := ChatCompletionRequest{
-		Model: "us.anthropic.claude-sonnet-4-20250514-v1:0",
+		AutoRouting: true,
 		Messages: []ChatMessage{
 			{Role: "user", Content: "Hello! This is a test of the authentication system."},
 		},
