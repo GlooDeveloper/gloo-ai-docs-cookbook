@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Resource Recommender — Gloo AI</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1>Smart Resource Recommender</h1>
+      <p class="subtitle">Powered by Gloo AI</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Query form -->
+    <section class="search-section">
+      <form id="query-form">
+        <div class="input-row">
+          <input
+            type="text"
+            id="query-input"
+            placeholder="e.g. How do I deal with anxiety?"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="search-btn">Find Resources</button>
+        </div>
+        <div class="options-row">
+          <label class="toggle-label">
+            <input type="checkbox" id="verbose-toggle" />
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+            Show content previews
+          </label>
+          <label class="count-label">
+            Results:
+            <select id="item-count">
+              <option value="3">3</option>
+              <option value="5" selected>5</option>
+              <option value="8">8</option>
+              <option value="10">10</option>
+            </select>
+          </label>
+        </div>
+      </form>
+    </section>
+
+    <!-- Error banner -->
+    <div id="error-banner" class="error-banner hidden" role="alert"></div>
+
+    <!-- Results: publisher recommendations -->
+    <section id="publisher-section" class="results-section hidden">
+      <div class="section-header">
+        <h2>Publisher Recommendations</h2>
+        <span id="publisher-mode-badge" class="badge badge-base">Metadata only</span>
+      </div>
+      <p class="section-desc">Ranked results from your publisher's content library.</p>
+      <div id="publisher-results" class="card-grid"></div>
+    </section>
+
+    <!-- Results: affiliate network -->
+    <section id="affiliates-section" class="results-section hidden">
+      <div class="section-header">
+        <h2>Explore More Resources</h2>
+        <span class="badge badge-affiliates">Affiliate Network</span>
+      </div>
+      <p class="section-desc">Related content from across the Gloo affiliate publisher network.</p>
+      <div id="affiliates-results" class="card-grid"></div>
+    </section>
+
+    <!-- Loading state -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Finding resources…</p>
+    </div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state">
+      <p>Enter a topic or question above to discover relevant resources.</p>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

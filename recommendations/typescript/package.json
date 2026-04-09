@@ -1,0 +1,26 @@
+{
+  "name": "gloo-recommendations-typescript",
+  "version": "1.0.0",
+  "description": "Gloo AI Recommendations API - TypeScript Example",
+  "main": "dist/recommend-base.js",
+  "scripts": {
+    "build": "tsc",
+    "base": "npx ts-node recommend-base.ts",
+    "verbose": "npx ts-node recommend-verbose.ts",
+    "affiliates": "npx ts-node recommend-affiliates.ts",
+    "server": "npx ts-node server.ts"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.0",
+    "express": "^4.18.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  }
+}
