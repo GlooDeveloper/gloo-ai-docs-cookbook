@@ -1,0 +1,18 @@
+{
+  "name": "gloo-recommendations",
+  "version": "1.0.0",
+  "description": "Gloo AI Recommendations API - JavaScript Example",
+  "main": "recommend-base.js",
+  "scripts": {
+    "base": "node recommend-base.js",
+    "verbose": "node recommend-verbose.js",
+    "affiliates": "node recommend-affiliates.js",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.0",
+    "express": "^4.18.0"
+  }
+}
