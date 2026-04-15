@@ -122,6 +122,20 @@ Build custom search experiences using the Gloo AI Search API.
 
 ---
 
+### ⭐ [Recommendations API](./recommendations/)
+Surface relevant resources using the Gloo AI Recommendations API.
+
+**Topics Covered:**
+- Publisher-scoped recommendations (metadata only)
+- Publisher-scoped recommendations with snippet previews
+- Cross-publisher affiliate network discovery
+- Proxy server for browser-based frontends
+- Browser-based recommendations UI example
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ## Repository Structure
 
 ```
@@ -139,6 +153,9 @@ gloo-ai-docs-cookbook/
 ├── realtime-ingestion/
 │   └── [javascript, typescript, python, php, go, java]
 ├── search-tutorial/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── frontend-example/simple-html/
+├── recommendations/
 │   ├── [javascript, typescript, python, php, go, java]
 │   └── frontend-example/simple-html/
 └── upload-files/

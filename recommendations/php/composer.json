@@ -1,0 +1,9 @@
+{
+    "name": "gloo/recommendations-php",
+    "description": "Gloo AI Recommendations API - PHP Example",
+    "require": {
+        "php": "^8.1",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "license": "MIT"
+}
