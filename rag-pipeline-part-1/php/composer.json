@@ -1,0 +1,11 @@
+{
+    "name": "gloo/rag-pipeline-part-1",
+    "description": "RAG Pipeline Part 1: Set Up the Pipeline - PHP Implementation",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "ext-curl": "*",
+        "vlucas/phpdotenv": "^5.5"
+    }
+}

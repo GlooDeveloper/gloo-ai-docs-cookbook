@@ -136,6 +136,19 @@ Surface relevant resources using the Gloo AI Recommendations API.
 
 ---
 
+### 🔗 [RAG Pipeline Part 1: Set Up the Pipeline](./rag-pipeline-part-1/)
+Part 1 of the Build an End-to-End RAG Pipeline series: ingest content and verify it's ready for retrieval.
+
+**Topics Covered:**
+- File upload with stable producer IDs (idempotent re-runs)
+- Item metadata enrichment (title, summary, author, tags)
+- Asynchronous ingestion status polling with timeout
+- Metadata round-trip verification
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ## Repository Structure
 
 ```
@@ -158,8 +171,11 @@ gloo-ai-docs-cookbook/
 ├── recommendations/
 │   ├── [javascript, typescript, python, php, go, java]
 │   └── frontend-example/simple-html/
-└── upload-files/
-    └── [javascript, typescript, python, php, go, java]
+├── upload-files/
+│   └── [javascript, typescript, python, php, go, java]
+└── rag-pipeline-part-1/
+    ├── [javascript, typescript, python, php, go, java]
+    └── sample_files/
 ```
 
 Each language directory contains:
