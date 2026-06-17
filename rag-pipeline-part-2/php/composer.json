@@ -1,0 +1,11 @@
+{
+    "name": "gloo/rag-pipeline-part-2",
+    "description": "RAG Pipeline Part 2: Content Lifecycle - PHP Implementation",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "ext-curl": "*",
+        "vlucas/phpdotenv": "^5.5"
+    }
+}

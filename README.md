@@ -149,6 +149,20 @@ Part 1 of the Build an End-to-End RAG Pipeline series: ingest content and verify
 
 ---
 
+### 🔁 [RAG Pipeline Part 2: Content Lifecycle](./rag-pipeline-part-2/)
+Part 2 of the Build an End-to-End RAG Pipeline series: update, bulk-edit, and delete content safely.
+
+**Topics Covered:**
+- Scoping operations to item IDs captured from upload responses
+- Single-item metadata updates
+- Bulk metadata edits with filters and patch operations
+- Read-after-write verification (eventual consistency)
+- Deletion and confirmation (GET → 404)
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ## Repository Structure
 
 ```
@@ -173,7 +187,10 @@ gloo-ai-docs-cookbook/
 │   └── frontend-example/simple-html/
 ├── upload-files/
 │   └── [javascript, typescript, python, php, go, java]
-└── rag-pipeline-part-1/
+├── rag-pipeline-part-1/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── sample_files/
+└── rag-pipeline-part-2/
     ├── [javascript, typescript, python, php, go, java]
     └── sample_files/
 ```
