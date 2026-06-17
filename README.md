@@ -163,6 +163,19 @@ Part 2 of the Build an End-to-End RAG Pipeline series: update, bulk-edit, and de
 
 ---
 
+### 🛡️ [RAG Pipeline Part 3: Verification, Error Handling & Resilience](./rag-pipeline-part-3/)
+Part 3 of the Build an End-to-End RAG Pipeline series: make the integration production-ready.
+
+**Topics Covered:**
+- A resilient API client (structured error parsing, retry with backoff, token refresh on 401)
+- Interpreting API error responses (404 / 400 / 403)
+- Retrying transient failures (5xx, network) with exponential backoff
+- Ingestion health verification with graceful handling of missing items
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ## Repository Structure
 
 ```
@@ -190,7 +203,10 @@ gloo-ai-docs-cookbook/
 ├── rag-pipeline-part-1/
 │   ├── [javascript, typescript, python, php, go, java]
 │   └── sample_files/
-└── rag-pipeline-part-2/
+├── rag-pipeline-part-2/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── sample_files/
+└── rag-pipeline-part-3/
     ├── [javascript, typescript, python, php, go, java]
     └── sample_files/
 ```

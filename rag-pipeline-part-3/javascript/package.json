@@ -1,0 +1,18 @@
+{
+  "name": "rag-pipeline-part-3-js",
+  "version": "1.0.0",
+  "description": "RAG Pipeline Part 3: Verification, Error Handling & Resilience - JavaScript Implementation",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": ["gloo", "ai", "rag", "data-engine", "resilience", "error-handling"],
+  "author": "Gloo AI",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
