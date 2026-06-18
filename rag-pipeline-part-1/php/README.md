@@ -8,7 +8,7 @@ search and grounded completions.
 
 - PHP 8.1+ with the curl extension, Composer
 - A Gloo AI publisher (create one in [Gloo Studio](https://studio.ai.gloo.com))
-- API credentials from Studio > Settings > API Keys
+- API credentials from [Gloo AI Studio](https://studio.ai.gloo.com/)
 
 ## Setup
 

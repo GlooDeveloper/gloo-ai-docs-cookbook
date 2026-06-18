@@ -10,7 +10,7 @@ touches other content in the publisher.
 
 - Python 3.9+
 - A Gloo AI publisher (create one in [Gloo Studio](https://studio.ai.gloo.com))
-- API credentials from Studio > Settings > API Keys
+- API credentials from [Gloo AI Studio](https://studio.ai.gloo.com/)
 
 ## Setup
 
