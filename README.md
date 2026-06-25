@@ -136,6 +136,46 @@ Surface relevant resources using the Gloo AI Recommendations API.
 
 ---
 
+### 🔗 [RAG Pipeline Part 1: Set Up the Pipeline](./rag-pipeline-part-1/)
+Part 1 of the Build an End-to-End RAG Pipeline series: ingest content and verify it's ready for retrieval.
+
+**Topics Covered:**
+- File upload with stable producer IDs (idempotent re-runs)
+- Item metadata enrichment (title, summary, author, tags)
+- Asynchronous ingestion status polling with timeout
+- Metadata round-trip verification
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
+### 🔁 [RAG Pipeline Part 2: Content Lifecycle](./rag-pipeline-part-2/)
+Part 2 of the Build an End-to-End RAG Pipeline series: update, bulk-edit, and delete content safely.
+
+**Topics Covered:**
+- Scoping operations to item IDs captured from upload responses
+- Single-item metadata updates
+- Bulk metadata edits with filters and patch operations
+- Read-after-write verification (eventual consistency)
+- Deletion and confirmation (GET → 404)
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
+### 🛡️ [RAG Pipeline Part 3: Verification, Error Handling & Resilience](./rag-pipeline-part-3/)
+Part 3 of the Build an End-to-End RAG Pipeline series: make the integration production-ready.
+
+**Topics Covered:**
+- A resilient API client (structured error parsing, retry with backoff, token refresh on 401)
+- Interpreting API error responses (404 / 400 / 403)
+- Retrying transient failures (5xx, network) with exponential backoff
+- Ingestion health verification with graceful handling of missing items
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ## Repository Structure
 
 ```
@@ -158,8 +198,17 @@ gloo-ai-docs-cookbook/
 ├── recommendations/
 │   ├── [javascript, typescript, python, php, go, java]
 │   └── frontend-example/simple-html/
-└── upload-files/
-    └── [javascript, typescript, python, php, go, java]
+├── upload-files/
+│   └── [javascript, typescript, python, php, go, java]
+├── rag-pipeline-part-1/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── sample_files/
+├── rag-pipeline-part-2/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── sample_files/
+└── rag-pipeline-part-3/
+    ├── [javascript, typescript, python, php, go, java]
+    └── sample_files/
 ```
 
 Each language directory contains:

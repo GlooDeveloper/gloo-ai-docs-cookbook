@@ -1,0 +1,11 @@
+{
+    "name": "gloo/rag-pipeline-part-3",
+    "description": "RAG Pipeline Part 3: Verification, Error Handling & Resilience - PHP Implementation",
+    "type": "project",
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "ext-curl": "*",
+        "vlucas/phpdotenv": "^5.5"
+    }
+}

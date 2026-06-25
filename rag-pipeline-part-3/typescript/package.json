@@ -1,0 +1,24 @@
+{
+  "name": "rag-pipeline-part-3-ts",
+  "version": "1.0.0",
+  "description": "RAG Pipeline Part 3: Verification, Error Handling & Resilience - TypeScript Implementation",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "ts-node index.ts"
+  },
+  "keywords": ["gloo", "ai", "rag", "data-engine", "resilience", "typescript"],
+  "author": "Gloo AI",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
