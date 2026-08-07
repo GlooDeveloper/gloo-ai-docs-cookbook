@@ -22,16 +22,15 @@ load_dotenv()
 def test_step2():
     print("🧪 Testing: Streaming Request & SSE Line Parsing\n")
 
-    client_id = os.getenv("GLOO_CLIENT_ID")
-    if not client_id:
-        print("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+    api_key = os.getenv("GLOO_API_KEY")
+    if not api_key:
+        print("❌ Missing GLOO_API_KEY — run Step 1 first")
         sys.exit(1)
 
     try:
-        from auth.token_manager import ensure_valid_token
         from streaming.stream_client import make_streaming_request, parse_sse_line
 
-        token = ensure_valid_token()
+        token = api_key
         print("✓ Token obtained\n")
 
         # Test 1: parse_sse_line unit tests (no network needed)

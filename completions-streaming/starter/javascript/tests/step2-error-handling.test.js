@@ -15,8 +15,8 @@ import { handleStreamError } from "../src/streaming/streamClient.js";
 async function testStep4() {
   console.log("🧪 Testing: Streaming Error Handling\n");
 
-  if (!process.env.GLOO_CLIENT_ID) {
-    console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+  if (!process.env.GLOO_API_KEY) {
+    console.error("❌ Missing GLOO_API_KEY — run Step 1 first");
     process.exit(1);
   }
 

@@ -15,7 +15,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dotenv\Dotenv;
-use GlooStreaming\Auth\TokenManager;
 use GlooStreaming\Streaming\StreamClient;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
@@ -25,9 +24,9 @@ function testStep3(): void
 {
     echo "🧪 Testing: Token Extraction & Accumulation\n\n";
 
-    $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
-    if (!$clientId) {
-        echo "❌ Missing GLOO_CLIENT_ID — run Step 1 first\n";
+    $apiKey = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY');
+    if (!$apiKey) {
+        echo "❌ Missing GLOO_API_KEY — run Step 1 first\n";
         exit(1);
     }
 
@@ -75,7 +74,7 @@ function testStep3(): void
 
         // Test 6: Full streamCompletion integration test
         echo "Test 6: streamCompletion — full response assembly...\n";
-        $token  = TokenManager::ensureValidToken();
+        $token  = $apiKey;
         $result = StreamClient::streamCompletion(
             'Count from 1 to 5, separated by spaces. Reply with only the numbers.',
             $token

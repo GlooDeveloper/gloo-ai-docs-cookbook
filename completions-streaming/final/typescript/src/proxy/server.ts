@@ -8,7 +8,6 @@
 
 import "dotenv/config";
 import express, { Request, Response } from "express";
-import { ensureValidToken } from "../auth/tokenManager.js";
 
 const app = express();
 app.use(express.json());
@@ -39,7 +38,13 @@ app.post("/api/stream", async (req: Request, res: Response): Promise<void> => {
   res.setHeader("Connection", "keep-alive");
 
   try {
-    const token = await ensureValidToken();
+    const token = process.env.GLOO_API_KEY;
+    if (!token) {
+      res.write(`data: {"error": "GLOO_API_KEY is not set"}\n\n`);
+      res.end();
+      return;
+    }
+
     const body = req.body ?? {};
     const payload = { ...body, stream: true };
 

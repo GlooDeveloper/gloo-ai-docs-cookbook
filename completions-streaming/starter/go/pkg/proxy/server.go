@@ -11,8 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"completions-streaming/pkg/auth"
 )
 
 // Suppress unused-import errors during step-by-step implementation.
@@ -22,7 +20,6 @@ var (
 	_ = json.Marshal
 	_ = io.ReadAll
 	_ = os.Getenv
-	_ = auth.EnsureValidToken
 )
 
 const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
@@ -48,7 +45,7 @@ func streamProxy(w http.ResponseWriter, r *http.Request) {
 	// 2. Reject non-POST requests with a 405 Method Not Allowed error
 	// 3. Set SSE-specific HTTP response headers (Content-Type, Cache-Control, X-Accel-Buffering)
 	// 4. Verify the ResponseWriter supports the http.Flusher interface
-	// 5. Ensure a valid auth token is available via auth.EnsureValidToken()
+	// 5. Read the API key from os.Getenv("GLOO_API_KEY")
 	// 6. Read and parse the incoming JSON request body, ensuring the 'stream' flag is set to true
 	// 7. Construct and send the upstream POST request to the Gloo AI API with the token and payload
 	// 8. Handle non-200 upstream responses by flushing an error data event to the client

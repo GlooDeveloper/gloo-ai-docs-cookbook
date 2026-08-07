@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace GlooStreaming\Proxy;
 
-use GlooStreaming\Auth\TokenManager;
-
 /**
  * SSE proxy server for streaming completions.
  *

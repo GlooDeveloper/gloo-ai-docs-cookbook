@@ -60,7 +60,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 **Important:** All commands must be run from `final/javascript/`.
 
 ```bash
-# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
+# CP1: Auth & environment — API key loaded, endpoint returns 200
 npm run test:step1
 
 # CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
@@ -88,7 +88,6 @@ need to start the proxy manually before running it.
 javascript/
 ├── src/
 │   ├── index.js                 # Entry point
-│   ├── auth/tokenManager.js     # OAuth2 token management
 │   ├── streaming/streamClient.js  # SSE parsing + accumulation
 │   ├── browser/
 │   │   └── renderer.js          # Typing-effect CLI demo

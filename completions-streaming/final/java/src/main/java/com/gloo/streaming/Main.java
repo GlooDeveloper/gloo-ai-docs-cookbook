@@ -1,6 +1,5 @@
 package com.gloo.streaming;
 
-import com.gloo.streaming.auth.TokenManager;
 import com.gloo.streaming.browser.Renderer;
 import com.gloo.streaming.streaming.StreamClient;
 import io.github.cdimascio.dotenv.Dotenv;
@@ -17,11 +16,10 @@ public class Main {
         System.out.println("Streaming AI Responses in Real Time\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        String clientId = dotenv.get("GLOO_CLIENT_ID", "");
-        String clientSecret = dotenv.get("GLOO_CLIENT_SECRET", "");
+        String apiKey = dotenv.get("GLOO_API_KEY", "");
 
-        if (clientId.isBlank() || clientSecret.isBlank()) {
-            System.err.println("Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET");
+        if (apiKey.isBlank()) {
+            System.err.println("Missing credentials. Set GLOO_API_KEY");
             System.exit(1);
         }
 
@@ -29,7 +27,7 @@ public class Main {
 
         // --- Example 1: Accumulate full response ---
         System.out.println("Example: Streaming a completion (accumulate full text)...");
-        String token = TokenManager.ensureValidToken();
+        String token = apiKey;
         StreamClient.StreamResult result = StreamClient.streamCompletion(
             "What is the significance of the resurrection?",
             token

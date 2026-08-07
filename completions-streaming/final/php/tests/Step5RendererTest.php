@@ -14,7 +14,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/../vendor/autoload.php';
 
 use Dotenv\Dotenv;
-use GlooStreaming\Auth\TokenManager;
 use GlooStreaming\Browser\Renderer;
 
 $dotenv = Dotenv::createImmutable(__DIR__ . '/..');
@@ -24,15 +23,15 @@ function testStep5(): void
 {
     echo "🧪 Testing: Typing-Effect Renderer\n\n";
 
-    $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
-    if (!$clientId) {
-        echo "❌ Missing GLOO_CLIENT_ID — run Step 1 first\n";
+    $apiKey = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY');
+    if (!$apiKey) {
+        echo "❌ Missing GLOO_API_KEY — run Step 1 first\n";
         exit(1);
     }
 
     try {
-        $token = TokenManager::ensureValidToken();
-        echo "✓ Token obtained\n\n";
+        $token = $apiKey;
+        echo "✓ API key loaded\n\n";
 
         echo "Test 1: renderStreamToTerminal — streaming to terminal...\n";
 

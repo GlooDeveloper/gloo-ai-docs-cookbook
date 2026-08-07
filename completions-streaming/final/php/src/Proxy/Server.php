@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace GlooStreaming\Proxy;
 
-use GlooStreaming\Auth\TokenManager;
-
 /**
  * SSE proxy server for streaming completions.
  *
@@ -63,7 +61,10 @@ class Server
         }
 
         try {
-            $authToken = TokenManager::ensureValidToken();
+            $authToken = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY');
+            if (!$authToken) {
+                throw new \RuntimeException('Missing GLOO_API_KEY environment variable');
+            }
             $rawBody = file_get_contents('php://input');
             $body = json_decode($rawBody, true) ?? [];
             $body['stream'] = true;

@@ -6,18 +6,16 @@
  */
 
 import "dotenv/config";
-import { ensureValidToken } from "./auth/tokenManager.js";
 import { streamCompletion } from "./streaming/streamClient.js";
 import { renderStreamToTerminal } from "./browser/renderer.js";
 
 async function main(): Promise<void> {
   console.log("Streaming AI Responses in Real Time\n");
 
-  const clientId = process.env.GLOO_CLIENT_ID;
-  const clientSecret = process.env.GLOO_CLIENT_SECRET;
+  const apiKey = process.env.GLOO_API_KEY;
 
-  if (!clientId || !clientSecret) {
-    console.error("Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET");
+  if (!apiKey) {
+    console.error("Missing API key. Set GLOO_API_KEY in your .env file");
     process.exit(1);
   }
 
@@ -25,7 +23,7 @@ async function main(): Promise<void> {
 
   // --- Example 1: Accumulate full response ---
   console.log("Example: Streaming a completion (accumulate full text)...");
-  const token = await ensureValidToken();
+  const token = apiKey;
   const result = await streamCompletion(
     "What is the significance of the resurrection?",
     token

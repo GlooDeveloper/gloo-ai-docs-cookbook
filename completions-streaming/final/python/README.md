@@ -5,7 +5,7 @@ Python implementation of real-time SSE streaming with the Gloo AI completions AP
 ## Prerequisites
 
 - Python 3.9+
-- Gloo AI credentials (get them at https://platform.ai.gloo.com/studio/manage-api-credentials)
+- Gloo AI credentials (get them at https://studio.ai.gloo.com/api-keys)
 
 ## Setup
 
@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 # Configure credentials
 cp .env.example .env
-# Edit .env and fill in GLOO_CLIENT_ID and GLOO_CLIENT_SECRET
+# Edit .env and fill in GLOO_API_KEY
 ```
 
 ## Run the Demo
@@ -78,7 +78,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 environment activated.
 
 ```bash
-# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
+# CP1: Auth & environment — API key loaded, endpoint returns 200
 python tests/step1_auth_test.py
 
 # CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
@@ -105,8 +105,6 @@ need to start the proxy manually before running it.
 ```
 python/
 ├── main.py                      # Entry point
-├── auth/
-│   └── token_manager.py         # OAuth2 token management (pre-built)
 ├── streaming/
 │   └── stream_client.py         # SSE parsing + accumulation (teaching layer)
 ├── browser/

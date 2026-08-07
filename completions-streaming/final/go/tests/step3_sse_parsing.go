@@ -19,7 +19,6 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"completions-streaming/pkg/auth"
 	"completions-streaming/pkg/streaming"
 )
 
@@ -31,16 +30,12 @@ func main() {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
 	}
 
-	if os.Getenv("GLOO_CLIENT_ID") == "" {
-		fmt.Println("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+	token := os.Getenv("GLOO_API_KEY")
+	if token == "" {
+		fmt.Println("❌ Missing GLOO_API_KEY — run Step 1 first")
 		os.Exit(1)
 	}
-
-	token, err := auth.EnsureValidToken()
-	if err != nil {
-		fail(fmt.Sprintf("EnsureValidToken failed: %v", err))
-	}
-	fmt.Println("✓ Token obtained")
+	fmt.Println("✓ API key loaded")
 	fmt.Println("")
 
 	// Test 1: ParseSSELine — blank line

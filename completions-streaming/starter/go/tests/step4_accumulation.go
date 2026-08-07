@@ -16,7 +16,6 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"completions-streaming/pkg/auth"
 	"completions-streaming/pkg/streaming"
 )
 
@@ -28,8 +27,8 @@ func main() {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
 	}
 
-	if os.Getenv("GLOO_CLIENT_ID") == "" {
-		fmt.Println("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+	if os.Getenv("GLOO_API_KEY") == "" {
+		fmt.Println("❌ Missing GLOO_API_KEY — run Step 1 first")
 		os.Exit(1)
 	}
 
@@ -118,10 +117,7 @@ func main() {
 
 	// Test 6: Full StreamCompletion integration test
 	fmt.Println("\nTest 6: StreamCompletion — full response assembly...")
-	token, err := auth.EnsureValidToken()
-	if err != nil {
-		fail(fmt.Sprintf("EnsureValidToken failed: %v", err))
-	}
+	token := os.Getenv("GLOO_API_KEY")
 
 	streamResult, err := streaming.StreamCompletion(
 		"Count from 1 to 5, separated by spaces. Reply with only the numbers.",

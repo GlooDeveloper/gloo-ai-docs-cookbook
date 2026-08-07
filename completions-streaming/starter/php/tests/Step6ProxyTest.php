@@ -26,9 +26,9 @@ function testStep6(): void
 {
     echo "🧪 Testing: Server-Side Proxy\n\n";
 
-    $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
-    if (!$clientId) {
-        echo "❌ Missing GLOO_CLIENT_ID — run Step 1 first\n";
+    $apiKey = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY');
+    if (!$apiKey) {
+        echo "❌ Missing GLOO_API_KEY — run Step 1 first\n";
         exit(1);
     }
 
@@ -242,7 +242,7 @@ function testStep6(): void
         echo "   - Check that PHP CLI and curl extension are available\n";
         echo "   - Verify port {$port} is not already in use\n";
         echo "   - Check src/Proxy/Server.php loads vendor/autoload.php correctly\n";
-        echo "   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n\n";
+        echo "   - Confirm GLOO_API_KEY is set in .env\n\n";
         exit(1);
     } finally {
         if ($proc !== null && is_resource($proc)) {

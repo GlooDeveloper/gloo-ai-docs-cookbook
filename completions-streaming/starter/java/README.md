@@ -89,7 +89,6 @@ to start the proxy manually before running it.
 java/
 ├── src/main/java/com/gloo/streaming/
 │   ├── Main.java                         # Entry point
-│   ├── auth/TokenManager.java            # OAuth2 token management
 │   ├── streaming/StreamClient.java       # SSE parsing + accumulation
 │   ├── browser/Renderer.java             # Typing-effect CLI demo
 │   └── proxy/ProxyServer.java            # HttpExchange chunked SSE proxy

@@ -8,7 +8,6 @@
 
 import "dotenv/config";
 import express from "express";
-import { ensureValidToken } from "../auth/tokenManager.js";
 
 const app = express();
 app.use(express.json());
@@ -42,7 +41,7 @@ app.post("/api/stream", async (req, res) => {
   res.setHeader("Connection", "keep-alive");
 
   try {
-    const token = await ensureValidToken();
+    const token = process.env.GLOO_API_KEY;
     const body = req.body ?? {};
     const payload = { ...body, stream: true };
 

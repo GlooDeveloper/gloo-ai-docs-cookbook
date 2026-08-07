@@ -1,7 +1,6 @@
 package com.gloo.streaming.proxy;
 
 import com.google.gson.Gson;
-import com.gloo.streaming.auth.TokenManager;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -95,7 +94,7 @@ public class ProxyServer {
                 OutputStream out = exchange.getResponseBody();
 
                 try {
-                    String authToken = TokenManager.ensureValidToken();
+                    String authToken = System.getenv("GLOO_API_KEY");
                     String rawBody = new String(
                         exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8
                     );

@@ -11,7 +11,6 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"completions-streaming/pkg/auth"
 	"completions-streaming/pkg/browser"
 	"completions-streaming/pkg/streaming"
 )
@@ -24,11 +23,9 @@ func main() {
 
 	fmt.Println("Streaming AI Responses in Real Time\n")
 
-	clientID := os.Getenv("GLOO_CLIENT_ID")
-	clientSecret := os.Getenv("GLOO_CLIENT_SECRET")
-
-	if clientID == "" || clientSecret == "" {
-		fmt.Fprintln(os.Stderr, "Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")
+	token := os.Getenv("GLOO_API_KEY")
+	if token == "" {
+		fmt.Fprintln(os.Stderr, "Missing credentials. Set GLOO_API_KEY")
 		os.Exit(1)
 	}
 
@@ -36,10 +33,6 @@ func main() {
 
 	// --- Example 1: Accumulate full response ---
 	fmt.Println("Example: Streaming a completion (accumulate full text)...")
-	token, err := auth.EnsureValidToken()
-	if err != nil {
-		log.Fatalf("Failed to get token: %v", err)
-	}
 
 	result, err := streaming.StreamCompletion(
 		"What is the significance of the resurrection?",

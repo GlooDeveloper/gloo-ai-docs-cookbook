@@ -2,7 +2,7 @@
 """
 Environment Setup & Auth Verification Test
 
-Validates that credentials load correctly and the streaming endpoint
+Validates that the API key loads correctly and the streaming endpoint
 responds with 200 OK and Content-Type: text/event-stream.
 
 Usage: python tests/step1_auth_test.py
@@ -22,51 +22,25 @@ load_dotenv()
 def test_step1():
     print("🧪 Testing: Environment Setup & Auth Verification\n")
 
-    # Check environment variables
-    client_id = os.getenv("GLOO_CLIENT_ID")
-    client_secret = os.getenv("GLOO_CLIENT_SECRET")
+    # Test 1: Check API key is set
+    print("Test 1: Loading API key...")
+    api_key = os.getenv("GLOO_API_KEY")
 
-    if not client_id or not client_secret:
-        print("❌ Missing required environment variables")
+    if not api_key:
+        print("❌ Missing required environment variable")
         print("   Make sure .env file contains:")
-        print("   - GLOO_CLIENT_ID")
-        print("   - GLOO_CLIENT_SECRET")
+        print("   - GLOO_API_KEY")
         sys.exit(1)
 
-    print("✓ GLOO_CLIENT_ID loaded")
-    print("✓ GLOO_CLIENT_SECRET loaded\n")
+    print("✓ API key loaded\n")
 
     try:
-        from auth.token_manager import get_access_token, ensure_valid_token
-
-        # Test 1: Get access token
-        print("Test 1: Obtaining access token...")
-        token_data = get_access_token()
-
-        if not token_data.get("access_token"):
-            raise Exception("Token response missing access_token field")
-
-        print(f"✓ Access token obtained")
-        print(f"  Expires in: {token_data.get('expires_in', 'N/A')} seconds")
-
-        # Test 2: ensure_valid_token caches correctly
-        print("\nTest 2: Token caching (ensure_valid_token)...")
-        token1 = ensure_valid_token()
-        token2 = ensure_valid_token()
-
-        if token1 != token2:
-            raise Exception(
-                "ensure_valid_token returned different tokens on consecutive calls"
-            )
-
-        print("✓ Token cached correctly — same token returned on consecutive calls")
-
-        # Test 3: Verify streaming endpoint returns 200 + text/event-stream
-        print("\nTest 3: Verifying streaming endpoint...")
+        # Test 2: Verify streaming endpoint returns 200 + text/event-stream
+        print("Test 2: Verifying streaming endpoint...")
         import requests
 
         headers = {
-            "Authorization": f"Bearer {token1}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
         payload = {
@@ -103,9 +77,9 @@ def test_step1():
         print(f"\n❌ Auth Test Failed")
         print(f"Error: {error}")
         print("\n💡 Hints:")
-        print("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")
+        print("   - Check that .env has a valid GLOO_API_KEY")
         print(
-            "   - Verify your credentials at https://platform.ai.gloo.com/studio/manage-api-credentials"
+            "   - Verify your credentials at https://studio.ai.gloo.com/api-keys"
         )
         print("   - Ensure you have internet connectivity\n")
         sys.exit(1)

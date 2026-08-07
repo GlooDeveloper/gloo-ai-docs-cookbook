@@ -8,7 +8,6 @@ Shows token accumulation, typing-effect rendering, and error handling.
 
 import os
 from dotenv import load_dotenv
-from auth.token_manager import ensure_valid_token
 from streaming.stream_client import stream_completion
 from browser.renderer import render_stream_to_terminal
 
@@ -18,18 +17,17 @@ load_dotenv()
 def main():
     print("Streaming AI Responses in Real Time\n")
 
-    client_id = os.getenv("GLOO_CLIENT_ID")
-    client_secret = os.getenv("GLOO_CLIENT_SECRET")
+    api_key = os.getenv("GLOO_API_KEY")
 
-    if not client_id or not client_secret:
-        print("Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET")
+    if not api_key:
+        print("Missing credentials. Set GLOO_API_KEY")
         return
 
-    print("Environment variables loaded\n")
+    print("✓ API key loaded\n")
 
     # --- Example 1: Accumulate full response ---
     print("Example: Streaming a completion (accumulate full text)...")
-    token = ensure_valid_token()
+    token = os.getenv("GLOO_API_KEY")
     result = stream_completion(
         "What is the significance of the resurrection?", token
     )

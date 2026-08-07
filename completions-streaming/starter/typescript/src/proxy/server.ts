@@ -8,7 +8,6 @@
 
 import "dotenv/config";
 import express, { Request, Response } from "express";
-import { ensureValidToken } from "../auth/tokenManager.js";
 
 const app = express();
 app.use(express.json());
@@ -34,7 +33,7 @@ app.use((req: Request, res: Response, next) => {
  */
 app.post("/api/stream", async (req: Request, res: Response): Promise<void> => {
   // TODO: Implement the Express SSE proxy handler (Step 8):
-  // 1. Set SSE response headers and retrieve the server-side auth token
+  // 1. Set SSE response headers and retrieve the API key from process.env.GLOO_API_KEY
   // 2. Build the upstream payload with stream set to true and send the POST request to the API
   // 3. Handle non-200 upstream responses by writing an error SSE frame and ending the response
   // 4. Set up a ReadableStream reader and loop to read, decode, and forward each chunk line by line

@@ -8,20 +8,19 @@
  */
 
 import "dotenv/config";
-import { ensureValidToken } from "../src/auth/tokenManager.js";
 import { renderStreamToTerminal } from "../src/browser/renderer.js";
 
 async function testStep5(): Promise<void> {
   console.log("🧪 Testing: Typing-Effect Renderer\n");
 
-  if (!process.env.GLOO_CLIENT_ID) {
-    console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+  if (!process.env.GLOO_API_KEY) {
+    console.error("Missing GLOO_API_KEY — run Step 1 first");
     process.exit(1);
   }
 
   try {
-    const token = await ensureValidToken();
-    console.log("✓ Token obtained\n");
+    const token = process.env.GLOO_API_KEY!;
+    console.log("API key loaded\n");
 
     // Capture stdout to verify output
     const chunks: string[] = [];

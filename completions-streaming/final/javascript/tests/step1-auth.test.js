@@ -1,64 +1,38 @@
 /**
  * Environment Setup & Auth Verification Test
  *
- * Validates that credentials load correctly and the streaming endpoint
+ * Validates that the API key loads correctly and the streaming endpoint
  * responds with 200 OK and Content-Type: text/event-stream.
  *
  * Usage: node tests/step1-auth.test.js
  */
 
 import "dotenv/config";
-import { getAccessToken, ensureValidToken } from "../src/auth/tokenManager.js";
 
 const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
 async function testStep1() {
   console.log("🧪 Testing: Environment Setup & Auth Verification\n");
 
-  const clientId = process.env.GLOO_CLIENT_ID;
-  const clientSecret = process.env.GLOO_CLIENT_SECRET;
+  const apiKey = process.env.GLOO_API_KEY;
 
-  if (!clientId || !clientSecret) {
-    console.error("❌ Missing required environment variables");
+  if (!apiKey) {
+    console.error("❌ Missing required environment variable");
     console.error("   Make sure .env file contains:");
-    console.error("   - GLOO_CLIENT_ID");
-    console.error("   - GLOO_CLIENT_SECRET");
+    console.error("   - GLOO_API_KEY");
     process.exit(1);
   }
 
-  console.log("✓ GLOO_CLIENT_ID loaded");
-  console.log("✓ GLOO_CLIENT_SECRET loaded\n");
+  console.log("✓ API key loaded\n");
 
   try {
-    // Test 1: Get access token
-    console.log("Test 1: Obtaining access token...");
-    const tokenData = await getAccessToken();
-
-    if (!tokenData.access_token) {
-      throw new Error("Token response missing access_token field");
-    }
-
-    console.log("✓ Access token obtained");
-    console.log(`  Expires in: ${tokenData.expires_in ?? "N/A"} seconds`);
-
-    // Test 2: ensureValidToken caches correctly
-    console.log("\nTest 2: Token caching (ensureValidToken)...");
-    const token1 = await ensureValidToken();
-    const token2 = await ensureValidToken();
-
-    if (token1 !== token2) {
-      throw new Error("ensureValidToken returned different tokens on consecutive calls");
-    }
-
-    console.log("✓ Token cached correctly — same token returned on consecutive calls");
-
-    // Test 3: Verify streaming endpoint returns 200 + text/event-stream
-    console.log("\nTest 3: Verifying streaming endpoint...");
+    // Test 1: Verify streaming endpoint returns 200 + text/event-stream
+    console.log("Test 1: Verifying streaming endpoint...");
 
     const response = await fetch(API_URL, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token1}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -90,8 +64,8 @@ async function testStep1() {
     console.error("\n❌ Auth Test Failed");
     console.error(`Error: ${err.message}`);
     console.error("\n💡 Hints:");
-    console.error("   - Check that .env has valid GLOO_CLIENT_ID and GLOO_CLIENT_SECRET");
-    console.error("   - Verify credentials at https://platform.ai.gloo.com/studio/manage-api-credentials");
+    console.error("   - Check that .env has a valid GLOO_API_KEY");
+    console.error("   - Verify credentials at https://studio.ai.gloo.com/api-keys");
     console.error("   - Ensure you have internet connectivity\n");
     process.exit(1);
   }

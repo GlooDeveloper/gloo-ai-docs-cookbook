@@ -1,6 +1,5 @@
 package com.gloo.streaming.tests;
 
-import com.gloo.streaming.auth.TokenManager;
 import com.gloo.streaming.browser.Renderer;
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -26,14 +25,15 @@ public class Step5RendererTest {
         System.out.println("🧪 Testing: Typing-Effect Renderer\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
-            System.err.println("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+        String apiKey = dotenv.get("GLOO_API_KEY", "");
+        if (apiKey.isBlank()) {
+            System.err.println("❌ Missing GLOO_API_KEY — run Step 1 first");
             System.exit(1);
         }
 
         try {
-            String token = TokenManager.ensureValidToken();
-            System.out.println("✓ Token obtained\n");
+            String token = apiKey;
+            System.out.println("✓ API key loaded\n");
 
             // Tee stdout: write to both terminal (live) and a buffer (for validation)
             PrintStream originalOut = System.out;

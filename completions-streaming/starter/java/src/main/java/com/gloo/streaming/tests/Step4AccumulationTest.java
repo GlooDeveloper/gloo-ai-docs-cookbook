@@ -1,6 +1,5 @@
 package com.gloo.streaming.tests;
 
-import com.gloo.streaming.auth.TokenManager;
 import com.gloo.streaming.streaming.StreamClient;
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -31,8 +30,9 @@ public class Step4AccumulationTest {
         System.out.println("🧪 Testing: Token Extraction & Accumulation\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
-            System.err.println("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+        String apiKey = dotenv.get("GLOO_API_KEY", "");
+        if (apiKey.isBlank()) {
+            System.err.println("❌ Missing GLOO_API_KEY — run Step 1 first");
             System.exit(1);
         }
 
@@ -74,7 +74,7 @@ public class Step4AccumulationTest {
 
             // Test 6: Full streamCompletion integration test
             System.out.println("Test 6: streamCompletion — full response assembly...");
-            String token = TokenManager.ensureValidToken();
+            String token = apiKey;
             StreamClient.StreamResult streamResult = StreamClient.streamCompletion(
                 "Count from 1 to 5, separated by spaces. Reply with only the numbers.",
                 token

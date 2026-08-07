@@ -36,8 +36,8 @@ public class Step6ProxyTest {
         System.out.println("🧪 Testing: Server-Side Proxy\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
-            System.err.println("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+        if (dotenv.get("GLOO_API_KEY", "").isBlank()) {
+            System.err.println("❌ Missing GLOO_API_KEY — run Step 1 first");
             System.exit(1);
         }
 
@@ -192,7 +192,7 @@ public class Step6ProxyTest {
             System.err.println("   - Check that Maven dependencies are installed: mvn compile");
             System.err.println("   - Verify port " + port + " is not already in use");
             System.err.println("   - Check proxy/ProxyServer.java creates HttpServer correctly");
-            System.err.println("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n");
+            System.err.println("   - Confirm GLOO_API_KEY is set in .env\n");
             System.exit(1);
         }
 
