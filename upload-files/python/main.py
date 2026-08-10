@@ -20,11 +20,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
+API_KEY = os.getenv("GLOO_API_KEY", "")
 PUBLISHER_ID = os.getenv("GLOO_PUBLISHER_ID", "your-publisher-id")
 
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
 UPLOAD_URL = "https://platform.ai.gloo.com/ingestion/v2/files"
 METADATA_URL = "https://platform.ai.gloo.com/engine/v2/item"
 
@@ -32,65 +30,16 @@ METADATA_URL = "https://platform.ai.gloo.com/engine/v2/item"
 SUPPORTED_EXTENSIONS = {'.txt', '.md', '.pdf', '.doc', '.docx'}
 
 # Validate credentials
-if CLIENT_ID in ("YOUR_CLIENT_ID", "", None) or CLIENT_SECRET in ("YOUR_CLIENT_SECRET", "", None):
-    print("Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set")
+if not API_KEY:
+    print("Error: GLOO_API_KEY must be set")
     print("Create a .env file with your credentials:")
-    print("GLOO_CLIENT_ID=your_client_id_here")
-    print("GLOO_CLIENT_SECRET=your_client_secret_here")
+    print("GLOO_API_KEY=your_api_key_here")
     print("GLOO_PUBLISHER_ID=your_publisher_id_here")
     sys.exit(1)
-
-# --- State Management ---
-access_token_info: Dict[str, Any] = {}
-
-
-class TokenManager:
-    """Manages OAuth2 token lifecycle for API authentication."""
-
-    @staticmethod
-    def get_access_token() -> Dict[str, Any]:
-        """Retrieves a new access token from the OAuth2 endpoint."""
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        data = {"grant_type": "client_credentials", "scope": "api/access"}
-
-        try:
-            response = requests.post(
-                TOKEN_URL,
-                headers=headers,
-                data=data,
-                auth=(CLIENT_ID, CLIENT_SECRET),
-                timeout=30
-            )
-            response.raise_for_status()
-
-            token_data = response.json()
-            token_data['expires_at'] = int(time.time()) + token_data['expires_in']
-            return token_data
-
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to obtain access token: {e}")
-
-    @staticmethod
-    def is_token_expired(token_info: Dict[str, Any]) -> bool:
-        """Checks if the token is expired or close to expiring."""
-        if not token_info or 'expires_at' not in token_info:
-            return True
-        return time.time() > (token_info['expires_at'] - 60)  # 60 second buffer
 
 
 class FileUploader:
     """Handles file uploads to the Data Engine Files API."""
-
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
-
-    def ensure_valid_token(self) -> str:
-        """Ensure we have a valid access token and return it."""
-        global access_token_info
-        if self.token_manager.is_token_expired(access_token_info):
-            print("Token is expired or missing. Fetching a new one...")
-            access_token_info = self.token_manager.get_access_token()
-        return access_token_info['access_token']
 
     def is_supported_file(self, file_path: str) -> bool:
         """Check if file extension is supported for upload."""
@@ -106,8 +55,7 @@ class FileUploader:
         if not self.is_supported_file(str(file_path)):
             raise ValueError(f"Unsupported file type: {file_path.suffix}")
 
-        token = self.ensure_valid_token()
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {API_KEY}"}
 
         params = {}
         if producer_id:
@@ -134,8 +82,7 @@ class FileUploader:
 
     def upload_multiple_files(self, file_paths: List[str]) -> Dict[str, Any]:
         """Upload multiple files to the Data Engine in a single request."""
-        token = self.ensure_valid_token()
-        headers = {"Authorization": f"Bearer {token}"}
+        headers = {"Authorization": f"Bearer {API_KEY}"}
 
         files = []
         open_files = []
@@ -177,9 +124,8 @@ class FileUploader:
         if not item_id and not producer_id:
             raise ValueError("Either item_id or producer_id must be provided")
 
-        token = self.ensure_valid_token()
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
         }
 
@@ -208,8 +154,7 @@ class UploadFilesApp:
     """Main application class for file uploads."""
 
     def __init__(self):
-        self.token_manager = TokenManager()
-        self.uploader = FileUploader(self.token_manager)
+        self.uploader = FileUploader()
 
     def upload_single(self, file_path: str, producer_id: Optional[str] = None) -> None:
         """Upload a single file."""

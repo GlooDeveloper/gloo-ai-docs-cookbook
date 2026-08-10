@@ -10,7 +10,7 @@ items gracefully.
 
 - Node.js 18+
 - A Gloo AI publisher (create one in [Gloo Studio](https://studio.ai.gloo.com))
-- API credentials from [Gloo AI Studio](https://studio.ai.gloo.com/)
+- An API key from [Gloo AI Studio](https://studio.ai.gloo.com/)
 
 ## Setup
 
@@ -27,8 +27,8 @@ npm start
 ```
 
 The program:
-1. Builds a resilient client (token refresh on 401, structured error parsing,
-   retry with exponential backoff for transient failures)
+1. Builds a resilient client (structured error parsing, retry with exponential
+   backoff for transient failures)
 2. Interprets API error responses — triggers a 404, a 400, and a 403 and shows
    the parsed status, code, and message
 3. Retries a transient failure with backoff (simulated 503 → recovers)
@@ -48,6 +48,5 @@ The program:
 
 | Variable | Description |
 |----------|-------------|
-| `GLOO_CLIENT_ID` | OAuth2 client ID from Gloo Studio |
-| `GLOO_CLIENT_SECRET` | OAuth2 client secret from Gloo Studio |
+| `GLOO_API_KEY` | API key from Gloo Studio |
 | `GLOO_PUBLISHER_ID` | UUID of your publisher (Studio > Data Engine > Publishers) |

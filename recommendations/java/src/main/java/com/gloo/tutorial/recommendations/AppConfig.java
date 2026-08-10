@@ -5,12 +5,10 @@ import io.github.cdimascio.dotenv.Dotenv;
 final class AppConfig {
     private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
-    static final String CLIENT_ID     = dotenv.get("GLOO_CLIENT_ID", "YOUR_CLIENT_ID");
-    static final String CLIENT_SECRET = dotenv.get("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET");
-    static final String TENANT        = dotenv.get("GLOO_TENANT", "your-tenant-name");
-    static final String COLLECTION    = dotenv.get("GLOO_COLLECTION", "GlooProd");
+    static final String API_KEY    = dotenv.get("GLOO_API_KEY", "");
+    static final String TENANT     = dotenv.get("GLOO_TENANT", "your-tenant-name");
+    static final String COLLECTION = dotenv.get("GLOO_COLLECTION", "GlooProd");
 
-    static final String TOKEN_URL                  = "https://platform.ai.gloo.com/oauth2/token";
     static final String RECOMMENDATIONS_BASE_URL    = "https://platform.ai.gloo.com/ai/v1/data/items/recommendations/base";
     static final String RECOMMENDATIONS_VERBOSE_URL = "https://platform.ai.gloo.com/ai/v1/data/items/recommendations/verbose";
     static final String AFFILIATES_URL             = "https://platform.ai.gloo.com/ai/v1/data/affiliates/referenced-items";

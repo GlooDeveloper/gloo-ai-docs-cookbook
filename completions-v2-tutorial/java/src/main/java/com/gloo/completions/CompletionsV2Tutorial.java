@@ -8,8 +8,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.time.Instant;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,69 +22,14 @@ import java.util.Map;
 public class CompletionsV2Tutorial {
 
     // Configuration
-    private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
     private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
-    private final String clientId;
-    private final String clientSecret;
-    private TokenInfo tokenInfo;
+    private final String apiKey;
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
 
-    // Token info class
-    private static class TokenInfo {
-        String access_token;
-        int expires_in;
-        long expires_at;
-    }
-
-    public CompletionsV2Tutorial(String clientId, String clientSecret) {
-        this.clientId = clientId;
-        this.clientSecret = clientSecret;
-    }
-
-    /**
-     * Retrieve a new access token from the Gloo AI API
-     */
-    private void fetchAccessToken() throws IOException, InterruptedException {
-        String auth = clientId + ":" + clientSecret;
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
-        String requestBody = "grant_type=client_credentials&scope=api/access";
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(TOKEN_URL))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Authorization", "Basic " + encodedAuth)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() != 200) {
-            throw new IOException("Failed to get token: " + response.body());
-        }
-
-        this.tokenInfo = gson.fromJson(response.body(), TokenInfo.class);
-        this.tokenInfo.expires_at = Instant.now().getEpochSecond() + this.tokenInfo.expires_in;
-    }
-
-    /**
-     * Check if the token is expired or close to expiring
-     */
-    private boolean isTokenExpired() {
-        if (this.tokenInfo == null || this.tokenInfo.expires_at == 0) {
-            return true;
-        }
-        return Instant.now().getEpochSecond() > (this.tokenInfo.expires_at - 60);
-    }
-
-    /**
-     * Ensure we have a valid access token
-     */
-    private void ensureValidToken() throws IOException, InterruptedException {
-        if (isTokenExpired()) {
-            System.out.println("Getting new access token...");
-            fetchAccessToken();
-        }
+    public CompletionsV2Tutorial(String apiKey) {
+        this.apiKey = apiKey;
     }
 
     /**
@@ -94,12 +37,10 @@ public class CompletionsV2Tutorial {
      */
     @SuppressWarnings("unchecked")
     private Map<String, Object> makeRequest(String payload) throws IOException, InterruptedException {
-        ensureValidToken();
-
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(API_URL))
                 .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + this.tokenInfo.access_token)
+                .header("Authorization", "Bearer " + this.apiKey)
                 .POST(HttpRequest.BodyPublishers.ofString(payload))
                 .build();
 
@@ -216,18 +157,16 @@ public class CompletionsV2Tutorial {
         // Load environment variables
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
 
-        String clientId = dotenv.get("GLOO_CLIENT_ID", System.getenv().getOrDefault("GLOO_CLIENT_ID", "YOUR_CLIENT_ID"));
-        String clientSecret = dotenv.get("GLOO_CLIENT_SECRET", System.getenv().getOrDefault("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET"));
+        String apiKey = dotenv.get("GLOO_API_KEY", System.getenv().getOrDefault("GLOO_API_KEY", "YOUR_API_KEY"));
 
-        if (clientId.equals("YOUR_CLIENT_ID") || clientSecret.equals("YOUR_CLIENT_SECRET")) {
-            System.out.println("Please set your GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables");
+        if (apiKey.equals("YOUR_API_KEY")) {
+            System.out.println("Please set your GLOO_API_KEY environment variable");
             System.out.println("You can create a .env file with:");
-            System.out.println("GLOO_CLIENT_ID=your_client_id");
-            System.out.println("GLOO_CLIENT_SECRET=your_client_secret");
+            System.out.println("GLOO_API_KEY=your_api_key");
             return;
         }
 
-        CompletionsV2Tutorial tutorial = new CompletionsV2Tutorial(clientId, clientSecret);
+        CompletionsV2Tutorial tutorial = new CompletionsV2Tutorial(apiKey);
         tutorial.testCompletionsV2API();
     }
 }

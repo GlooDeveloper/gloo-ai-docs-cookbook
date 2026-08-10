@@ -15,13 +15,6 @@ import * as dotenv from 'dotenv';
 dotenv.config();
 
 // Type definitions
-interface TokenInfo {
-    access_token: string;
-    expires_in: number;
-    expires_at: number;
-    token_type: string;
-}
-
 interface V2CompletionResponse {
     model: string;
     routing_mechanism?: string;
@@ -37,60 +30,13 @@ interface V2CompletionResponse {
 }
 
 // Configuration
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
+const API_KEY = process.env.GLOO_API_KEY || "YOUR_API_KEY";
 const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
-
-// Global token storage
-let tokenInfo: TokenInfo | null = null;
-
-/**
- * Retrieve a new access token from the Gloo AI API
- */
-async function getAccessToken(): Promise<TokenInfo> {
-    try {
-        const body = 'grant_type=client_credentials&scope=api/access';
-        const response = await axios.post<TokenInfo>(TOKEN_URL, body, {
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            auth: { username: CLIENT_ID, password: CLIENT_SECRET }
-        });
-
-        const tokenData = response.data;
-        (tokenData as any).expires_at = Math.floor(Date.now() / 1000) + tokenData.expires_in;
-
-        return tokenData;
-    } catch (error: any) {
-        console.error("Error getting access token:", error.response ? error.response.data : error.message);
-        throw error;
-    }
-}
-
-/**
- * Check if the token is expired or close to expiring
- */
-function isTokenExpired(token: TokenInfo | null): boolean {
-    if (!token || !(token as any).expires_at) return true;
-    return (Date.now() / 1000) > ((token as any).expires_at - 60);
-}
-
-/**
- * Ensure we have a valid access token
- */
-async function ensureValidToken(): Promise<TokenInfo> {
-    if (isTokenExpired(tokenInfo)) {
-        console.log("Getting new access token...");
-        tokenInfo = await getAccessToken();
-    }
-    return tokenInfo!;
-}
 
 /**
  * Example 1: Auto-routing - Let Gloo AI select the optimal model
  */
 async function makeV2AutoRouting(message: string, tradition: string = "evangelical"): Promise<V2CompletionResponse> {
-    const token = await ensureValidToken();
-
     const payload = {
         messages: [{ role: "user", content: message }],
         auto_routing: true,
@@ -100,7 +46,7 @@ async function makeV2AutoRouting(message: string, tradition: string = "evangelic
     try {
         const response = await axios.post<V2CompletionResponse>(API_URL, payload, {
             headers: {
-                'Authorization': `Bearer ${token.access_token}`,
+                'Authorization': `Bearer ${API_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -116,8 +62,6 @@ async function makeV2AutoRouting(message: string, tradition: string = "evangelic
  * Example 2: Model family selection - Choose a provider family
  */
 async function makeV2ModelFamily(message: string, modelFamily: string = "anthropic"): Promise<V2CompletionResponse> {
-    const token = await ensureValidToken();
-
     const payload = {
         messages: [{ role: "user", content: message }],
         model_family: modelFamily
@@ -126,7 +70,7 @@ async function makeV2ModelFamily(message: string, modelFamily: string = "anthrop
     try {
         const response = await axios.post<V2CompletionResponse>(API_URL, payload, {
             headers: {
-                'Authorization': `Bearer ${token.access_token}`,
+                'Authorization': `Bearer ${API_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -142,8 +86,6 @@ async function makeV2ModelFamily(message: string, modelFamily: string = "anthrop
  * Example 3: Direct model selection - Specify an exact model
  */
 async function makeV2DirectModel(message: string, model: string = "gloo-anthropic-claude-sonnet-4.5"): Promise<V2CompletionResponse> {
-    const token = await ensureValidToken();
-
     const payload = {
         messages: [{ role: "user", content: message }],
         model: model,
@@ -154,7 +96,7 @@ async function makeV2DirectModel(message: string, model: string = "gloo-anthropi
     try {
         const response = await axios.post<V2CompletionResponse>(API_URL, payload, {
             headers: {
-                'Authorization': `Bearer ${token.access_token}`,
+                'Authorization': `Bearer ${API_KEY}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -211,11 +153,10 @@ async function testCompletionsV2API(): Promise<boolean> {
  * Main execution
  */
 async function main(): Promise<void> {
-    if (CLIENT_ID === "YOUR_CLIENT_ID" || CLIENT_SECRET === "YOUR_CLIENT_SECRET") {
-        console.log("Please set your GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables");
+    if (API_KEY === "YOUR_API_KEY") {
+        console.log("Please set your GLOO_API_KEY environment variable");
         console.log("You can create a .env file with:");
-        console.log("GLOO_CLIENT_ID=your_client_id");
-        console.log("GLOO_CLIENT_SECRET=your_client_secret");
+        console.log("GLOO_API_KEY=your_api_key");
         return;
     }
 

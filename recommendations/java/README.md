@@ -6,7 +6,7 @@ Java implementation of the [Building a Smart Resource Recommender](https://devel
 
 - Java 17+
 - Maven 3.6+
-- A Gloo AI account with API credentials
+- A Gloo AI account with an API key
 - Content uploaded to the Data Engine
 
 ## Setup
@@ -16,8 +16,7 @@ Java implementation of the [Building a Smart Resource Recommender](https://devel
    cp .env.example .env
    ```
    Edit `.env` with your Gloo AI credentials:
-   - `GLOO_CLIENT_ID` — from the API Credentials page in Studio
-   - `GLOO_CLIENT_SECRET` — from the API Credentials page in Studio
+   - `GLOO_API_KEY` — from the [API Keys page](https://studio.ai.gloo.com/api-keys) in Studio
    - `GLOO_TENANT` — your publisher tenant name
    - `GLOO_COLLECTION` — content collection (default: `GlooProd`)
 
@@ -56,7 +55,6 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 | File | Description |
 |---|---|
-| `src/.../TokenManager.java` | OAuth2 token management with automatic refresh |
 | `src/.../AppConfig.java` | Environment variable loading and URL constants |
 | `src/.../Main.java` | API clients, command functions, and entry point |
 | `src/.../Server.java` | HTTP proxy server for the frontend |

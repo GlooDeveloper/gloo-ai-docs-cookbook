@@ -1,6 +1,6 @@
 # Gloo AI Authentication Tutorial - Go
 
-This example demonstrates how to authenticate with the Gloo AI API using OAuth2 client credentials flow in Go.
+This example demonstrates how to authenticate with the Gloo AI API using API key authentication in Go.
 
 ## Requirements
 
@@ -17,19 +17,17 @@ This example demonstrates how to authenticate with the Gloo AI API using OAuth2 
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them directly:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-3. **Get your credentials:**
+3. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -44,13 +42,12 @@ go build -o auth-tutorial
 ```
 
 This will run a complete authentication test that:
-1. Retrieves an access token
-2. Validates token management
-3. Makes an authenticated API call
+1. Verifies the API key is configured
+2. Makes an authenticated API call
 
 ## Key Features
 
-- **Token Management**: Automatic token refresh when expired
+- **API Key Auth**: Simple, direct authentication using an API key as a Bearer token
 - **Error Handling**: Comprehensive error handling with proper Go error wrapping
 - **Environment Variables**: Secure credential management using godotenv
 - **Test Suite**: Built-in tests to verify authentication setup
@@ -65,16 +62,11 @@ This will run a complete authentication test that:
 ```
 === Gloo AI Authentication Test ===
 
-1. Testing token retrieval...
-   ✓ Token retrieved successfully
-   Token type: Bearer
-   Expires in: 3600 seconds
+1. Verifying API key is configured...
+   API key is set
 
-2. Testing token validation...
-   ✓ Token validation successful
-
-3. Testing authenticated API call...
-   ✓ API call successful
+2. Testing authenticated API call...
+   API call successful
    Response: Hello! I'm ready when you are. How can I help you today?...
 
 === All tests passed! ===
@@ -91,12 +83,6 @@ import (
 )
 
 func example() {
-    // Get a valid token
-    token, err := ensureValidToken()
-    if err != nil {
-        log.Fatalf("Failed to get token: %v", err)
-    }
-    
     // Make authenticated API calls
     request := ChatCompletionRequest{
         AutoRouting: true,
@@ -122,21 +108,14 @@ func example() {
 The example includes comprehensive type definitions:
 
 ```go
-type TokenInfo struct {
-    AccessToken string `json:"access_token"`
-    ExpiresIn   int    `json:"expires_in"`
-    ExpiresAt   int64  `json:"expires_at"`
-    TokenType   string `json:"token_type"`
-}
-
 type ChatMessage struct {
     Role    string `json:"role"`
     Content string `json:"content"`
 }
 
 type ChatCompletionRequest struct {
-    Model    string        `json:"model"`
-    Messages []ChatMessage `json:"messages"`
+    AutoRouting bool          `json:"auto_routing"`
+    Messages    []ChatMessage `json:"messages"`
 }
 
 type ChatCompletionResponse struct {
@@ -154,7 +133,6 @@ type ChatCompletionResponse struct {
 The example includes comprehensive error handling for:
 - HTTP request failures
 - JSON parsing errors
-- Token expiration
 - Network connectivity issues
 - API errors
 
@@ -163,7 +141,6 @@ All errors are properly wrapped using Go's error wrapping functionality.
 ## Security Features
 
 - Environment variable management
-- Secure token storage
 - Proper error handling without exposing sensitive information
 - Input validation
 - Request timeouts
@@ -184,7 +161,7 @@ go run main.go
 
 ## Troubleshooting
 
-- **401 Unauthorized**: Check your Client ID and Client Secret
+- **401 Unauthorized**: Check your API key
 - **403 Forbidden**: Verify your API access permissions
 - **Network errors**: Ensure you have internet connectivity
 - **Module errors**: Run `go mod tidy` to resolve dependencies

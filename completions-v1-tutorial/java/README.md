@@ -18,19 +18,17 @@ This example demonstrates how to use the Gloo AI Completions API to generate tex
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or set them as system environment variables:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-3. **Get your credentials:**
+3. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -44,13 +42,12 @@ mvn compile exec:java -Dexec.mainClass="com.gloo.completions.CompletionsTutorial
 ```
 
 This will run multiple completion tests that:
-1. Authenticate with the Gloo AI API using OAuth2 client credentials
-2. Make completion requests for different prompts
-3. Display the generated responses
+1. Make completion requests for different prompts
+2. Display the generated responses
 
 ## Key Features
 
-- **Token Management**: Automatic token refresh with expiration handling
+- **API Key Auth**: Simple API key authentication via Bearer token
 - **Error Handling**: Comprehensive exception handling with detailed error messages
 - **Environment Variables**: Secure credential management using java-dotenv
 - **Multiple Tests**: Tests multiple completion scenarios with different prompts
@@ -98,10 +95,6 @@ public class Example {
             String response = completion.choices.get(0).message.content;
             System.out.println(response);
             
-            // Or get a token for other API calls
-            String token = CompletionsTutorial.ensureValidToken();
-            System.out.println("Token: " + token);
-            
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
         }
@@ -114,13 +107,6 @@ public class Example {
 The example includes comprehensive type definitions for all API interactions:
 
 ```java
-public static class TokenInfo {
-    public String access_token;
-    public int expires_in;
-    public long expires_at;
-    public String token_type;
-}
-
 public static class ChatMessage {
     public String role;
     public String content;
@@ -145,16 +131,11 @@ public static class ChatCompletionResponse {
 }
 ```
 
-## Authentication
-
-This example uses the authentication methods from the [Authentication Tutorial](../../../tutorials/authentication). The token management is handled automatically, but you can also use the `ensureValidToken()` method to get a token for other API calls.
-
 ## Error Handling
 
 The example includes comprehensive error handling for:
 - HTTP request failures
 - JSON parsing errors
-- Token expiration and refresh
 - Network connectivity issues
 - API authentication errors
 - Invalid response formats
@@ -164,11 +145,9 @@ All errors are wrapped in Java exceptions with detailed error messages.
 ## Security Features
 
 - Environment variable management with java-dotenv
-- Secure token storage with automatic refresh
 - Proper error handling without exposing sensitive information
 - Input validation and sanitization
 - Request timeouts (30 seconds)
-- Base64 encoding for authentication headers
 
 ## Building
 
@@ -216,7 +195,7 @@ mvn exec:java
 
 ## Troubleshooting
 
-- **401 Unauthorized**: Check your Client ID and Client Secret in the .env file
+- **401 Unauthorized**: Check your API key in the .env file
 - **403 Forbidden**: Verify your API access permissions in the Gloo AI Studio
 - **Network errors**: Ensure you have internet connectivity and the API endpoints are accessible
 - **Maven errors**: Run `mvn clean install` to resolve dependencies

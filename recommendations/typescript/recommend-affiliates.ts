@@ -16,11 +16,9 @@
  */
 
 import axios from "axios";
-import { TokenManager, validateCredentials } from "./auth";
+import { validateApiKey } from "./recommend-base";
 import {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  TOKEN_URL,
+  API_KEY,
   AFFILIATES_URL,
   DEFAULT_ITEM_COUNT,
 } from "./config";
@@ -41,10 +39,10 @@ interface AffiliateItem {
 // --- Client ---
 
 export class AffiliatesClient {
-  private tokenManager: TokenManager;
+  private apiKey: string;
 
-  constructor(tokenManager: TokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -57,8 +55,6 @@ export class AffiliatesClient {
     query: string,
     itemCount: number = DEFAULT_ITEM_COUNT
   ): Promise<AffiliateItem[]> {
-    const token = await this.tokenManager.ensureValidToken();
-
     const payload = {
       query,
       item_count: itemCount,
@@ -71,7 +67,7 @@ export class AffiliatesClient {
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
           },
           timeout: 60000,
@@ -95,8 +91,7 @@ async function run(
   query: string,
   itemCount: number = DEFAULT_ITEM_COUNT
 ): Promise<void> {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const client = new AffiliatesClient(tokenManager);
+  const client = new AffiliatesClient(API_KEY);
 
   console.log(`Fetching affiliate recommendations for: '${query}'`);
   console.log(`Searching across the Gloo affiliate network...`);
@@ -137,7 +132,7 @@ function printUsage(): void {
 }
 
 async function main(): Promise<void> {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
   if (args.length < 1) {

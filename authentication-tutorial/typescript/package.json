@@ -17,7 +17,7 @@
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   },
-  "keywords": ["gloo", "authentication", "oauth2", "api", "typescript"],
+  "keywords": ["gloo", "authentication", "api-key", "api", "typescript"],
   "author": "Gloo AI",
   "license": "MIT"
 }

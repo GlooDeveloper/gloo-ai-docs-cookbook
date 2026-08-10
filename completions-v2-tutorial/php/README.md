@@ -13,13 +13,12 @@ This example demonstrates how to use the Gloo AI Completions V2 API with its thr
 
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
-3. **Get your credentials:**
+3. **Get your API key:**
 
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -38,7 +37,6 @@ php index.php
 - **Auto-Routing**: Let Gloo AI automatically select the optimal model based on query complexity
 - **Model Family Selection**: Choose a provider family (anthropic, openai, google, open source)
 - **Direct Model Selection**: Specify an exact model for full control
-- **Token Management**: Automatic token refresh when expired
 - **Tradition-Aware**: Optional theological perspective parameter
 
 ## V2 Routing Strategies

@@ -32,7 +32,6 @@ import (
 
 const (
 	apiRoot   = "https://platform.ai.gloo.com"
-	tokenURL  = apiRoot + "/oauth2/token"
 	uploadURL = apiRoot + "/ingestion/v2/files"
 	itemsURL  = apiRoot + "/engine/v2/items"
 
@@ -63,10 +62,9 @@ var seedItemsList = []seedItem{
 }
 
 var (
-	clientID     string
-	clientSecret string
-	publisherID  string
-	httpClient   = &http.Client{Timeout: 120 * time.Second}
+	apiKey      string
+	publisherID string
+	httpClient  = &http.Client{Timeout: 120 * time.Second}
 )
 
 // ApiError is a normalized API error: HTTP status (0 for network failures), a
@@ -89,60 +87,16 @@ func (e *ApiError) IsRetryable() bool {
 	return containsInt(retryableStatuses, e.Status)
 }
 
-// TokenManager manages OAuth2 client-credentials token lifecycle.
-type TokenManager struct {
-	accessToken string
-	expiresAt   time.Time
-}
-
-// GetToken returns a valid access token, fetching a new one if needed.
-func (tm *TokenManager) GetToken() (string, error) {
-	if tm.accessToken != "" && time.Now().Before(tm.expiresAt.Add(-60*time.Second)) {
-		return tm.accessToken, nil
-	}
-	form := neturl.Values{"grant_type": {"client_credentials"}, "scope": {"api/access"}}
-	req, err := http.NewRequest(http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
-	if err != nil {
-		return "", err
-	}
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 400 {
-		return "", fmt.Errorf("token request failed: HTTP %d", resp.StatusCode)
-	}
-	var token struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&token); err != nil {
-		return "", err
-	}
-	tm.accessToken = token.AccessToken
-	tm.expiresAt = time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
-	return tm.accessToken, nil
-}
-
-// ForceRefresh drops the cached token so the next call fetches a fresh one.
-func (tm *TokenManager) ForceRefresh() {
-	tm.accessToken = ""
-}
-
 type requestOpts struct {
-	json            any
-	params          map[string]string
-	token           string
-	disallowRefresh bool
+	json   any
+	params map[string]string
+	token  string
 }
 
-// ResilientClient is a thin HTTP client with structured error parsing,
-// retry-with-backoff, and one-shot token refresh on 401.
+// ResilientClient is a thin HTTP client with structured error parsing
+// and retry-with-backoff.
 type ResilientClient struct {
-	tokens *TokenManager
+	apiKey string
 }
 
 // parseError extracts (code, message) from the API's error shapes:
@@ -188,8 +142,8 @@ func (c *ResilientClient) backoff(attempt, status int, code string) {
 	time.Sleep(delay)
 }
 
-// request sends a request, retrying transient failures and refreshing the token
-// once on 401. Returns an *ApiError on non-retryable failures or exhausted retries.
+// request sends a request, retrying transient failures with backoff.
+// Returns an *ApiError on non-retryable failures or exhausted retries.
 func (c *ResilientClient) request(method, url string, opts requestOpts) (map[string]any, error) {
 	target := url
 	if len(opts.params) > 0 {
@@ -203,16 +157,11 @@ func (c *ResilientClient) request(method, url string, opts requestOpts) (map[str
 	if opts.json != nil {
 		payload, _ = json.Marshal(opts.json)
 	}
-	refreshed := false
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		bearer := opts.token
 		if bearer == "" {
-			t, err := c.tokens.GetToken()
-			if err != nil {
-				return nil, err
-			}
-			bearer = t
+			bearer = c.apiKey
 		}
 		var body io.Reader
 		if payload != nil {
@@ -234,11 +183,6 @@ func (c *ResilientClient) request(method, url string, opts requestOpts) (map[str
 		resp.Body.Close()
 		status := resp.StatusCode
 
-		if status == 401 && !opts.disallowRefresh && !refreshed {
-			refreshed = true
-			c.tokens.ForceRefresh()
-			continue
-		}
 		if containsInt(retryableStatuses, status) && attempt < maxRetries {
 			code, _ := c.parseError(status, bodyBytes)
 			c.backoff(attempt, status, code)
@@ -288,10 +232,7 @@ func (c *ResilientClient) uploadFile(path, producerID string) (string, error) {
 		part.Write(fileBytes)
 		writer.Close()
 
-		token, err := c.tokens.GetToken()
-		if err != nil {
-			return nil, err
-		}
+		token := c.apiKey
 		req, _ := http.NewRequest(http.MethodPost,
 			uploadURL+"?producer_id="+neturl.QueryEscape(producerID), &buf)
 		req.Header.Set("Authorization", "Bearer "+token)
@@ -365,7 +306,7 @@ func demoErrorHandling(c *ResilientClient) error {
 		{"Missing item (random UUID)", http.MethodGet, itemsURL + "/" + newUUID(), requestOpts{}},
 		{"Malformed item ID", http.MethodGet, itemsURL + "/not-a-valid-uuid", requestOpts{}},
 		{"Rejected bearer token", http.MethodGet, itemsURL + "/" + newUUID(),
-			requestOpts{token: "invalid-token", disallowRefresh: true}},
+			requestOpts{token: "invalid-token"}},
 	}
 	for _, tc := range cases {
 		_, err := c.request(tc.method, tc.url, tc.opts)
@@ -451,22 +392,20 @@ func demoHealthCheck(c *ResilientClient) error {
 
 func main() {
 	_ = godotenv.Load()
-	clientID = os.Getenv("GLOO_CLIENT_ID")
-	clientSecret = os.Getenv("GLOO_CLIENT_SECRET")
+	apiKey = os.Getenv("GLOO_API_KEY")
 	publisherID = os.Getenv("GLOO_PUBLISHER_ID")
 	for name, value := range map[string]string{
-		"GLOO_CLIENT_ID":     clientID,
-		"GLOO_CLIENT_SECRET": clientSecret,
-		"GLOO_PUBLISHER_ID":  publisherID,
+		"GLOO_API_KEY":      apiKey,
+		"GLOO_PUBLISHER_ID": publisherID,
 	} {
 		if value == "" {
 			log.Fatalf("Error: %s must be set. Copy .env.example to .env and fill in your values.", name)
 		}
 	}
 
-	c := &ResilientClient{tokens: &TokenManager{}}
+	c := &ResilientClient{apiKey: apiKey}
 
-	fmt.Println("Step 1: Resilient client ready (token refresh, error parsing, retry/backoff).")
+	fmt.Println("Step 1: Resilient client ready (error parsing, retry/backoff).")
 
 	fmt.Println("\nStep 2: Interpreting API error responses...")
 	if err := demoErrorHandling(c); err != nil {

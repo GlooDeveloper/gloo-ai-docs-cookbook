@@ -11,72 +11,18 @@ against a grounded completion (which uses your actual content).
 
 import os
 import requests
-from datetime import datetime, timedelta
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
 # Configuration
-GLOO_CLIENT_ID = os.getenv("GLOO_CLIENT_ID")
-GLOO_CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET")
+GLOO_API_KEY = os.getenv("GLOO_API_KEY")
 PUBLISHER_NAME = os.getenv("PUBLISHER_NAME", "Bezalel")
 
 # API Endpoints
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
 COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 GROUNDED_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions/grounded"
-
-# Token management
-access_token = None
-token_expiry = None
-
-
-def get_access_token():
-    """
-    Retrieve an OAuth2 access token from Gloo AI.
-
-    Returns:
-        dict: Token response containing access_token and expires_in
-    """
-    if not GLOO_CLIENT_ID or not GLOO_CLIENT_SECRET:
-        raise ValueError(
-            "Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET "
-            "environment variables."
-        )
-
-    payload = {
-        "grant_type": "client_credentials",
-        "client_id": GLOO_CLIENT_ID,
-        "client_secret": GLOO_CLIENT_SECRET
-    }
-
-    try:
-        response = requests.post(TOKEN_URL, data=payload)
-        response.raise_for_status()
-        return response.json()
-    except requests.exceptions.RequestException as e:
-        raise Exception(f"Failed to get access token: {str(e)}")
-
-
-def ensure_valid_token():
-    """
-    Ensure we have a valid access token, refreshing if necessary.
-
-    Returns:
-        str: Valid access token
-    """
-    global access_token, token_expiry
-
-    # Check if we need a new token
-    if not access_token or not token_expiry or datetime.now() >= token_expiry:
-        token_data = get_access_token()
-        access_token = token_data["access_token"]
-        # Set expiry with 5 minute buffer
-        expires_in = token_data.get("expires_in", 3600)
-        token_expiry = datetime.now() + timedelta(seconds=expires_in - 300)
-
-    return access_token
 
 
 def make_non_grounded_request(query):
@@ -92,10 +38,13 @@ def make_non_grounded_request(query):
     Returns:
         dict: API response
     """
-    token = ensure_valid_token()
+    if not GLOO_API_KEY:
+        raise ValueError(
+            "Missing API key. Set GLOO_API_KEY environment variable."
+        )
 
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {GLOO_API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -129,10 +78,13 @@ def make_publisher_grounded_request(query, publisher_name, sources_limit=3):
     Returns:
         dict: API response with sources_returned flag
     """
-    token = ensure_valid_token()
+    if not GLOO_API_KEY:
+        raise ValueError(
+            "Missing API key. Set GLOO_API_KEY environment variable."
+        )
 
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {GLOO_API_KEY}",
         "Content-Type": "application/json"
     }
 

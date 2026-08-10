@@ -277,28 +277,25 @@ Before using any tutorial, ensure you have:
    cd chat-tutorial/javascript
    ```
 3. **Follow the README** in that directory for setup instructions
-4. **Configure your credentials** (typically via environment variables)
+4. **Configure your API key** (get one at https://studio.ai.gloo.com/api-keys)
    ```bash
-   export GLOO_CLIENT_ID="your_client_id"
-   export GLOO_CLIENT_SECRET="your_client_secret"
+   export GLOO_API_KEY="your_api_key"
    ```
 5. **Run the example** using the language-specific command
 
 ## Configuration
 
-Most tutorials require API credentials to be set as environment variables:
+Most tutorials require an API key to be set as an environment variable:
 
 ```bash
 # Required for all tutorials
-export GLOO_CLIENT_ID="your_client_id_here"
-export GLOO_CLIENT_SECRET="your_client_secret_here"
+export GLOO_API_KEY="your_api_key_here"
 ```
 
 Alternatively, create a `.env` file in the tutorial directory:
 
 ```env
-GLOO_CLIENT_ID=your_client_id_here
-GLOO_CLIENT_SECRET=your_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 ## Testing

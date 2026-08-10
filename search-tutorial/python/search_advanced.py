@@ -11,25 +11,23 @@ This script demonstrates advanced search features including:
 import requests
 import sys
 from typing import Dict, Any, List, Optional
-from auth import TokenManager, validate_credentials
 from config import (
-    CLIENT_ID,
-    CLIENT_SECRET,
+    API_KEY,
     TENANT,
-    TOKEN_URL,
     SEARCH_URL,
     COMPLETIONS_URL,
     RAG_MAX_TOKENS,
     RAG_CONTEXT_MAX_SNIPPETS,
     RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+    validate_api_key,
 )
 from utils import normalize_limit
 
 class AdvancedSearchClient:
     """Advanced search client with filtering and pagination capabilities."""
 
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
     def search(
         self,
@@ -48,7 +46,7 @@ class AdvancedSearchClient:
         Returns:
             Dictionary containing search results
         """
-        token = self.token_manager.ensure_valid_token()
+        token = self.api_key
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
@@ -119,8 +117,8 @@ class AdvancedSearchClient:
 class RAGHelper:
     """Helper class for Retrieval Augmented Generation workflows."""
 
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
     @staticmethod
     def extract_snippets(
@@ -192,7 +190,7 @@ class RAGHelper:
         Returns:
             Generated response text
         """
-        token = self.token_manager.ensure_valid_token()
+        token = self.api_key
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
@@ -245,9 +243,8 @@ class AdvancedSearchApp:
     """Application demonstrating advanced search features."""
 
     def __init__(self):
-        self.token_manager = TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL)
-        self.search_client = AdvancedSearchClient(self.token_manager)
-        self.rag_helper = RAGHelper(self.token_manager)
+        self.search_client = AdvancedSearchClient(API_KEY)
+        self.rag_helper = RAGHelper(API_KEY)
 
     def filtered_search(
         self,
@@ -342,7 +339,7 @@ class AdvancedSearchApp:
 
 def main():
     """Main entry point."""
-    validate_credentials(CLIENT_ID, CLIENT_SECRET)
+    validate_api_key(API_KEY)
     app = AdvancedSearchApp()
 
     if len(sys.argv) < 3:

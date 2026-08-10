@@ -1,19 +1,14 @@
 package com.gloo.tutorial.recommendations;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 import java.io.IOException;
-import java.lang.reflect.Type;
 import java.net.InetSocketAddress;
-import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.util.Map;
 
 /**
  * Gloo AI Recommendations API - Proxy Server (Java HttpServer)
@@ -32,9 +27,6 @@ import java.util.Map;
  */
 public class Server {
 
-    static final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(30))
-            .build();
     static final Gson gson = new Gson();
 
     static class RecommendRequestBody {
@@ -48,10 +40,7 @@ public class Server {
     }
 
     public static void start(int port) throws Exception {
-        TokenManager.validateCredentials(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET);
-
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET,
-                AppConfig.TOKEN_URL, httpClient);
+        Main.validateApiKey(AppConfig.API_KEY);
 
         Path frontendDir = Path.of(".", "..", "frontend-example", "simple-html").toAbsolutePath().normalize();
 
@@ -72,7 +61,7 @@ public class Server {
             int itemCount = resolveItemCount(body.item_count, AppConfig.DEFAULT_ITEM_COUNT);
 
             try {
-                var items = Main.getBase(tm, body.query, itemCount);
+                var items = Main.getBase(AppConfig.API_KEY, body.query, itemCount);
                 sendJson(exchange, 200, gson.toJson(items));
             } catch (Exception e) {
                 System.err.println("Base recommendations error: " + e.getMessage());
@@ -95,7 +84,7 @@ public class Server {
             int itemCount = resolveItemCount(body.item_count, AppConfig.DEFAULT_ITEM_COUNT);
 
             try {
-                var items = Main.getVerbose(tm, body.query, itemCount);
+                var items = Main.getVerbose(AppConfig.API_KEY, body.query, itemCount);
                 sendJson(exchange, 200, gson.toJson(items));
             } catch (Exception e) {
                 System.err.println("Verbose recommendations error: " + e.getMessage());
@@ -118,7 +107,7 @@ public class Server {
             int itemCount = resolveItemCount(body.item_count, AppConfig.DEFAULT_ITEM_COUNT);
 
             try {
-                var items = Main.getReferencedItems(tm, body.query, itemCount);
+                var items = Main.getReferencedItems(AppConfig.API_KEY, body.query, itemCount);
                 sendJson(exchange, 200, gson.toJson(items));
             } catch (Exception e) {
                 System.err.println("Affiliates error: " + e.getMessage());

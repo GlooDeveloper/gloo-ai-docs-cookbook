@@ -6,13 +6,11 @@
  */
 
 import axios from "axios";
-import { TokenManager, validateCredentials } from "./auth";
 import {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   TENANT,
-  TOKEN_URL,
   SEARCH_URL,
+  validateApiKey,
 } from "./config";
 import { normalizeLimit } from "./utils";
 
@@ -48,14 +46,14 @@ interface SearchResponse {
 }
 
 export class SearchClient {
-  private tokenManager: TokenManager;
+  private apiKey: string;
 
-  constructor(tokenManager: TokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
   async search(query: string, limit: number = 10): Promise<SearchResponse> {
-    const token = await this.tokenManager.ensureValidToken();
+    const token = this.apiKey;
 
     const payload = {
       query,
@@ -86,8 +84,7 @@ export class SearchClient {
 }
 
 async function basicSearch(query: string, limit: number = 10): Promise<void> {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const searchClient = new SearchClient(tokenManager);
+  const searchClient = new SearchClient(API_KEY);
 
   console.log(`Searching for: '${query}'`);
   console.log(`Limit: ${limit} results\n`);
@@ -129,7 +126,7 @@ function printUsage(): void {
 }
 
 async function main(): Promise<void> {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
 

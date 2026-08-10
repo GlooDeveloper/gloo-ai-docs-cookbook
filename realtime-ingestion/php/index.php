@@ -21,9 +21,6 @@ $dotenv->load();
  */
 class Config
 {
-    public const CLIENT_ID = "CLIENT_ID";
-    public const CLIENT_SECRET = "CLIENT_SECRET";
-    public const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
     public const API_URL = "https://platform.ai.gloo.com/ingestion/v1/real_time_upload";
     public const PUBLISHER_ID = "your-publisher-id"; // Replace with your publisher ID
     public const SUPPORTED_EXTENSIONS = [".txt", ".md"];
@@ -31,91 +28,17 @@ class Config
 }
 
 /**
- * Token management class for OAuth2 authentication
- */
-class TokenManager
-{
-    private array $tokenInfo = [];
-    private Client $httpClient;
-    private string $clientId;
-    private string $clientSecret;
-
-    public function __construct(
-        Client $httpClient,
-        string $clientId,
-        string $clientSecret,
-    ) {
-        $this->httpClient = $httpClient;
-        $this->clientId = $clientId;
-        $this->clientSecret = $clientSecret;
-    }
-
-    /**
-     * Get a new access token from the OAuth2 endpoint
-     */
-    public function getAccessToken(): array
-    {
-        try {
-            $response = $this->httpClient->post(Config::TOKEN_URL, [
-                "form_params" => [
-                    "grant_type" => "client_credentials",
-                    "scope" => "api/access",
-                ],
-                "auth" => [$this->clientId, $this->clientSecret],
-                "timeout" => 30,
-            ]);
-
-            $tokenData = json_decode($response->getBody(), true);
-            if (!$tokenData) {
-                throw new Exception("Invalid token response format");
-            }
-
-            $tokenData["expires_at"] = time() + $tokenData["expires_in"];
-            $this->tokenInfo = $tokenData;
-            return $tokenData;
-        } catch (RequestException $e) {
-            throw new Exception(
-                "Failed to get access token: " . $e->getMessage(),
-            );
-        }
-    }
-
-    /**
-     * Check if the current token is expired or close to expiring
-     */
-    public function isTokenExpired(): bool
-    {
-        if (empty($this->tokenInfo) || !isset($this->tokenInfo["expires_at"])) {
-            return true;
-        }
-        return time() > $this->tokenInfo["expires_at"] - 60; // 60 second buffer
-    }
-
-    /**
-     * Get current token info, refreshing if necessary
-     */
-    public function getValidToken(): array
-    {
-        if ($this->isTokenExpired()) {
-            echo "Token is expired or missing. Fetching a new one...\n";
-            return $this->getAccessToken();
-        }
-        return $this->tokenInfo;
-    }
-}
-
-/**
  * Content processing and upload management
  */
 class ContentProcessor
 {
-    private TokenManager $tokenManager;
     private Client $httpClient;
+    private string $apiKey;
 
-    public function __construct(TokenManager $tokenManager, Client $httpClient)
+    public function __construct(Client $httpClient, string $apiKey)
     {
-        $this->tokenManager = $tokenManager;
         $this->httpClient = $httpClient;
+        $this->apiKey = $apiKey;
     }
 
     /**
@@ -161,13 +84,11 @@ class ContentProcessor
      */
     public function uploadContent(array $contentData): array
     {
-        $tokenInfo = $this->tokenManager->getValidToken();
-
         try {
             $response = $this->httpClient->post(Config::API_URL, [
                 "json" => $contentData,
                 "headers" => [
-                    "Authorization" => "Bearer " . $tokenInfo["access_token"],
+                    "Authorization" => "Bearer " . $this->apiKey,
                     "Content-Type" => "application/json",
                 ],
                 "timeout" => 30,
@@ -327,37 +248,25 @@ class DirectoryWatcher
  */
 class RealtimeIngestionApp
 {
-    private TokenManager $tokenManager;
     private ContentProcessor $processor;
     private DirectoryWatcher $watcher;
     private Client $httpClient;
 
     public function __construct()
     {
-        // Validate credentials
-        $clientId = $_ENV["GLOO_CLIENT_ID"] ?? "";
-        $clientSecret = $_ENV["GLOO_CLIENT_SECRET"] ?? "";
+        // Validate API key
+        $apiKey = $_ENV["GLOO_API_KEY"] ?? "";
 
-        if (
-            empty($clientId) ||
-            empty($clientSecret) ||
-            $clientId === "YOUR_CLIENT_ID" ||
-            $clientSecret === "YOUR_CLIENT_SECRET"
-        ) {
+        if (empty($apiKey)) {
             $this->printCredentialError();
             exit(1);
         }
 
         // Initialize components
         $this->httpClient = new Client();
-        $this->tokenManager = new TokenManager(
-            $this->httpClient,
-            $clientId,
-            $clientSecret,
-        );
         $this->processor = new ContentProcessor(
-            $this->tokenManager,
             $this->httpClient,
+            $apiKey,
         );
         $this->watcher = new DirectoryWatcher($this->processor);
     }
@@ -450,10 +359,9 @@ class RealtimeIngestionApp
      */
     private function printCredentialError(): void
     {
-        echo "Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set\n";
-        echo "Create a .env file with your credentials:\n";
-        echo "GLOO_CLIENT_ID=your_client_id_here\n";
-        echo "GLOO_CLIENT_SECRET=your_client_secret_here\n";
+        echo "Error: GLOO_API_KEY must be set\n";
+        echo "Create a .env file with your API key:\n";
+        echo "GLOO_API_KEY=your_api_key_here\n";
     }
 }
 

@@ -5,7 +5,7 @@ Go implementation of the [Building a Smart Resource Recommender](https://develop
 ## Prerequisites
 
 - Go 1.20+
-- A Gloo AI account with API credentials
+- A Gloo AI account with an API key
 - Content uploaded to the Data Engine
 
 ## Setup
@@ -20,8 +20,7 @@ Go implementation of the [Building a Smart Resource Recommender](https://develop
    cp .env.example .env
    ```
    Edit `.env` with your Gloo AI credentials:
-   - `GLOO_CLIENT_ID` — from the API Credentials page in Studio
-   - `GLOO_CLIENT_SECRET` — from the API Credentials page in Studio
+   - `GLOO_API_KEY` — from the [API Keys page](https://studio.ai.gloo.com/api-keys) in Studio
    - `GLOO_TENANT` — your publisher tenant name
    - `GLOO_COLLECTION` — content collection (default: `GlooProd`)
 
@@ -55,7 +54,6 @@ Then open [http://localhost:3000](http://localhost:3000) in your browser.
 
 | File | Description |
 |---|---|
-| `auth.go` | OAuth2 token management with automatic refresh |
 | `main.go` | Config, types, API clients, command functions, entry point |
 | `server.go` | HTTP proxy server for the frontend |
 | `go.mod` | Module definition and dependencies |

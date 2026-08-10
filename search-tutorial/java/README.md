@@ -8,7 +8,7 @@ This example demonstrates how to use the Gloo AI Search API with Java to perform
 - **Advanced Filtering**: Filter results by content type
 - **RAG Support**: Extract and format search results for Retrieval Augmented Generation
 - **Completions Integration**: Use search results with Completions V2 API
-- **Token Management**: Automatic token refresh when expired
+- **API Key Auth**: Simple API key authentication
 - **Proxy Server**: Built-in HTTP server with frontend UI for browser-based search
 - **Error Handling**: Comprehensive error handling for network and API issues
 
@@ -17,7 +17,7 @@ This example demonstrates how to use the Gloo AI Search API with Java to perform
 - Java 17+ installed
 - Maven 3.6+ installed
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API Key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 - Content already uploaded to Gloo AI (see [Upload Files Tutorial](https://docs.ai.gloo.com/tutorials/upload-files))
 
 ## Installation
@@ -29,8 +29,7 @@ mvn compile
 
 2. Create a `.env` file in the project root directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_actual_api_key_here
 GLOO_TENANT=your_tenant_name_here
 ```
 
@@ -89,8 +88,7 @@ The frontend is served from `../frontend-example/simple-html/` and works with an
 ## Configuration
 
 ### Environment Variables
-- `GLOO_CLIENT_ID`: Your Gloo AI Client ID (required)
-- `GLOO_CLIENT_SECRET`: Your Gloo AI Client Secret (required)
+- `GLOO_API_KEY`: Your Gloo AI API Key (required)
 - `GLOO_TENANT`: Your tenant (publisher) name (required)
 - `RAG_MAX_TOKENS`: Max completion tokens for RAG generation (optional, default: `3000`)
 - `RAG_CONTEXT_MAX_SNIPPETS`: Max snippets included in RAG context (optional, default: `5`)
@@ -105,11 +103,11 @@ The frontend is served from `../frontend-example/simple-html/` and works with an
 ## Error Handling
 
 The program handles various error conditions:
-- Invalid credentials
+- Missing API key
 - Network timeouts
 - No results found
 - API errors (403 Forbidden, 401 Unauthorized, etc.)
-- Token expiration
+- Invalid API key
 
 ## Learn More
 

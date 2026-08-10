@@ -17,12 +17,10 @@ import { fileURLToPath } from "node:url";
 import "dotenv/config";
 
 // --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID ?? "";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET ?? "";
+const API_KEY = process.env.GLOO_API_KEY ?? "";
 const PUBLISHER_ID = process.env.GLOO_PUBLISHER_ID ?? "";
 
 const API_ROOT = "https://platform.ai.gloo.com";
-const TOKEN_URL = `${API_ROOT}/oauth2/token`;
 const UPLOAD_URL = `${API_ROOT}/ingestion/v2/files`;
 const ITEM_URL = `${API_ROOT}/engine/v2/item`; // single-item update (PATCH)
 const ITEMS_URL = `${API_ROOT}/engine/v2/items`; // bulk patch (PATCH), delete (DELETE)
@@ -70,8 +68,7 @@ const VERIFY_ATTEMPTS = 20;
 const VERIFY_INTERVAL_MS = 3_000;
 
 for (const [name, value] of [
-  ["GLOO_CLIENT_ID", CLIENT_ID],
-  ["GLOO_CLIENT_SECRET", CLIENT_SECRET],
+  ["GLOO_API_KEY", API_KEY],
   ["GLOO_PUBLISHER_ID", PUBLISHER_ID],
 ]) {
   if (!value) {
@@ -82,46 +79,18 @@ for (const [name, value] of [
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Manages OAuth2 client-credentials token lifecycle. */
-class TokenManager {
-  #tokenInfo = null;
-
-  async getToken() {
-    if (this.#isExpired()) {
-      const response = await fetch(TOKEN_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
-        },
-        body: new URLSearchParams({ grant_type: "client_credentials", scope: "api/access" }),
-      });
-      if (!response.ok) {
-        throw new Error(`Token request failed: ${response.status} ${await response.text()}`);
-      }
-      this.#tokenInfo = await response.json();
-      this.#tokenInfo.expiresAt = Date.now() + this.#tokenInfo.expires_in * 1000;
-    }
-    return this.#tokenInfo.access_token;
-  }
-
-  #isExpired() {
-    return !this.#tokenInfo || Date.now() > this.#tokenInfo.expiresAt - 60_000;
-  }
-}
-
 /** Seeds content and performs scoped lifecycle operations on it. */
 class ContentLifecycle {
-  constructor(tokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
   }
 
-  async #headers() {
-    return { Authorization: `Bearer ${await this.tokenManager.getToken()}` };
+  #headers() {
+    return { Authorization: `Bearer ${this.apiKey}` };
   }
 
-  async #jsonHeaders() {
-    return { ...(await this.#headers()), "Content-Type": "application/json" };
+  #jsonHeaders() {
+    return { ...this.#headers(), "Content-Type": "application/json" };
   }
 
   /**
@@ -134,7 +103,7 @@ class ContentLifecycle {
     form.append("files", new Blob([await readFile(filePath)]), path.basename(filePath));
 
     const url = `${UPLOAD_URL}?producer_id=${encodeURIComponent(producerId)}`;
-    const response = await fetch(url, { method: "POST", headers: await this.#headers(), body: form });
+    const response = await fetch(url, { method: "POST", headers: this.#headers(), body: form });
     if (!response.ok) {
       throw new Error(`Upload failed: ${response.status} ${await response.text()}`);
     }
@@ -149,7 +118,7 @@ class ContentLifecycle {
     const payload = { publisher_id: PUBLISHER_ID, item_id: itemId, ...fields };
     const response = await fetch(ITEM_URL, {
       method: "PATCH",
-      headers: await this.#jsonHeaders(),
+      headers: this.#jsonHeaders(),
       body: JSON.stringify(payload),
     });
     if (!response.ok) {
@@ -159,14 +128,14 @@ class ContentLifecycle {
 
   /** Fetch current item metadata, including ingestion status. */
   async getItem(itemId) {
-    const response = await fetch(`${ITEMS_URL}/${itemId}`, { headers: await this.#headers() });
+    const response = await fetch(`${ITEMS_URL}/${itemId}`, { headers: this.#headers() });
     if (!response.ok) throw new Error(`Get item failed: ${response.status} ${await response.text()}`);
     return response.json();
   }
 
   /** Return true while the item can still be fetched (false once deleted). */
   async itemExists(itemId) {
-    const response = await fetch(`${ITEMS_URL}/${itemId}`, { headers: await this.#headers() });
+    const response = await fetch(`${ITEMS_URL}/${itemId}`, { headers: this.#headers() });
     if (response.status === 404) return false;
     if (!response.ok) throw new Error(`Get item failed: ${response.status} ${await response.text()}`);
     return true;
@@ -198,7 +167,7 @@ class ContentLifecycle {
     const url = `${ITEMS_URL}?publisher_id=${encodeURIComponent(PUBLISHER_ID)}`;
     const response = await fetch(url, {
       method: "PATCH",
-      headers: await this.#jsonHeaders(),
+      headers: this.#jsonHeaders(),
       body: JSON.stringify({ filter: { item_ids: itemIds }, ops }),
     });
     if (!response.ok) throw new Error(`Bulk patch failed: ${response.status} ${await response.text()}`);
@@ -209,7 +178,7 @@ class ContentLifecycle {
   async deleteItems(itemIds) {
     const response = await fetch(ITEMS_URL, {
       method: "DELETE",
-      headers: await this.#jsonHeaders(),
+      headers: this.#jsonHeaders(),
       body: JSON.stringify({ item_ids: itemIds }),
     });
     if (!response.ok) throw new Error(`Delete failed: ${response.status} ${await response.text()}`);
@@ -238,7 +207,7 @@ class ContentLifecycle {
 }
 
 async function main() {
-  const lifecycle = new ContentLifecycle(new TokenManager());
+  const lifecycle = new ContentLifecycle(API_KEY);
 
   console.log("Step 1: Seeding sample content...");
   // Capture each item's ID from its upload response — the authoritative handle

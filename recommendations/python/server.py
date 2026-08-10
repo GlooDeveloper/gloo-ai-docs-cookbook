@@ -16,28 +16,24 @@ import sys
 import os
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from auth import TokenManager, validate_credentials
-from recommend_base import RecommendationsClient
+from recommend_base import RecommendationsClient, validate_api_key
 from recommend_verbose import VerboseRecommendationsClient
 from recommend_affiliates import AffiliatesClient
 from config import (
-    CLIENT_ID,
-    CLIENT_SECRET,
-    TOKEN_URL,
+    API_KEY,
     PORT,
     DEFAULT_ITEM_COUNT,
 )
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend-example", "simple-html")
 
-# Validate credentials on startup
-validate_credentials(CLIENT_ID, CLIENT_SECRET)
+# Validate API key on startup
+validate_api_key(API_KEY)
 
-# Shared token manager and API clients
-token_manager = TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL)
-base_client = RecommendationsClient(token_manager)
-verbose_client = VerboseRecommendationsClient(token_manager)
-affiliates_client = AffiliatesClient(token_manager)
+# Shared API clients
+base_client = RecommendationsClient(API_KEY)
+verbose_client = VerboseRecommendationsClient(API_KEY)
+affiliates_client = AffiliatesClient(API_KEY)
 
 app = Flask(__name__, static_folder=FRONTEND_DIR)
 CORS(app)

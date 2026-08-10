@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -15,11 +16,9 @@ import (
 // --- Config ---
 
 var (
-	clientID     string
-	clientSecret string
-	tenant       string
-	collection   string
-	tokenURL     string
+	apiKey     string
+	tenant     string
+	collection string
 
 	recommendationsBaseURL    string
 	recommendationsVerboseURL string
@@ -32,11 +31,11 @@ var (
 
 // RecommendationsRequest is the request body for publisher-scoped endpoints.
 type RecommendationsRequest struct {
-	Query               string  `json:"query"`
-	ItemCount           int     `json:"item_count"`
-	CertaintyThreshold  float64 `json:"certainty_threshold"`
-	Collection          string  `json:"collection"`
-	Tenant              string  `json:"tenant"`
+	Query              string  `json:"query"`
+	ItemCount          int     `json:"item_count"`
+	CertaintyThreshold float64 `json:"certainty_threshold"`
+	Collection         string  `json:"collection"`
+	Tenant             string  `json:"tenant"`
 }
 
 // AffiliatesRequest is the request body for the affiliate network endpoint.
@@ -57,11 +56,11 @@ type SnippetUUIDBase struct {
 
 // RecommendationItemBase is a single item from the base recommendations endpoint.
 type RecommendationItemBase struct {
-	ItemID       string            `json:"item_id"`
-	ItemTitle    string            `json:"item_title"`
-	Author       []string          `json:"author"`
-	ItemURL      string            `json:"item_url"`
-	UUIDs        []SnippetUUIDBase `json:"uuids"`
+	ItemID    string            `json:"item_id"`
+	ItemTitle string            `json:"item_title"`
+	Author    []string          `json:"author"`
+	ItemURL   string            `json:"item_url"`
+	UUIDs     []SnippetUUIDBase `json:"uuids"`
 }
 
 // SnippetUUIDVerbose extends SnippetUUIDBase with the full snippet text.
@@ -96,22 +95,17 @@ type AffiliateItem struct {
 
 // RecommendationsClient fetches publisher-scoped recommendations (metadata only).
 type RecommendationsClient struct {
-	tokenManager *TokenManager
-	baseURL      string
-	collection   string
-	tenant       string
+	apiKey     string
+	baseURL    string
+	collection string
+	tenant     string
 }
 
-func NewRecommendationsClient(tm *TokenManager, baseURL, collection, tenant string) *RecommendationsClient {
-	return &RecommendationsClient{tm, baseURL, collection, tenant}
+func NewRecommendationsClient(apiKey, baseURL, collection, tenant string) *RecommendationsClient {
+	return &RecommendationsClient{apiKey, baseURL, collection, tenant}
 }
 
 func (c *RecommendationsClient) GetBase(query string, itemCount int) ([]RecommendationItemBase, error) {
-	token, err := c.tokenManager.EnsureValidToken()
-	if err != nil {
-		return nil, err
-	}
-
 	payload, _ := json.Marshal(RecommendationsRequest{
 		Query:              query,
 		ItemCount:          itemCount,
@@ -121,7 +115,7 @@ func (c *RecommendationsClient) GetBase(query string, itemCount int) ([]Recommen
 	})
 
 	req, _ := http.NewRequest("POST", c.baseURL, bytes.NewBuffer(payload))
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -144,22 +138,17 @@ func (c *RecommendationsClient) GetBase(query string, itemCount int) ([]Recommen
 
 // VerboseRecommendationsClient fetches publisher-scoped recommendations with snippet text.
 type VerboseRecommendationsClient struct {
-	tokenManager *TokenManager
-	verboseURL   string
-	collection   string
-	tenant       string
+	apiKey     string
+	verboseURL string
+	collection string
+	tenant     string
 }
 
-func NewVerboseRecommendationsClient(tm *TokenManager, verboseURL, collection, tenant string) *VerboseRecommendationsClient {
-	return &VerboseRecommendationsClient{tm, verboseURL, collection, tenant}
+func NewVerboseRecommendationsClient(apiKey, verboseURL, collection, tenant string) *VerboseRecommendationsClient {
+	return &VerboseRecommendationsClient{apiKey, verboseURL, collection, tenant}
 }
 
 func (c *VerboseRecommendationsClient) GetVerbose(query string, itemCount int) ([]RecommendationItemVerbose, error) {
-	token, err := c.tokenManager.EnsureValidToken()
-	if err != nil {
-		return nil, err
-	}
-
 	payload, _ := json.Marshal(RecommendationsRequest{
 		Query:              query,
 		ItemCount:          itemCount,
@@ -169,7 +158,7 @@ func (c *VerboseRecommendationsClient) GetVerbose(query string, itemCount int) (
 	})
 
 	req, _ := http.NewRequest("POST", c.verboseURL, bytes.NewBuffer(payload))
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -192,20 +181,15 @@ func (c *VerboseRecommendationsClient) GetVerbose(query string, itemCount int) (
 
 // AffiliatesClient fetches items from across the Gloo affiliate publisher network.
 type AffiliatesClient struct {
-	tokenManager  *TokenManager
+	apiKey        string
 	affiliatesURL string
 }
 
-func NewAffiliatesClient(tm *TokenManager, affiliatesURL string) *AffiliatesClient {
-	return &AffiliatesClient{tm, affiliatesURL}
+func NewAffiliatesClient(apiKey, affiliatesURL string) *AffiliatesClient {
+	return &AffiliatesClient{apiKey, affiliatesURL}
 }
 
 func (c *AffiliatesClient) GetReferencedItems(query string, itemCount int) ([]AffiliateItem, error) {
-	token, err := c.tokenManager.EnsureValidToken()
-	if err != nil {
-		return nil, err
-	}
-
 	payload, _ := json.Marshal(AffiliatesRequest{
 		Query:              query,
 		ItemCount:          itemCount,
@@ -213,7 +197,7 @@ func (c *AffiliatesClient) GetReferencedItems(query string, itemCount int) ([]Af
 	})
 
 	req, _ := http.NewRequest("POST", c.affiliatesURL, bytes.NewBuffer(payload))
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
@@ -237,8 +221,7 @@ func (c *AffiliatesClient) GetReferencedItems(query string, itemCount int) ([]Af
 // --- Command Functions ---
 
 func runBase(query string, itemCount int) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	client := NewRecommendationsClient(tm, recommendationsBaseURL, collection, tenant)
+	client := NewRecommendationsClient(apiKey, recommendationsBaseURL, collection, tenant)
 
 	fmt.Printf("Fetching recommendations for: %q\n", query)
 	fmt.Printf("Collection: %s | Tenant: %s\n", collection, tenant)
@@ -282,8 +265,7 @@ func runBase(query string, itemCount int) {
 }
 
 func runVerbose(query string, itemCount int) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	client := NewVerboseRecommendationsClient(tm, recommendationsVerboseURL, collection, tenant)
+	client := NewVerboseRecommendationsClient(apiKey, recommendationsVerboseURL, collection, tenant)
 
 	fmt.Printf("Fetching verbose recommendations for: %q\n", query)
 	fmt.Printf("Collection: %s | Tenant: %s\n", collection, tenant)
@@ -334,8 +316,7 @@ func runVerbose(query string, itemCount int) {
 }
 
 func runAffiliates(query string, itemCount int) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	client := NewAffiliatesClient(tm, affiliatesURL)
+	client := NewAffiliatesClient(apiKey, affiliatesURL)
 
 	fmt.Printf("Fetching affiliate recommendations for: %q\n", query)
 	fmt.Println("Searching across the Gloo affiliate network...")
@@ -416,6 +397,15 @@ func joinStrings(ss []string) string {
 	return result
 }
 
+// ValidateApiKey exits if the API key is empty.
+func ValidateApiKey(key string) {
+	if strings.TrimSpace(key) == "" {
+		fmt.Println("Error: Please set GLOO_API_KEY in your .env file.")
+		fmt.Println("Get your API key from the API Keys page in Gloo AI Studio.")
+		panic("missing API key")
+	}
+}
+
 func printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  go run . base <query> [item_count]")
@@ -438,13 +428,11 @@ func printUsage() {
 func main() {
 	_ = godotenv.Load()
 
-	clientID = getEnv("GLOO_CLIENT_ID", "")
-	clientSecret = getEnv("GLOO_CLIENT_SECRET", "")
+	apiKey = getEnv("GLOO_API_KEY", "")
 	tenant = getEnv("GLOO_TENANT", "")
 	collection = getEnv("GLOO_COLLECTION", "GlooProd")
 	defaultItemCount = getEnvInt("DEFAULT_ITEM_COUNT", 5)
 
-	tokenURL = "https://platform.ai.gloo.com/oauth2/token"
 	recommendationsBaseURL = "https://platform.ai.gloo.com/ai/v1/data/items/recommendations/base"
 	recommendationsVerboseURL = "https://platform.ai.gloo.com/ai/v1/data/items/recommendations/verbose"
 	affiliatesURL = "https://platform.ai.gloo.com/ai/v1/data/affiliates/referenced-items"
@@ -458,11 +446,11 @@ func main() {
 
 	switch command {
 	case "server":
-		ValidateCredentials(clientID, clientSecret)
+		ValidateApiKey(apiKey)
 		startServer()
 
 	case "base", "verbose", "affiliates":
-		ValidateCredentials(clientID, clientSecret)
+		ValidateApiKey(apiKey)
 		if len(os.Args) < 3 {
 			fmt.Fprintf(os.Stderr, "Error: query argument required\n\n")
 			printUsage()

@@ -17,24 +17,13 @@ import (
 
 // Configuration constants
 const (
-	tokenURL    = "https://platform.ai.gloo.com/oauth2/token"
 	apiURL      = "https://platform.ai.gloo.com/ingestion/v1/real_time_upload"
 	publisherID = "your-publisher-id" // Replace with your publisher ID
 )
 
 var (
-	clientID     string
-	clientSecret string
-	tokenInfo    *TokenInfo
+	apiKey string
 )
-
-// TokenInfo represents OAuth2 token information
-type TokenInfo struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	ExpiresAt   int64  `json:"expires_at"`
-	TokenType   string `json:"token_type"`
-}
 
 // ContentData represents the content payload for API upload
 type ContentData struct {
@@ -59,79 +48,15 @@ type ApiResponse struct {
 	ProcessingDetails interface{} `json:"processing_details"`
 }
 
-// TokenManager handles OAuth2 token lifecycle
-type TokenManager struct {
-	clientID     string
-	clientSecret string
-	httpClient   *http.Client
-}
-
-// NewTokenManager creates a new token manager instance
-func NewTokenManager(clientID, clientSecret string) *TokenManager {
-	return &TokenManager{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
-		},
-	}
-}
-
-// GetAccessToken retrieves a new access token from the OAuth2 endpoint
-func (tm *TokenManager) GetAccessToken() (*TokenInfo, error) {
-	data := strings.NewReader("grant_type=client_credentials&scope=api/access")
-	req, err := http.NewRequest("POST", tokenURL, data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.SetBasicAuth(tm.clientID, tm.clientSecret)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := tm.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to get token: %s - %s", resp.Status, string(bodyBytes))
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	var localTokenInfo TokenInfo
-	if err := json.Unmarshal(body, &localTokenInfo); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal token response: %w", err)
-	}
-
-	localTokenInfo.ExpiresAt = time.Now().Unix() + int64(localTokenInfo.ExpiresIn)
-	return &localTokenInfo, nil
-}
-
-// IsTokenExpired checks if the token is expired or close to expiring
-func (tm *TokenManager) IsTokenExpired(token *TokenInfo) bool {
-	if token == nil || token.ExpiresAt == 0 {
-		return true
-	}
-	return time.Now().Unix() > (token.ExpiresAt - 60) // 60 second buffer
-}
-
 // ContentProcessor handles content processing and uploads
 type ContentProcessor struct {
-	tokenManager  *TokenManager
 	httpClient    *http.Client
 	supportedExts map[string]bool
 }
 
 // NewContentProcessor creates a new content processor instance
-func NewContentProcessor(tokenManager *TokenManager) *ContentProcessor {
+func NewContentProcessor() *ContentProcessor {
 	return &ContentProcessor{
-		tokenManager: tokenManager,
 		httpClient: &http.Client{
 			Timeout: 30 * time.Second,
 		},
@@ -183,16 +108,6 @@ func (cp *ContentProcessor) CreateContentData(content, title string) *ContentDat
 
 // UploadContent uploads content to the Realtime API
 func (cp *ContentProcessor) UploadContent(contentData *ContentData) (*ApiResponse, error) {
-	// Check and refresh token if needed
-	if cp.tokenManager.IsTokenExpired(tokenInfo) {
-		fmt.Println("Token is expired or missing. Fetching a new one...")
-		var err error
-		tokenInfo, err = cp.tokenManager.GetAccessToken()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get access token: %w", err)
-		}
-	}
-
 	jsonPayload, err := json.Marshal(contentData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal content data: %w", err)
@@ -203,7 +118,7 @@ func (cp *ContentProcessor) UploadContent(contentData *ContentData) (*ApiRespons
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Add("Authorization", "Bearer "+tokenInfo.AccessToken)
+	req.Header.Add("Authorization", "Bearer "+apiKey)
 	req.Header.Add("Content-Type", "application/json")
 
 	resp, err := cp.httpClient.Do(req)
@@ -397,7 +312,6 @@ func (bp *BatchProcessor) ProcessDirectory(dirPath string) error {
 
 // Application represents the main application
 type Application struct {
-	tokenManager   *TokenManager
 	processor      *ContentProcessor
 	watcher        *DirectoryWatcher
 	batchProcessor *BatchProcessor
@@ -405,18 +319,16 @@ type Application struct {
 
 // NewApplication creates a new application instance
 func NewApplication() (*Application, error) {
-	// Validate credentials
-	if clientID == "" || clientSecret == "" {
-		return nil, fmt.Errorf("GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set")
+	// Validate API key
+	if apiKey == "" {
+		return nil, fmt.Errorf("GLOO_API_KEY must be set")
 	}
 
-	tokenManager := NewTokenManager(clientID, clientSecret)
-	processor := NewContentProcessor(tokenManager)
+	processor := NewContentProcessor()
 	watcher := NewDirectoryWatcher(processor)
 	batchProcessor := NewBatchProcessor(processor)
 
 	return &Application{
-		tokenManager:   tokenManager,
 		processor:      processor,
 		watcher:        watcher,
 		batchProcessor: batchProcessor,
@@ -459,19 +371,16 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// validateCredentials checks that required credentials are provided
+// validateCredentials checks that the required API key is provided
 func validateCredentials() error {
-	if clientID == "" || clientSecret == "" ||
-		clientID == "YOUR_CLIENT_ID" || clientSecret == "YOUR_CLIENT_SECRET" {
-		fmt.Println("Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set")
+	if apiKey == "" {
+		fmt.Println("Error: GLOO_API_KEY must be set")
 		fmt.Println("Either:")
-		fmt.Println("1. Create a .env file with your credentials:")
-		fmt.Println("   GLOO_CLIENT_ID=your_client_id_here")
-		fmt.Println("   GLOO_CLIENT_SECRET=your_client_secret_here")
-		fmt.Println("2. Export them as environment variables:")
-		fmt.Println("   export GLOO_CLIENT_ID=\"your_client_id_here\"")
-		fmt.Println("   export GLOO_CLIENT_SECRET=\"your_client_secret_here\"")
-		return fmt.Errorf("missing or invalid credentials")
+		fmt.Println("1. Create a .env file with your API key:")
+		fmt.Println("   GLOO_API_KEY=your_api_key_here")
+		fmt.Println("2. Export it as an environment variable:")
+		fmt.Println("   export GLOO_API_KEY=\"your_api_key_here\"")
+		return fmt.Errorf("missing or invalid API key")
 	}
 	return nil
 }
@@ -483,9 +392,8 @@ func init() {
 		// .env file is optional, so we don't fail here
 	}
 
-	// Get credentials from environment
-	clientID = getEnv("GLOO_CLIENT_ID", "")
-	clientSecret = getEnv("GLOO_CLIENT_SECRET", "")
+	// Get API key from environment
+	apiKey = getEnv("GLOO_API_KEY", "")
 }
 
 func main() {

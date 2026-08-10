@@ -10,7 +10,7 @@ touches other content in the publisher.
 
 - Node.js 18+
 - A Gloo AI publisher (create one in [Gloo Studio](https://studio.ai.gloo.com))
-- API credentials from [Gloo AI Studio](https://studio.ai.gloo.com/)
+- An API key from [Gloo AI Studio](https://studio.ai.gloo.com/)
 
 ## Setup
 
@@ -53,6 +53,5 @@ The program:
 
 | Variable | Description |
 |----------|-------------|
-| `GLOO_CLIENT_ID` | OAuth2 client ID from Gloo Studio |
-| `GLOO_CLIENT_SECRET` | OAuth2 client secret from Gloo Studio |
+| `GLOO_API_KEY` | API key from Gloo Studio |
 | `GLOO_PUBLISHER_ID` | UUID of your publisher (Studio > Data Engine > Publishers) |

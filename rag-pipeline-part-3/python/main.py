@@ -26,12 +26,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "")
+API_KEY = os.getenv("GLOO_API_KEY", "")
 PUBLISHER_ID = os.getenv("GLOO_PUBLISHER_ID", "")
 
 API_ROOT = "https://platform.ai.gloo.com"
-TOKEN_URL = f"{API_ROOT}/oauth2/token"
 UPLOAD_URL = f"{API_ROOT}/ingestion/v2/files"
 ITEMS_URL = f"{API_ROOT}/engine/v2/items"
 
@@ -51,8 +49,7 @@ BASE_DELAY_SECONDS = 1.0
 POLL_INTERVAL_SECONDS = 15
 POLL_TIMEOUT_SECONDS = 600
 
-for name, value in [("GLOO_CLIENT_ID", CLIENT_ID),
-                    ("GLOO_CLIENT_SECRET", CLIENT_SECRET),
+for name, value in [("GLOO_API_KEY", API_KEY),
                     ("GLOO_PUBLISHER_ID", PUBLISHER_ID)]:
     if not value:
         print(f"Error: {name} must be set. Copy .env.example to .env and fill in your values.")
@@ -74,41 +71,11 @@ class ApiError(Exception):
         return self.status is None or self.status in RETRYABLE_STATUSES
 
 
-class TokenManager:
-    """Manages OAuth2 client-credentials token lifecycle."""
-
-    def __init__(self) -> None:
-        self._token_info: Dict[str, Any] = {}
-
-    def get_token(self) -> str:
-        if self._is_expired():
-            response = requests.post(
-                TOKEN_URL,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                data={"grant_type": "client_credentials", "scope": "api/access"},
-                auth=(CLIENT_ID, CLIENT_SECRET),
-                timeout=30,
-            )
-            response.raise_for_status()
-            self._token_info = response.json()
-            self._token_info["expires_at"] = time.time() + self._token_info["expires_in"]
-        return self._token_info["access_token"]
-
-    def force_refresh(self) -> None:
-        """Drop the cached token so the next call fetches a fresh one."""
-        self._token_info = {}
-
-    def _is_expired(self) -> bool:
-        expires_at = self._token_info.get("expires_at")
-        return expires_at is None or time.time() > expires_at - 60
-
-
 class ResilientClient:
-    """A thin HTTP client with structured error parsing, retry-with-backoff,
-    and one-shot token refresh on 401."""
+    """A thin HTTP client with structured error parsing and retry-with-backoff."""
 
-    def __init__(self, token_manager: TokenManager) -> None:
-        self.token_manager = token_manager
+    def __init__(self, api_key: str) -> None:
+        self.api_key = api_key
 
     @staticmethod
     def _parse_error(response: requests.Response) -> Tuple[Optional[str], str]:
@@ -146,14 +113,12 @@ class ResilientClient:
         json: Optional[Dict[str, Any]] = None,
         params: Optional[Dict[str, Any]] = None,
         token: Optional[str] = None,
-        allow_refresh: bool = True,
         parse: bool = True,
     ) -> Any:
-        """Send a request, retrying transient failures and refreshing the token
-        once on 401. Raises ApiError on non-retryable failures or exhausted retries."""
-        refreshed = False
+        """Send a request, retrying transient failures. Raises ApiError on
+        non-retryable failures or exhausted retries."""
         for attempt in range(MAX_RETRIES + 1):
-            bearer = token if token is not None else self.token_manager.get_token()
+            bearer = token if token is not None else self.api_key
             try:
                 response = requests.request(
                     method, url,
@@ -165,11 +130,6 @@ class ResilientClient:
                     self._backoff(attempt, None, "connection")
                     continue
                 raise ApiError(None, "network_error", str(e))
-
-            if response.status_code == 401 and allow_refresh and not refreshed:
-                refreshed = True
-                self.token_manager.force_refresh()
-                continue  # retry immediately with a fresh token
 
             if response.status_code in RETRYABLE_STATUSES and attempt < MAX_RETRIES:
                 code, _ = self._parse_error(response)
@@ -207,7 +167,7 @@ class ResilientClient:
         def operation() -> Dict[str, Any]:
             response = requests.post(
                 UPLOAD_URL,
-                headers={"Authorization": f"Bearer {self.token_manager.get_token()}"},
+                headers={"Authorization": f"Bearer {self.api_key}"},
                 params={"producer_id": producer_id},
                 files={"files": (file_path.name, file_bytes)},
                 data={"publisher_id": PUBLISHER_ID},
@@ -250,7 +210,7 @@ def demo_error_handling(client: ResilientClient) -> None:
         ("Missing item (random UUID)", "GET", f"{ITEMS_URL}/{uuid.uuid4()}", {}),
         ("Malformed item ID", "GET", f"{ITEMS_URL}/not-a-valid-uuid", {}),
         ("Rejected bearer token", "GET", f"{ITEMS_URL}/{uuid.uuid4()}",
-         {"token": "invalid-token", "allow_refresh": False}),
+         {"token": "invalid-token"}),
     ]
     for label, method, url, kwargs in cases:
         try:
@@ -313,9 +273,9 @@ def demo_health_check(client: ResilientClient) -> None:
 
 
 def main() -> None:
-    client = ResilientClient(TokenManager())
+    client = ResilientClient(API_KEY)
 
-    print("Step 1: Resilient client ready (token refresh, error parsing, retry/backoff).")
+    print("Step 1: Resilient client ready (error parsing, retry/backoff).")
 
     print("\nStep 2: Interpreting API error responses...")
     demo_error_handling(client)

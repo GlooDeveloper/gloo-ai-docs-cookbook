@@ -11,7 +11,7 @@ Compares responses side-by-side:
 ## Prerequisites
 
 - Python 3.7 or higher
-- Gloo AI account with API credentials
+- Gloo AI account with API key
 - Publisher created in [Gloo Studio](https://studio.ai.gloo.com) with content uploaded
 
 ## Setup
@@ -33,8 +33,7 @@ Compares responses side-by-side:
    ```
 
 4. **Edit `.env`** with your credentials:
-   - `GLOO_CLIENT_ID`: Your Client ID from [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
-   - `GLOO_CLIENT_SECRET`: Your Client Secret
+   - `GLOO_API_KEY`: Your API key from [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
    - `PUBLISHER_NAME`: Name of your Publisher (default: "Bezalel")
 
 ## Running the Demo
@@ -74,15 +73,11 @@ Query: What is Bezalel Ministries' hiring process?
 
 ## How It Works
 
-### Token Management
+### Authentication
 ```python
-def get_access_token():
-    """Retrieve OAuth2 access token from Gloo AI"""
-    # Exchanges client credentials for access token
-
-def ensure_valid_token():
-    """Ensure we have a valid token, refreshing if needed"""
-    # Checks expiration and refreshes automatically
+# API key is read from environment and used directly as Bearer token
+GLOO_API_KEY = os.getenv("GLOO_API_KEY")
+headers = {"Authorization": f"Bearer {GLOO_API_KEY}"}
 ```
 
 ### Non-Grounded Request
@@ -148,8 +143,8 @@ def main():
 ## Troubleshooting
 
 ### Authentication Errors
-- Verify `GLOO_CLIENT_ID` and `GLOO_CLIENT_SECRET` are correct
-- Check credentials at [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
+- Verify `GLOO_API_KEY` is correct
+- Check your API key at [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
 
 ### Publisher Not Found
 - Confirm publisher name matches exactly (case-sensitive)

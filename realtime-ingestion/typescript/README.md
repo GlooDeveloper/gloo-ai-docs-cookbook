@@ -10,7 +10,7 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Typ
 - **Batch Processing**: Upload multiple files at once with rate limiting
 - **Single File Upload**: Process individual files on demand
 - **Error Handling**: Comprehensive error handling with type-safe error responses
-- **Token Management**: Automatic token refresh when expired
+- **API Key Authentication**: Simple, direct API key-based authentication
 - **Strict Mode**: Compiled with strict TypeScript settings for maximum reliability
 
 ## Prerequisites
@@ -18,7 +18,7 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Typ
 - Node.js 18+ installed
 - TypeScript 5.0+ (installed as dev dependency)
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -29,8 +29,7 @@ npm install
 
 2. Create a `.env` file in this directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 3. Update the `PUBLISHER_ID` in `index.ts` with your actual publisher ID.
@@ -76,16 +75,6 @@ npm run start     # Build and run compiled version
 ## Type Definitions
 
 The example includes comprehensive TypeScript interfaces:
-
-### TokenInfo
-```typescript
-interface TokenInfo {
-    access_token: string;
-    expires_in: number;
-    expires_at: number;
-    token_type: string;
-}
-```
 
 ### ContentData
 ```typescript
@@ -141,13 +130,11 @@ npm run single
 ## Configuration
 
 ### Environment Variables
-- `GLOO_CLIENT_ID`: Your Gloo AI Client ID (required)
-- `GLOO_CLIENT_SECRET`: Your Gloo AI Client Secret (required)
+- `GLOO_API_KEY`: Your Gloo AI API key (required)
 
 ### Constants (modify in index.ts)
 - `PUBLISHER_ID`: Your publisher UUID (required)
 - `API_URL`: Realtime ingestion endpoint
-- `TOKEN_URL`: OAuth2 token endpoint
 
 ## TypeScript Configuration
 
@@ -171,7 +158,7 @@ The script automatically extracts and sets metadata with type safety:
 ## Error Handling
 
 Type-safe error handling includes:
-- **Authentication failures**: Automatic token refresh with typed responses
+- **Authentication failures**: API key validation with typed responses
 - **File system errors**: Typed error responses for missing files
 - **Network issues**: HTTP request failures with structured error data
 - **API errors**: Validation failures with type-safe error messages
@@ -229,7 +216,7 @@ The script provides type-safe status updates:
 ### Authentication Issues
 - Verify credentials are properly typed and not empty strings
 - Ensure environment variables are loaded correctly
-- Check token expiration logic with typed date comparisons
+- Check API key is set correctly in environment
 
 ### File Processing Issues
 - Verify file type validation with `isSupportedFile()` function

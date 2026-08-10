@@ -4,21 +4,20 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
 
 ## Features
 
-- ✅ OAuth2 authentication with automatic token refresh
-- ✅ Type hints and dataclasses for better code quality
-- ✅ Create new chat sessions
-- ✅ Continue conversations with context
-- ✅ Retrieve and display chat history
-- ✅ Comprehensive error handling with custom exceptions
-- ✅ Environment validation and configuration
-- ✅ Formatted timestamp display
-- ✅ Human flourishing conversation examples
+- Type hints and dataclasses for better code quality
+- Create new chat sessions
+- Continue conversations with context
+- Retrieve and display chat history
+- Comprehensive error handling with custom exceptions
+- Environment validation and configuration
+- Formatted timestamp display
+- Human flourishing conversation examples
 
 ## Prerequisites
 
 - Python 3.9 or higher
 - pip package manager
-- Gloo AI API credentials (Client ID and Client Secret)
+- Gloo AI API key
 
 ## Setup
 
@@ -36,15 +35,15 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
    
    Create a `.env` file in this directory:
    ```env
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them in your shell:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
+
+   You can get your API key from [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -70,7 +69,7 @@ python main.py
 
 The example will:
 1. Validate environment variables
-2. Authenticate with the Gloo AI API
+2. Authenticate with the Gloo AI API using your API key
 3. Ask a deep question about finding meaning and purpose
 4. Follow up with practical questions
 5. Display the complete conversation history with formatted timestamps
@@ -82,13 +81,6 @@ The example uses modern Python features:
 ### Data Classes
 ```python
 @dataclass
-class TokenInfo:
-    access_token: str
-    expires_in: int
-    expires_at: int
-    token_type: str
-
-@dataclass
 class MessageResponse:
     query_id: str
     message_id: str
@@ -97,7 +89,6 @@ class MessageResponse:
 ```
 
 ### Functions
-- `get_access_token()` - Handles OAuth2 authentication
 - `send_message()` - Sends messages to the chat API
 - `get_chat_history()` - Retrieves conversation history
 - `validate_environment()` - Validates required environment variables
@@ -127,7 +118,6 @@ class GlooApiError(Exception):
 
 ## API Endpoints Used
 
-- `POST /oauth2/token` - Authentication
 - `POST /ai/v1/message` - Send messages
 - `GET /ai/v1/chat` - Retrieve chat history
 
@@ -188,11 +178,11 @@ The code follows Python best practices:
 
 **Common issues:**
 
-1. **"Please set your credentials"** - Ensure environment variables are set
+1. **"Please set your GLOO_API_KEY"** - Ensure your API key environment variable is set
 2. **Import errors** - Install required packages with `pip install -r requirements.txt`
 3. **Python version errors** - Ensure Python 3.9+ is installed
 4. **Network errors** - Check your internet connection
-5. **401 Unauthorized** - Verify your credentials are correct
+5. **401 Unauthorized** - Verify your API key is correct
 6. **SSL errors** - Update your certificates or use Python 3.9+
 
 ## Learn More

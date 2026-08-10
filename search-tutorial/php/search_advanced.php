@@ -11,14 +11,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
 
 $config = loadConfig();
-$CLIENT_ID = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$API_KEY = $config['API_KEY'];
 $TENANT = $config['TENANT'];
-$TOKEN_URL = $config['TOKEN_URL'];
 $SEARCH_URL = $config['SEARCH_URL'];
 $COMPLETIONS_URL = $config['COMPLETIONS_URL'];
 $RAG_MAX_TOKENS = $config['RAG_MAX_TOKENS'];
@@ -27,13 +24,13 @@ $RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = $config['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'
 
 class AdvancedSearchClient
 {
-    private TokenManager $tokenManager;
+    private string $apiKey;
     private string $searchUrl;
     private string $tenant;
 
-    public function __construct(TokenManager $tokenManager, string $searchUrl, string $tenant)
+    public function __construct(string $apiKey, string $searchUrl, string $tenant)
     {
-        $this->tokenManager = $tokenManager;
+        $this->apiKey = $apiKey;
         $this->searchUrl = $searchUrl;
         $this->tenant = $tenant;
     }
@@ -43,7 +40,7 @@ class AdvancedSearchClient
      */
     public function search(string $query, int $limit = 10, string $sortBy = 'relevance'): array
     {
-        $token = $this->tokenManager->ensureValidToken();
+        $token = $this->apiKey;
 
         $payload = json_encode([
             'query' => $query,
@@ -108,13 +105,13 @@ class AdvancedSearchClient
 
 class RAGHelper
 {
-    private TokenManager $tokenManager;
+    private string $apiKey;
     private string $completionsUrl;
     private int $ragMaxTokens;
 
-    public function __construct(TokenManager $tokenManager, string $completionsUrl, int $ragMaxTokens = 3000)
+    public function __construct(string $apiKey, string $completionsUrl, int $ragMaxTokens = 3000)
     {
-        $this->tokenManager = $tokenManager;
+        $this->apiKey = $apiKey;
         $this->completionsUrl = $completionsUrl;
         $this->ragMaxTokens = $ragMaxTokens > 0 ? $ragMaxTokens : 3000;
     }
@@ -160,7 +157,7 @@ class RAGHelper
      */
     public function generateWithContext(string $query, string $context, ?string $systemPrompt = null): string
     {
-        $token = $this->tokenManager->ensureValidToken();
+        $token = $this->apiKey;
 
         if (!$systemPrompt) {
             $systemPrompt = 'You are a helpful assistant. Answer the user\'s question based on the '
@@ -283,7 +280,7 @@ function printAdvancedUsage(): void
 
 // --- Main ---
 if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')) {
-    validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+    validateApiKey($API_KEY);
 
     if ($argc < 3) {
         printAdvancedUsage();
@@ -294,9 +291,8 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     $query = $argv[2];
 
     try {
-        $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-        $searchClient = new AdvancedSearchClient($tokenManager, $SEARCH_URL, $TENANT);
-        $ragHelper = new RAGHelper($tokenManager, $COMPLETIONS_URL, $RAG_MAX_TOKENS);
+        $searchClient = new AdvancedSearchClient($API_KEY, $SEARCH_URL, $TENANT);
+        $ragHelper = new RAGHelper($API_KEY, $COMPLETIONS_URL, $RAG_MAX_TOKENS);
 
         if ($command === 'filter') {
             if ($argc < 4) {

@@ -19,24 +19,22 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/recommend_base.php';
 
 $config = loadConfig();
-$CLIENT_ID   = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
-$TOKEN_URL   = $config['TOKEN_URL'];
+$API_KEY     = $config['API_KEY'];
 $AFFILIATES_URL = $config['AFFILIATES_URL'];
 $DEFAULT_ITEM_COUNT = $config['DEFAULT_ITEM_COUNT'];
 
 class AffiliatesClient
 {
-    private TokenManager $tokenManager;
+    private string $apiKey;
     private string $affiliatesUrl;
 
-    public function __construct(TokenManager $tokenManager, string $affiliatesUrl)
+    public function __construct(string $apiKey, string $affiliatesUrl)
     {
-        $this->tokenManager  = $tokenManager;
+        $this->apiKey        = $apiKey;
         $this->affiliatesUrl = $affiliatesUrl;
     }
 
@@ -46,8 +44,6 @@ class AffiliatesClient
      */
     public function getReferencedItems(string $query, int $itemCount = 5): array
     {
-        $token = $this->tokenManager->ensureValidToken();
-
         $payload = json_encode([
             'query'               => $query,
             'item_count'          => $itemCount,
@@ -60,7 +56,7 @@ class AffiliatesClient
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
+            'Authorization: Bearer ' . $this->apiKey,
             'Content-Type: application/json',
         ]);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
@@ -135,7 +131,7 @@ function printAffiliatesUsage(): void
 
 // --- Main ---
 if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')) {
-    validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+    validateApiKey($API_KEY);
 
     if ($argc < 2) {
         printAffiliatesUsage();
@@ -146,8 +142,7 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     $itemCount = isset($argv[2]) ? parseItemCount($argv[2], $DEFAULT_ITEM_COUNT) : $DEFAULT_ITEM_COUNT;
 
     try {
-        $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-        $client = new AffiliatesClient($tokenManager, $AFFILIATES_URL);
+        $client = new AffiliatesClient($API_KEY, $AFFILIATES_URL);
         runAffiliates($client, $query, $itemCount);
     } catch (Exception $e) {
         fwrite(STDERR, "Error: " . $e->getMessage() . "\n");

@@ -12,74 +12,12 @@
 require('dotenv').config();
 
 // Configuration
-const GLOO_CLIENT_ID = process.env.GLOO_CLIENT_ID;
-const GLOO_CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET;
+const GLOO_API_KEY = process.env.GLOO_API_KEY;
 const PUBLISHER_NAME = process.env.PUBLISHER_NAME || 'Bezalel';
 
 // API Endpoints
-const TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
 const COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
 const GROUNDED_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions/grounded';
-
-// Token management
-let accessToken = null;
-let tokenExpiry = null;
-
-/**
- * Retrieve an OAuth2 access token from Gloo AI.
- *
- * @returns {Promise<Object>} Token response containing access_token and expires_in
- */
-async function getAccessToken() {
-  if (!GLOO_CLIENT_ID || !GLOO_CLIENT_SECRET) {
-    throw new Error(
-      'Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET ' +
-      'environment variables.'
-    );
-  }
-
-  const params = new URLSearchParams({
-    grant_type: 'client_credentials',
-    client_id: GLOO_CLIENT_ID,
-    client_secret: GLOO_CLIENT_SECRET
-  });
-
-  try {
-    const response = await fetch(TOKEN_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params
-    });
-
-    if (!response.ok) {
-      throw new Error(`Token request failed: ${response.statusText}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    throw new Error(`Failed to get access token: ${error.message}`);
-  }
-}
-
-/**
- * Ensure we have a valid access token, refreshing if necessary.
- *
- * @returns {Promise<string>} Valid access token
- */
-async function ensureValidToken() {
-  // Check if we need a new token
-  if (!accessToken || !tokenExpiry || Date.now() >= tokenExpiry) {
-    const tokenData = await getAccessToken();
-    accessToken = tokenData.access_token;
-    // Set expiry with 5 minute buffer
-    const expiresIn = tokenData.expires_in || 3600;
-    tokenExpiry = Date.now() + (expiresIn - 300) * 1000;
-  }
-
-  return accessToken;
-}
 
 /**
  * Make a standard V2 completion request WITHOUT grounding.
@@ -91,7 +29,11 @@ async function ensureValidToken() {
  * @returns {Promise<Object>} API response
  */
 async function makeNonGroundedRequest(query) {
-  const token = await ensureValidToken();
+  if (!GLOO_API_KEY) {
+    throw new Error(
+      'Missing API key. Set GLOO_API_KEY environment variable.'
+    );
+  }
 
   const payload = {
     messages: [{ role: 'user', content: query }],
@@ -103,7 +45,7 @@ async function makeNonGroundedRequest(query) {
     const response = await fetch(COMPLETIONS_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${GLOO_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload)
@@ -132,7 +74,11 @@ async function makeNonGroundedRequest(query) {
  * @returns {Promise<Object>} API response with sources_returned flag
  */
 async function makePublisherGroundedRequest(query, publisherName, sourcesLimit = 3) {
-  const token = await ensureValidToken();
+  if (!GLOO_API_KEY) {
+    throw new Error(
+      'Missing API key. Set GLOO_API_KEY environment variable.'
+    );
+  }
 
   const payload = {
     messages: [{ role: 'user', content: query }],
@@ -146,7 +92,7 @@ async function makePublisherGroundedRequest(query, publisherName, sourcesLimit =
     const response = await fetch(GROUNDED_URL, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${GLOO_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload)
@@ -288,8 +234,6 @@ if (require.main === module) {
 
 // Export functions for use as a module
 module.exports = {
-  getAccessToken,
-  ensureValidToken,
   makeNonGroundedRequest,
   makePublisherGroundedRequest,
   compareResponses

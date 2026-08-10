@@ -4,21 +4,21 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
 
 ## Features
 
-- ✅ OAuth2 authentication with automatic token refresh
-- ✅ Idiomatic Go code with proper error handling
-- ✅ Go modules for dependency management
-- ✅ Create new chat sessions
-- ✅ Continue conversations with context
-- ✅ Retrieve and display chat history
-- ✅ Comprehensive error handling with custom error types
-- ✅ Environment validation and configuration
-- ✅ Formatted timestamp display
-- ✅ Human flourishing conversation examples
+- API key authentication
+- Idiomatic Go code with proper error handling
+- Go modules for dependency management
+- Create new chat sessions
+- Continue conversations with context
+- Retrieve and display chat history
+- Comprehensive error handling with custom error types
+- Environment validation and configuration
+- Formatted timestamp display
+- Human flourishing conversation examples
 
 ## Prerequisites
 
 - Go 1.21 or higher
-- Gloo AI API credentials (Client ID and Client Secret)
+- Gloo AI API key
 
 ## Setup
 
@@ -37,15 +37,15 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
    
    Create a `.env` file in this directory:
    ```env
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them in your shell:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
+
+   You can get your API key from [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -70,7 +70,7 @@ go run .
 
 The example will:
 1. Validate environment variables
-2. Authenticate with the Gloo AI API
+2. Authenticate with the Gloo AI API using your API key
 3. Ask a deep question about finding meaning and purpose
 4. Follow up with practical questions
 5. Display the complete conversation history with formatted timestamps
@@ -81,13 +81,6 @@ The example demonstrates idiomatic Go patterns:
 
 ### Data Structures
 ```go
-type TokenInfo struct {
-    AccessToken string `json:"access_token"`
-    ExpiresIn   int    `json:"expires_in"`
-    ExpiresAt   int64  `json:"expires_at"`
-    TokenType   string `json:"token_type"`
-}
-
 type MessageResponse struct {
     QueryID   string `json:"query_id"`
     MessageID string `json:"message_id"`
@@ -97,7 +90,6 @@ type MessageResponse struct {
 ```
 
 ### Functions
-- `getAccessToken()` - Handles OAuth2 authentication
 - `sendMessage()` - Sends messages to the chat API
 - `getChatHistory()` - Retrieves conversation history
 - `validateEnvironment()` - Validates required environment variables
@@ -136,7 +128,6 @@ The example uses minimal, high-quality dependencies:
 
 ## API Endpoints Used
 
-- `POST /oauth2/token` - Authentication
 - `POST /ai/v1/message` - Send messages
 - `GET /ai/v1/chat` - Retrieve chat history
 
@@ -202,17 +193,13 @@ package main
 
 import (
     "testing"
-    "time"
 )
 
-func TestIsTokenExpired(t *testing.T) {
-    token := &TokenInfo{
-        AccessToken: "test",
-        ExpiresAt:   time.Now().Unix() + 3600,
-    }
-    
-    if isTokenExpired(token) {
-        t.Error("Token should not be expired")
+func TestValidateEnvironment(t *testing.T) {
+    // Test environment validation logic
+    apiKey = ""
+    if err := validateEnvironment(); err == nil {
+        t.Error("Expected error for empty API key")
     }
 }
 ```
@@ -226,11 +213,11 @@ go test
 
 **Common issues:**
 
-1. **"Please set your credentials"** - Ensure environment variables are set
+1. **"Please set your GLOO_API_KEY"** - Ensure your API key environment variable is set
 2. **Go version errors** - Ensure Go 1.21+ is installed
 3. **Module errors** - Run `go mod tidy` to clean up dependencies
 4. **Network errors** - Check your internet connection
-5. **401 Unauthorized** - Verify your credentials are correct
+5. **401 Unauthorized** - Verify your API key is correct
 6. **Build errors** - Ensure all dependencies are installed
 
 **Debugging:**

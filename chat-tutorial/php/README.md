@@ -4,22 +4,22 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
 
 ## Features
 
-- ✅ OAuth2 authentication with automatic token refresh
-- ✅ Modern PHP 8.1+ features (typed properties, null coalescing)
-- ✅ PSR-4 autoloading with Composer
-- ✅ Create new chat sessions
-- ✅ Continue conversations with context
-- ✅ Retrieve and display chat history
-- ✅ Comprehensive error handling with custom exceptions
-- ✅ Environment validation and configuration
-- ✅ Formatted timestamp display
-- ✅ Human flourishing conversation examples
+- API key authentication
+- Modern PHP 8.1+ features (typed properties, null coalescing)
+- PSR-4 autoloading with Composer
+- Create new chat sessions
+- Continue conversations with context
+- Retrieve and display chat history
+- Comprehensive error handling with custom exceptions
+- Environment validation and configuration
+- Formatted timestamp display
+- Human flourishing conversation examples
 
 ## Prerequisites
 
 - PHP 8.1 or higher
 - Composer package manager
-- Gloo AI API credentials (Client ID and Client Secret)
+- Gloo AI API key
 
 ## Setup
 
@@ -32,15 +32,15 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
    
    Create a `.env` file in this directory:
    ```env
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them in your shell:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
+
+   You can get your API key from [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -64,7 +64,7 @@ php -d display_errors=On index.php
 
 The example will:
 1. Validate environment variables
-2. Authenticate with the Gloo AI API
+2. Authenticate with the Gloo AI API using your API key
 3. Ask a deep question about finding meaning and purpose
 4. Follow up with practical questions
 5. Display the complete conversation history with formatted timestamps
@@ -75,23 +75,21 @@ The example uses modern PHP features:
 
 ### Classes and Objects
 ```php
-class TokenInfo {
-    public string $access_token;
-    public int $expires_in;
-    public int $expires_at;
-    public string $token_type;
-    
-    public function __construct(array $data) {
-        $this->access_token = $data['access_token'];
-        $this->expires_in = $data['expires_in'];
-        $this->expires_at = time() + $data['expires_in'];
-        $this->token_type = $data['token_type'];
-    }
+class MessageResponse {
+    public string $chat_id;
+    public string $query_id;
+    public string $message_id;
+    public string $message;
+    public string $timestamp;
+    public bool $success;
+    public array $suggestions;
+    public array $sources;
+
+    public function __construct(array $data) { ... }
 }
 ```
 
 ### Functions
-- `getAccessToken()` - Handles OAuth2 authentication
 - `sendMessage()` - Sends messages to the chat API
 - `getChatHistory()` - Retrieves conversation history
 - `validateEnvironment()` - Validates required environment variables
@@ -106,7 +104,7 @@ The example includes comprehensive error handling:
 ```php
 class GlooApiException extends Exception {
     public ?int $status_code;
-    
+
     public function __construct(string $message, ?int $status_code = null, ?Throwable $previous = null) {
         $this->status_code = $status_code;
         parent::__construct($message, $status_code ?? 0, $previous);
@@ -131,7 +129,6 @@ The example uses these quality PHP packages:
 
 ## API Endpoints Used
 
-- `POST /oauth2/token` - Authentication
 - `POST /ai/v1/message` - Send messages
 - `GET /ai/v1/chat` - Retrieve chat history
 
@@ -189,11 +186,11 @@ The code follows PHP best practices:
 
 **Common issues:**
 
-1. **"Please set your credentials"** - Ensure environment variables are set
+1. **"Please set your GLOO_API_KEY"** - Ensure your API key environment variable is set
 2. **Composer not found** - Install Composer from https://getcomposer.org/
 3. **PHP version errors** - Ensure PHP 8.1+ is installed
 4. **Network errors** - Check your internet connection and firewall
-5. **401 Unauthorized** - Verify your credentials are correct
+5. **401 Unauthorized** - Verify your API key is correct
 6. **SSL errors** - Update your CA certificates
 
 **Debugging:**

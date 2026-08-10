@@ -14,65 +14,13 @@ $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 // Configuration
-$CLIENT_ID = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID') ?: 'YOUR_CLIENT_ID';
-$CLIENT_SECRET = $_ENV['GLOO_CLIENT_SECRET'] ?? getenv('GLOO_CLIENT_SECRET') ?: 'YOUR_CLIENT_SECRET';
-$TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
+$API_KEY = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY') ?: 'YOUR_API_KEY';
 $API_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
-
-// Global token storage
-$tokenInfo = [];
-
-/**
- * Retrieve a new access token from the Gloo AI API
- */
-function getAccessToken($clientId, $clientSecret, $tokenUrl) {
-    $postData = 'grant_type=client_credentials&scope=api/access';
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $tokenUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    curl_setopt($ch, CURLOPT_POST, 1);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-    curl_setopt($ch, CURLOPT_USERPWD, $clientId . ':' . $clientSecret);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-
-    $result = curl_exec($ch);
-    if (curl_errno($ch)) {
-        throw new Exception('Error getting access token: ' . curl_error($ch));
-    }
-    curl_close($ch);
-
-    $tokenData = json_decode($result, true);
-    $tokenData['expires_at'] = time() + $tokenData['expires_in'];
-
-    return $tokenData;
-}
-
-/**
- * Check if the token is expired or close to expiring
- */
-function isTokenExpired($token) {
-    if (empty($token) || !isset($token['expires_at'])) {
-        return true;
-    }
-    return time() > ($token['expires_at'] - 60);
-}
-
-/**
- * Ensure we have a valid access token
- */
-function ensureValidToken(&$tokenInfo, $clientId, $clientSecret, $tokenUrl) {
-    if (isTokenExpired($tokenInfo)) {
-        echo "Getting new access token...\n";
-        $tokenInfo = getAccessToken($clientId, $clientSecret, $tokenUrl);
-    }
-    return $tokenInfo;
-}
 
 /**
  * Make an API request
  */
-function makeRequest($apiUrl, $payload, $token) {
+function makeRequest($apiUrl, $payload, $apiKey) {
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $apiUrl);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -80,7 +28,7 @@ function makeRequest($apiUrl, $payload, $token) {
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/json',
-        'Authorization: Bearer ' . $token['access_token'],
+        'Authorization: Bearer ' . $apiKey,
     ]);
 
     $result = curl_exec($ch);
@@ -95,38 +43,32 @@ function makeRequest($apiUrl, $payload, $token) {
 /**
  * Example 1: Auto-routing - Let Gloo AI select the optimal model
  */
-function makeV2AutoRouting($message, $tradition, $apiUrl, &$tokenInfo, $clientId, $clientSecret, $tokenUrl) {
-    $token = ensureValidToken($tokenInfo, $clientId, $clientSecret, $tokenUrl);
-
+function makeV2AutoRouting($message, $tradition, $apiUrl, $apiKey) {
     $payload = [
         'messages' => [['role' => 'user', 'content' => $message]],
         'auto_routing' => true,
         'tradition' => $tradition
     ];
 
-    return makeRequest($apiUrl, $payload, $token);
+    return makeRequest($apiUrl, $payload, $apiKey);
 }
 
 /**
  * Example 2: Model family selection - Choose a provider family
  */
-function makeV2ModelFamily($message, $modelFamily, $apiUrl, &$tokenInfo, $clientId, $clientSecret, $tokenUrl) {
-    $token = ensureValidToken($tokenInfo, $clientId, $clientSecret, $tokenUrl);
-
+function makeV2ModelFamily($message, $modelFamily, $apiUrl, $apiKey) {
     $payload = [
         'messages' => [['role' => 'user', 'content' => $message]],
         'model_family' => $modelFamily
     ];
 
-    return makeRequest($apiUrl, $payload, $token);
+    return makeRequest($apiUrl, $payload, $apiKey);
 }
 
 /**
  * Example 3: Direct model selection - Specify an exact model
  */
-function makeV2DirectModel($message, $model, $apiUrl, &$tokenInfo, $clientId, $clientSecret, $tokenUrl) {
-    $token = ensureValidToken($tokenInfo, $clientId, $clientSecret, $tokenUrl);
-
+function makeV2DirectModel($message, $model, $apiUrl, $apiKey) {
     $payload = [
         'messages' => [['role' => 'user', 'content' => $message]],
         'model' => $model,
@@ -134,15 +76,14 @@ function makeV2DirectModel($message, $model, $apiUrl, &$tokenInfo, $clientId, $c
         'max_tokens' => 500
     ];
 
-    return makeRequest($apiUrl, $payload, $token);
+    return makeRequest($apiUrl, $payload, $apiKey);
 }
 
 // Main execution
-if ($CLIENT_ID === 'YOUR_CLIENT_ID' || $CLIENT_SECRET === 'YOUR_CLIENT_SECRET') {
-    echo "Please set your GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables\n";
+if ($API_KEY === 'YOUR_API_KEY') {
+    echo "Please set your GLOO_API_KEY environment variable\n";
     echo "You can create a .env file with:\n";
-    echo "GLOO_CLIENT_ID=your_client_id\n";
-    echo "GLOO_CLIENT_SECRET=your_client_secret\n";
+    echo "GLOO_API_KEY=your_api_key\n";
     exit(1);
 }
 
@@ -155,7 +96,7 @@ try {
     $result1 = makeV2AutoRouting(
         "How does the Old Testament connect to the New Testament?",
         "evangelical",
-        $API_URL, $tokenInfo, $CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL
+        $API_URL, $API_KEY
     );
     echo "   Model used: " . ($result1['model'] ?? 'N/A') . "\n";
     echo "   Routing: " . ($result1['routing_mechanism'] ?? 'N/A') . "\n";
@@ -168,7 +109,7 @@ try {
     $result2 = makeV2ModelFamily(
         "Draft a short sermon outline on forgiveness.",
         "anthropic",
-        $API_URL, $tokenInfo, $CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL
+        $API_URL, $API_KEY
     );
     echo "   Model used: " . ($result2['model'] ?? 'N/A') . "\n";
     echo "   Response: " . substr($result2['choices'][0]['message']['content'], 0, 100) . "...\n";
@@ -180,7 +121,7 @@ try {
     $result3 = makeV2DirectModel(
         "Summarize the book of Romans in 3 sentences.",
         "gloo-anthropic-claude-sonnet-4.5",
-        $API_URL, $tokenInfo, $CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL
+        $API_URL, $API_KEY
     );
     echo "   Model used: " . ($result3['model'] ?? 'N/A') . "\n";
     echo "   Response: " . substr($result3['choices'][0]['message']['content'], 0, 100) . "...\n";

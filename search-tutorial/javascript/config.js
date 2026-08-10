@@ -4,11 +4,9 @@
 
 require("dotenv").config();
 
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
+const API_KEY = process.env.GLOO_API_KEY || "";
 const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
 
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
 const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
 const COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
@@ -24,15 +22,24 @@ const RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = parseInt(
   10
 );
 
+function validateApiKey(apiKey) {
+  if (!apiKey) {
+    console.error("Error: GLOO_API_KEY must be set");
+    console.log("Create a .env file with your API key:");
+    console.log("GLOO_API_KEY=your_api_key_here");
+    console.log("GLOO_TENANT=your_tenant_name_here");
+    process.exit(1);
+  }
+}
+
 module.exports = {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   TENANT,
-  TOKEN_URL,
   SEARCH_URL,
   COMPLETIONS_URL,
   PORT,
   RAG_MAX_TOKENS,
   RAG_CONTEXT_MAX_SNIPPETS,
   RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+  validateApiKey,
 };

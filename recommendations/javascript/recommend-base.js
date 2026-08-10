@@ -13,20 +13,28 @@
  */
 
 const axios = require("axios");
-const { TokenManager, validateCredentials } = require("./auth");
 const {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   COLLECTION,
   TENANT,
-  TOKEN_URL,
   RECOMMENDATIONS_BASE_URL,
   DEFAULT_ITEM_COUNT,
 } = require("./config");
 
+function validateApiKey(apiKey) {
+  if (!apiKey) {
+    console.error("Error: GLOO_API_KEY must be set");
+    console.log("Create a .env file with your API key:");
+    console.log("GLOO_API_KEY=your_api_key_here");
+    console.log("GLOO_TENANT=your_tenant_name_here");
+    console.log("GLOO_COLLECTION=GlooProd");
+    process.exit(1);
+  }
+}
+
 class RecommendationsClient {
-  constructor(tokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -36,8 +44,6 @@ class RecommendationsClient {
    * @returns {Array} List of recommended items with metadata
    */
   async getBase(query, itemCount = DEFAULT_ITEM_COUNT) {
-    const token = await this.tokenManager.ensureValidToken();
-
     const payload = {
       query,
       collection: COLLECTION,
@@ -49,7 +55,7 @@ class RecommendationsClient {
     try {
       const response = await axios.post(RECOMMENDATIONS_BASE_URL, payload, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
         },
         timeout: 60000,
@@ -67,8 +73,7 @@ class RecommendationsClient {
 }
 
 async function run(query, itemCount = DEFAULT_ITEM_COUNT) {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const client = new RecommendationsClient(tokenManager);
+  const client = new RecommendationsClient(API_KEY);
 
   console.log(`Fetching recommendations for: '${query}'`);
   console.log(`Requesting up to ${itemCount} items\n`);
@@ -119,7 +124,7 @@ function printUsage() {
 }
 
 async function main() {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
   if (args.length < 1) {
@@ -141,7 +146,7 @@ async function main() {
 }
 
 // Export for use by server.js
-module.exports = { RecommendationsClient };
+module.exports = { RecommendationsClient, validateApiKey };
 
 // Run if executed directly
 if (require.main === module) {

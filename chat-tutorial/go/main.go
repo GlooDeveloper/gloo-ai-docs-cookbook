@@ -16,20 +16,12 @@ import (
 
 // Configuration constants
 const (
-	tokenURL    = "https://platform.ai.gloo.com/oauth2/token"
 	messageURL  = "https://platform.ai.gloo.com/ai/v1/message"
 	chatURL     = "https://platform.ai.gloo.com/ai/v1/chat"
 	httpTimeout = 30 * time.Second
 )
 
 // Data structures
-type TokenInfo struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	ExpiresAt   int64  `json:"expires_at"`
-	TokenType   string `json:"token_type"`
-}
-
 type MessageRequest struct {
 	Query             string   `json:"query"`
 	CharacterLimit    int      `json:"character_limit,omitempty"`
@@ -73,10 +65,8 @@ type ApiError struct {
 
 // Global variables
 var (
-	clientID     string
-	clientSecret string
-	httpClient   *http.Client
-	tokenInfo    *TokenInfo
+	apiKey     string
+	httpClient *http.Client
 )
 
 // Custom error type
@@ -95,11 +85,10 @@ func init() {
 		// .env file is optional, so don't fail if it doesn't exist
 		fmt.Println("Warning: .env file not found, using environment variables")
 	}
-	
+
 	// Initialize configuration
-	clientID = getEnvOrDefault("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-	clientSecret = getEnvOrDefault("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-	
+	apiKey = getEnvOrDefault("GLOO_API_KEY", "")
+
 	// Initialize HTTP client with timeout
 	httpClient = &http.Client{
 		Timeout: httpTimeout,
@@ -113,75 +102,7 @@ func getEnvOrDefault(key, defaultValue string) string {
 	return defaultValue
 }
 
-func getAccessToken() (*TokenInfo, error) {
-	data := strings.NewReader("grant_type=client_credentials&scope=api/access")
-	req, err := http.NewRequest("POST", tokenURL, data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("authentication request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		var apiErr ApiError
-		if err := json.Unmarshal(body, &apiErr); err == nil && apiErr.Detail != "" {
-			return nil, &GlooApiError{
-				Message:    fmt.Sprintf("authentication failed: %s", apiErr.Detail),
-				StatusCode: resp.StatusCode,
-			}
-		}
-		return nil, &GlooApiError{
-			Message:    fmt.Sprintf("authentication failed: HTTP %d - %s", resp.StatusCode, string(body)),
-			StatusCode: resp.StatusCode,
-		}
-	}
-
-	var token TokenInfo
-	if err := json.Unmarshal(body, &token); err != nil {
-		return nil, fmt.Errorf("failed to parse token response: %w", err)
-	}
-
-	token.ExpiresAt = time.Now().Unix() + int64(token.ExpiresIn)
-	return &token, nil
-}
-
-func isTokenExpired(token *TokenInfo) bool {
-	if token == nil || token.ExpiresAt == 0 {
-		return true
-	}
-	return time.Now().Unix() > (token.ExpiresAt - 60)
-}
-
-func ensureValidToken() (string, error) {
-	if isTokenExpired(tokenInfo) {
-		fmt.Println("Getting new access token...")
-		var err error
-		tokenInfo, err = getAccessToken()
-		if err != nil {
-			return "", err
-		}
-	}
-	return tokenInfo.AccessToken, nil
-}
-
 func sendMessage(messageText string, chatID string) (*MessageResponse, error) {
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get valid token: %w", err)
-	}
-
 	payload := MessageRequest{
 		Query:             messageText,
 		CharacterLimit:    1000,
@@ -205,7 +126,7 @@ func sendMessage(messageText string, chatID string) (*MessageResponse, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(req)
@@ -242,11 +163,6 @@ func sendMessage(messageText string, chatID string) (*MessageResponse, error) {
 }
 
 func getChatHistory(chatID string) (*ChatHistory, error) {
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get valid token: %w", err)
-	}
-
 	params := url.Values{}
 	params.Add("chat_id", chatID)
 	requestURL := fmt.Sprintf("%s?%s", chatURL, params.Encode())
@@ -256,7 +172,7 @@ func getChatHistory(chatID string) (*ChatHistory, error) {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := httpClient.Do(req)
@@ -300,8 +216,8 @@ func formatTimestamp(timestamp string) string {
 }
 
 func validateEnvironment() error {
-	if clientID == "YOUR_CLIENT_ID" || clientSecret == "YOUR_CLIENT_SECRET" {
-		return fmt.Errorf("please set your GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables")
+	if apiKey == "" {
+		return fmt.Errorf("please set your GLOO_API_KEY environment variable")
 	}
 	return nil
 }
@@ -316,10 +232,9 @@ func displayMessage(message ChatMessage, index int) {
 func main() {
 	// Validate environment
 	if err := validateEnvironment(); err != nil {
-		fmt.Printf("❌ Environment Error: %v\n", err)
+		fmt.Printf("Environment Error: %v\n", err)
 		fmt.Println("Create a .env file with:")
-		fmt.Println("GLOO_CLIENT_ID=your_client_id")
-		fmt.Println("GLOO_CLIENT_SECRET=your_client_secret")
+		fmt.Println("GLOO_API_KEY=your_api_key")
 		os.Exit(1)
 	}
 
@@ -332,7 +247,7 @@ func main() {
 	// Create new chat session
 	chatResponse, err := sendMessage(initialQuestion, "")
 	if err != nil {
-		fmt.Printf("❌ Error creating chat: %v\n", err)
+		fmt.Printf("Error creating chat: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -360,11 +275,11 @@ func main() {
 
 	fmt.Println("=== Continuing the Conversation ===")
 	fmt.Printf("Using suggested question: %s\n\n", followUpQuestion)
-	
+
 	// Send follow-up message
 	followUpResponse, err := sendMessage(followUpQuestion, chatID)
 	if err != nil {
-		fmt.Printf("❌ Error sending follow-up: %v\n", err)
+		fmt.Printf("Error sending follow-up: %v\n", err)
 		os.Exit(1)
 	}
 	fmt.Println("AI Response:")
@@ -375,7 +290,7 @@ func main() {
 	fmt.Println("=== Complete Chat History ===")
 	chatHistory, err := getChatHistory(chatID)
 	if err != nil {
-		fmt.Printf("❌ Error getting chat history: %v\n", err)
+		fmt.Printf("Error getting chat history: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -383,8 +298,8 @@ func main() {
 		displayMessage(message, i)
 	}
 
-	fmt.Println("✅ Chat session completed successfully!")
-	fmt.Printf("📊 Total messages: %d\n", len(chatHistory.Messages))
-	fmt.Printf("🔗 Chat ID: %s\n", chatID)
-	fmt.Printf("📅 Session created: %s\n", formatTimestamp(chatHistory.CreatedAt))
+	fmt.Println("Chat session completed successfully!")
+	fmt.Printf("Total messages: %d\n", len(chatHistory.Messages))
+	fmt.Printf("Chat ID: %s\n", chatID)
+	fmt.Printf("Session created: %s\n", formatTimestamp(chatHistory.CreatedAt))
 }

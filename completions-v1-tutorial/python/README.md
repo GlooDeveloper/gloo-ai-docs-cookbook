@@ -19,19 +19,17 @@ This example demonstrates how to use the Gloo AI Completions API to generate tex
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them directly:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-4. **Get your credentials:**
+4. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -40,13 +38,12 @@ python main.py
 ```
 
 This will run multiple completion tests that:
-1. Authenticate with the Gloo AI API
-2. Make completion requests for different prompts
-3. Display the generated responses
+1. Make completion requests for different prompts
+2. Display the generated responses
 
 ## Key Features
 
-- **Token Management**: Automatic token refresh when expired
+- **API Key Auth**: Simple API key authentication via Bearer token
 - **Error Handling**: Comprehensive error handling for API failures
 - **Environment Variables**: Secure credential management using python-dotenv
 - **Multiple Tests**: Tests multiple completion scenarios
@@ -80,7 +77,7 @@ Response: Building meaningful relationships requires intentionality, authenticit
 ## Usage in Your Application
 
 ```python
-from main import make_chat_completion_request, ensure_valid_token
+from main import make_chat_completion_request
 
 def example():
     # Make a completion request
@@ -89,22 +86,13 @@ def example():
     # Extract the response
     response = result['choices'][0]['message']['content']
     print(response)
-    
-    # Or get a token for other API calls
-    token = ensure_valid_token()
-    # Use token for other authenticated requests
 ```
-
-## Authentication
-
-This example uses the authentication methods from the [Authentication Tutorial](../../../tutorials/authentication). The token management is handled automatically, but you can also use the `ensure_valid_token()` function to get a token for other API calls.
 
 ## Error Handling
 
 The example includes comprehensive error handling for:
 - Network connectivity issues
 - Invalid credentials
-- Token expiration
 - API rate limiting
 - HTTP errors
 
@@ -114,7 +102,7 @@ This example requires Python 3.7 or higher.
 
 ## Troubleshooting
 
-- **401 Unauthorized**: Check your Client ID and Client Secret
+- **401 Unauthorized**: Check your API key
 - **403 Forbidden**: Verify your API access permissions
 - **Network errors**: Ensure you have internet connectivity
 - **Module not found**: Run `pip install -r requirements.txt`

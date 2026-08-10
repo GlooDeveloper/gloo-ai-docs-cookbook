@@ -9,7 +9,6 @@ and direct model selection.
 """
 
 import requests
-import time
 import os
 from dotenv import load_dotenv
 
@@ -17,55 +16,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuration
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
+API_KEY = os.getenv("GLOO_API_KEY", "YOUR_API_KEY")
 API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
-
-# Global token storage
-access_token_info = {}
-
-
-def get_access_token():
-    """Retrieve a new access token from the Gloo AI API."""
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {"grant_type": "client_credentials", "scope": "api/access"}
-
-    try:
-        response = requests.post(TOKEN_URL, headers=headers, data=data, auth=(CLIENT_ID, CLIENT_SECRET))
-        response.raise_for_status()
-
-        token_data = response.json()
-        token_data['expires_at'] = int(time.time()) + token_data['expires_in']
-
-        return token_data
-    except requests.exceptions.RequestException as e:
-        print(f"Error getting access token: {e}")
-        raise
-
-
-def is_token_expired(token_info):
-    """Check if the token is expired or close to expiring."""
-    if not token_info or 'expires_at' not in token_info:
-        return True
-    return time.time() > (token_info['expires_at'] - 60)
-
-
-def ensure_valid_token():
-    """Ensure we have a valid access token."""
-    global access_token_info
-    if is_token_expired(access_token_info):
-        print("Getting new access token...")
-        access_token_info = get_access_token()
-    return access_token_info['access_token']
 
 
 def make_v2_auto_routing(message, tradition="evangelical"):
     """Example 1: Auto-routing - Let Gloo AI select the optimal model."""
-    token = ensure_valid_token()
-
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -86,10 +44,8 @@ def make_v2_auto_routing(message, tradition="evangelical"):
 
 def make_v2_model_family(message, model_family="anthropic"):
     """Example 2: Model family selection - Choose a provider family."""
-    token = ensure_valid_token()
-
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -109,10 +65,8 @@ def make_v2_model_family(message, model_family="anthropic"):
 
 def make_v2_direct_model(message, model="gloo-anthropic-claude-sonnet-4.5"):
     """Example 3: Direct model selection - Specify an exact model."""
-    token = ensure_valid_token()
-
     headers = {
-        "Authorization": f"Bearer {token}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
 
@@ -175,11 +129,10 @@ def test_completions_v2_api():
 
 def main():
     """Main execution."""
-    if CLIENT_ID == "YOUR_CLIENT_ID" or CLIENT_SECRET == "YOUR_CLIENT_SECRET":
-        print("Please set your GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables")
+    if API_KEY == "YOUR_API_KEY":
+        print("Please set your GLOO_API_KEY environment variable")
         print("You can create a .env file with:")
-        print("GLOO_CLIENT_ID=your_client_id")
-        print("GLOO_CLIENT_SECRET=your_client_secret")
+        print("GLOO_API_KEY=your_api_key")
         return
 
     test_completions_v2_api()

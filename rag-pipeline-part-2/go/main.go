@@ -28,7 +28,6 @@ import (
 
 const (
 	apiRoot   = "https://platform.ai.gloo.com"
-	tokenURL  = apiRoot + "/oauth2/token"
 	uploadURL = apiRoot + "/ingestion/v2/files"
 	itemURL   = apiRoot + "/engine/v2/item"  // single-item update (PATCH)
 	itemsURL  = apiRoot + "/engine/v2/items" // bulk patch (PATCH), delete (DELETE)
@@ -47,9 +46,8 @@ const (
 )
 
 var (
-	clientID     string
-	clientSecret string
-	publisherID  string
+	apiKey      string
+	publisherID string
 )
 
 // SeedItem describes one piece of content this recipe manages. Producer IDs are
@@ -92,41 +90,6 @@ func seedItems() []SeedItem {
 	}
 }
 
-// TokenManager manages OAuth2 client-credentials token lifecycle.
-type TokenManager struct {
-	accessToken string
-	expiresAt   time.Time
-}
-
-// GetToken returns a valid access token, fetching a new one if needed.
-func (tm *TokenManager) GetToken() (string, error) {
-	if time.Now().Before(tm.expiresAt.Add(-60 * time.Second)) {
-		return tm.accessToken, nil
-	}
-	form := url.Values{"grant_type": {"client_credentials"}, "scope": {"api/access"}}
-	req, err := http.NewRequest(http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
-	if err != nil {
-		return "", err
-	}
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	body, _, err := doRequest(req, false)
-	if err != nil {
-		return "", fmt.Errorf("token request failed: %w", err)
-	}
-	var token struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-	if err := json.Unmarshal(body, &token); err != nil {
-		return "", err
-	}
-	tm.accessToken = token.AccessToken
-	tm.expiresAt = time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
-	return tm.accessToken, nil
-}
-
 // ItemMetadata is the subset of item metadata this recipe reads.
 type ItemMetadata struct {
 	ItemID    string   `json:"item_id"`
@@ -145,16 +108,7 @@ type PatchOp struct {
 
 // ContentLifecycle seeds content and performs scoped lifecycle operations on it.
 type ContentLifecycle struct {
-	tokens *TokenManager
-}
-
-func (c *ContentLifecycle) authorize(req *http.Request) error {
-	token, err := c.tokens.GetToken()
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	return nil
+	apiKey string
 }
 
 // UploadFile uploads a single file under a stable producer ID; returns its item ID.
@@ -185,9 +139,7 @@ func (c *ContentLifecycle) UploadFile(path, producerID string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := c.authorize(req); err != nil {
-		return "", err
-	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	body, _, err := doRequest(req, false)
@@ -222,9 +174,7 @@ func (c *ContentLifecycle) SetMetadata(itemID string, fields map[string]any) err
 	if err != nil {
 		return err
 	}
-	if err := c.authorize(req); err != nil {
-		return err
-	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 	if _, _, err := doRequest(req, false); err != nil {
 		return fmt.Errorf("metadata update failed: %w", err)
@@ -238,9 +188,7 @@ func (c *ContentLifecycle) GetItem(itemID string) (*ItemMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := c.authorize(req); err != nil {
-		return nil, err
-	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	body, _, err := doRequest(req, false)
 	if err != nil {
 		return nil, fmt.Errorf("get item failed: %w", err)
@@ -258,9 +206,7 @@ func (c *ContentLifecycle) ItemExists(itemID string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if err := c.authorize(req); err != nil {
-		return false, err
-	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	_, status, err := doRequest(req, true)
 	if err != nil {
 		return false, err
@@ -313,9 +259,7 @@ func (c *ContentLifecycle) BulkPatch(itemIDs []string, ops []PatchOp) (map[strin
 	if err != nil {
 		return nil, err
 	}
-	if err := c.authorize(req); err != nil {
-		return nil, err
-	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	body, _, err := doRequest(req, false)
@@ -339,9 +283,7 @@ func (c *ContentLifecycle) DeleteItems(itemIDs []string) (map[string]any, error)
 	if err != nil {
 		return nil, err
 	}
-	if err := c.authorize(req); err != nil {
-		return nil, err
-	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	body, _, err := doRequest(req, false)
@@ -428,20 +370,18 @@ func numField(result map[string]any, key string) int {
 func main() {
 	_ = godotenv.Load()
 
-	clientID = os.Getenv("GLOO_CLIENT_ID")
-	clientSecret = os.Getenv("GLOO_CLIENT_SECRET")
+	apiKey = os.Getenv("GLOO_API_KEY")
 	publisherID = os.Getenv("GLOO_PUBLISHER_ID")
 	for name, value := range map[string]string{
-		"GLOO_CLIENT_ID":     clientID,
-		"GLOO_CLIENT_SECRET": clientSecret,
-		"GLOO_PUBLISHER_ID":  publisherID,
+		"GLOO_API_KEY":      apiKey,
+		"GLOO_PUBLISHER_ID": publisherID,
 	} {
 		if value == "" {
 			log.Fatalf("Error: %s must be set. Copy .env.example to .env and fill in your values.", name)
 		}
 	}
 
-	c := &ContentLifecycle{tokens: &TokenManager{}}
+	c := &ContentLifecycle{apiKey: apiKey}
 	seeds := seedItems()
 
 	fmt.Println("Step 1: Seeding sample content...")

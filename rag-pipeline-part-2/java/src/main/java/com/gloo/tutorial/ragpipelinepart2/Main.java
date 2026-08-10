@@ -17,7 +17,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,7 +33,6 @@ import java.util.UUID;
 public class Main {
 
   private static final String API_ROOT = "https://platform.ai.gloo.com";
-  private static final String TOKEN_URL = API_ROOT + "/oauth2/token";
   private static final String UPLOAD_URL = API_ROOT + "/ingestion/v2/files";
   private static final String ITEM_URL = API_ROOT + "/engine/v2/item"; // single-item update (PATCH)
   private static final String ITEMS_URL = API_ROOT + "/engine/v2/items"; // bulk patch, delete
@@ -54,12 +52,8 @@ public class Main {
   private static final HttpClient HTTP = HttpClient.newHttpClient();
   private static final Gson GSON = new Gson();
 
-  private static String clientId;
-  private static String clientSecret;
+  private static String apiKey;
   private static String publisherId;
-
-  private static String accessToken;
-  private static Instant tokenExpiresAt = Instant.EPOCH;
 
   /** One piece of content this recipe manages. */
   record SeedItem(
@@ -97,14 +91,12 @@ public class Main {
 
   public static void main(String[] args) {
     Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-    clientId = dotenv.get("GLOO_CLIENT_ID", "");
-    clientSecret = dotenv.get("GLOO_CLIENT_SECRET", "");
+    apiKey = dotenv.get("GLOO_API_KEY", "");
     publisherId = dotenv.get("GLOO_PUBLISHER_ID", "");
 
     for (Map.Entry<String, String> entry :
         Map.of(
-                "GLOO_CLIENT_ID", clientId,
-                "GLOO_CLIENT_SECRET", clientSecret,
+                "GLOO_API_KEY", apiKey,
                 "GLOO_PUBLISHER_ID", publisherId)
             .entrySet()) {
       if (entry.getValue().isEmpty()) {
@@ -192,26 +184,6 @@ public class Main {
     }
   }
 
-  private static String getToken() throws IOException, InterruptedException {
-    if (Instant.now().isBefore(tokenExpiresAt.minusSeconds(60))) {
-      return accessToken;
-    }
-    String basicAuth =
-        Base64.getEncoder()
-            .encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
-    HttpRequest request =
-        HttpRequest.newBuilder()
-            .uri(URI.create(TOKEN_URL))
-            .header("Content-Type", "application/x-www-form-urlencoded")
-            .header("Authorization", "Basic " + basicAuth)
-            .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials&scope=api/access"))
-            .build();
-    JsonObject token = sendForObject(request, "Token request");
-    accessToken = token.get("access_token").getAsString();
-    tokenExpiresAt = Instant.now().plusSeconds(token.get("expires_in").getAsLong());
-    return accessToken;
-  }
-
   /**
    * Upload a single file under a stable producer ID; return its item ID. The upload response is the
    * authoritative source of the item ID — keep it.
@@ -234,7 +206,7 @@ public class Main {
         HttpRequest.newBuilder()
             .uri(URI.create(UPLOAD_URL + "?producer_id="
                 + URLEncoder.encode(producerId, StandardCharsets.UTF_8)))
-            .header("Authorization", "Bearer " + getToken())
+            .header("Authorization", "Bearer " + apiKey)
             .header("Content-Type", "multipart/form-data; boundary=" + boundary)
             .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
             .build();
@@ -260,7 +232,7 @@ public class Main {
     HttpRequest request =
         HttpRequest.newBuilder()
             .uri(URI.create(ITEM_URL))
-            .header("Authorization", "Bearer " + getToken())
+            .header("Authorization", "Bearer " + apiKey)
             .header("Content-Type", "application/json")
             .method("PATCH", HttpRequest.BodyPublishers.ofString(GSON.toJson(payload)))
             .build();
@@ -272,7 +244,7 @@ public class Main {
     HttpRequest request =
         HttpRequest.newBuilder()
             .uri(URI.create(ITEMS_URL + "/" + itemId))
-            .header("Authorization", "Bearer " + getToken())
+            .header("Authorization", "Bearer " + apiKey)
             .GET()
             .build();
     return sendForObject(request, "Get item");
@@ -283,7 +255,7 @@ public class Main {
     HttpRequest request =
         HttpRequest.newBuilder()
             .uri(URI.create(ITEMS_URL + "/" + itemId))
-            .header("Authorization", "Bearer " + getToken())
+            .header("Authorization", "Bearer " + apiKey)
             .GET()
             .build();
     HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
@@ -334,7 +306,7 @@ public class Main {
         HttpRequest.newBuilder()
             .uri(URI.create(ITEMS_URL + "?publisher_id="
                 + URLEncoder.encode(publisherId, StandardCharsets.UTF_8)))
-            .header("Authorization", "Bearer " + getToken())
+            .header("Authorization", "Bearer " + apiKey)
             .header("Content-Type", "application/json")
             .method("PATCH", HttpRequest.BodyPublishers.ofString(GSON.toJson(payload)))
             .build();
@@ -347,7 +319,7 @@ public class Main {
     HttpRequest request =
         HttpRequest.newBuilder()
             .uri(URI.create(ITEMS_URL))
-            .header("Authorization", "Bearer " + getToken())
+            .header("Authorization", "Bearer " + apiKey)
             .header("Content-Type", "application/json")
             .method("DELETE", HttpRequest.BodyPublishers.ofString(
                 GSON.toJson(Map.of("item_ids", itemIds))))

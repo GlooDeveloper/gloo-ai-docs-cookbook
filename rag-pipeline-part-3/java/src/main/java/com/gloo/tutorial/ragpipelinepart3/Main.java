@@ -36,7 +36,6 @@ import java.util.UUID;
 public class Main {
 
   private static final String API_ROOT = "https://platform.ai.gloo.com";
-  private static final String TOKEN_URL = API_ROOT + "/oauth2/token";
   private static final String UPLOAD_URL = API_ROOT + "/ingestion/v2/files";
   private static final String ITEMS_URL = API_ROOT + "/engine/v2/items";
 
@@ -62,8 +61,7 @@ public class Main {
   private static final HttpClient HTTP = HttpClient.newHttpClient();
   private static final Gson GSON = new Gson();
 
-  private static String clientId;
-  private static String clientSecret;
+  private static String apiKey;
   private static String publisherId;
 
   /** A normalized API error: HTTP status (null for network failures), code, and message. */
@@ -88,60 +86,18 @@ public class Main {
     T run() throws InterruptedException;
   }
 
-  record RequestOptions(Object json, String token, boolean disallowRefresh) {
+  record RequestOptions(Object json, String token) {
     static RequestOptions none() {
-      return new RequestOptions(null, null, false);
+      return new RequestOptions(null, null);
     }
   }
 
-  /** Manages OAuth2 client-credentials token lifecycle. */
-  static class TokenManager {
-    private String accessToken;
-    private Instant expiresAt = Instant.EPOCH;
-
-    String getToken() throws InterruptedException {
-      if (accessToken != null && Instant.now().isBefore(expiresAt.minusSeconds(60))) {
-        return accessToken;
-      }
-      HttpRequest request =
-          HttpRequest.newBuilder()
-              .uri(URI.create(TOKEN_URL))
-              .header("Content-Type", "application/x-www-form-urlencoded")
-              .header("Authorization", "Basic " + Base64Creds())
-              .POST(HttpRequest.BodyPublishers.ofString(
-                  "grant_type=client_credentials&scope=api/access"))
-              .build();
-      HttpResponse<String> response;
-      try {
-        response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
-      } catch (IOException e) {
-        throw new ApiError(null, "network_error", e.getMessage());
-      }
-      if (response.statusCode() >= 400) {
-        throw new ApiError(response.statusCode(), "token_error", "Token request failed");
-      }
-      JsonObject token = GSON.fromJson(response.body(), JsonObject.class);
-      accessToken = token.get("access_token").getAsString();
-      expiresAt = Instant.now().plusSeconds(token.get("expires_in").getAsLong());
-      return accessToken;
-    }
-
-    void forceRefresh() {
-      accessToken = null;
-    }
-
-    private static String Base64Creds() {
-      return java.util.Base64.getEncoder()
-          .encodeToString((clientId + ":" + clientSecret).getBytes(StandardCharsets.UTF_8));
-    }
-  }
-
-  /** A thin HTTP client with structured error parsing, retry-with-backoff, and 401 refresh. */
+  /** A thin HTTP client with structured error parsing and retry-with-backoff. */
   static class ResilientClient {
-    private final TokenManager tokenManager;
+    private final String apiKey;
 
-    ResilientClient(TokenManager tokenManager) {
-      this.tokenManager = tokenManager;
+    ResilientClient(String apiKey) {
+      this.apiKey = apiKey;
     }
 
     /** Extract [code, message] from the API's error shapes. */
@@ -183,13 +139,12 @@ public class Main {
       Thread.sleep(delay * 1000);
     }
 
-    /** Send a request, retrying transient failures and refreshing the token once on 401. */
+    /** Send a request, retrying transient failures. Throws ApiError on non-retryable failures or exhausted retries. */
     JsonObject request(String method, String url, RequestOptions opts) throws InterruptedException {
       String payload = opts.json() != null ? GSON.toJson(opts.json()) : null;
-      boolean refreshed = false;
 
       for (int attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-        String bearer = opts.token() != null ? opts.token() : tokenManager.getToken();
+        String bearer = opts.token() != null ? opts.token() : apiKey;
         HttpRequest.Builder builder =
             HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -211,11 +166,6 @@ public class Main {
         }
 
         int status = response.statusCode();
-        if (status == 401 && !opts.disallowRefresh() && !refreshed) {
-          refreshed = true;
-          tokenManager.forceRefresh();
-          continue;
-        }
         if (RETRYABLE_STATUSES.contains(status) && attempt < MAX_RETRIES) {
           String[] parsed = parseError(status, response.body());
           backoff(attempt, status, parsed[0]);
@@ -267,7 +217,7 @@ public class Main {
               HttpRequest.newBuilder()
                   .uri(URI.create(UPLOAD_URL + "?producer_id="
                       + URLEncoder.encode(producerId, StandardCharsets.UTF_8)))
-                  .header("Authorization", "Bearer " + tokenManager.getToken())
+                  .header("Authorization", "Bearer " + apiKey)
                   .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                   .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
                   .build();
@@ -293,7 +243,7 @@ public class Main {
     }
 
     JsonObject deleteItems(List<String> itemIds) throws InterruptedException {
-      return request("DELETE", ITEMS_URL, new RequestOptions(Map.of("item_ids", itemIds), null, false));
+      return request("DELETE", ITEMS_URL, new RequestOptions(Map.of("item_ids", itemIds), null));
     }
 
     void waitUntilIndexed(List<String> itemIds) throws InterruptedException {
@@ -329,7 +279,7 @@ public class Main {
         new Case("Missing item (random UUID)", "GET", ITEMS_URL + "/" + UUID.randomUUID(), RequestOptions.none()),
         new Case("Malformed item ID", "GET", ITEMS_URL + "/not-a-valid-uuid", RequestOptions.none()),
         new Case("Rejected bearer token", "GET", ITEMS_URL + "/" + UUID.randomUUID(),
-            new RequestOptions(null, "invalid-token", true)));
+            new RequestOptions(null, "invalid-token")));
     for (Case tc : cases) {
       try {
         client.request(tc.method(), tc.url(), tc.opts());
@@ -396,12 +346,11 @@ public class Main {
 
   public static void main(String[] args) {
     Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-    clientId = dotenv.get("GLOO_CLIENT_ID", "");
-    clientSecret = dotenv.get("GLOO_CLIENT_SECRET", "");
+    apiKey = dotenv.get("GLOO_API_KEY", "");
     publisherId = dotenv.get("GLOO_PUBLISHER_ID", "");
 
     for (Map.Entry<String, String> entry :
-        Map.of("GLOO_CLIENT_ID", clientId, "GLOO_CLIENT_SECRET", clientSecret,
+        Map.of("GLOO_API_KEY", apiKey,
                 "GLOO_PUBLISHER_ID", publisherId).entrySet()) {
       if (entry.getValue().isEmpty()) {
         System.err.printf(
@@ -412,9 +361,9 @@ public class Main {
     }
 
     try {
-      ResilientClient client = new ResilientClient(new TokenManager());
+      ResilientClient client = new ResilientClient(apiKey);
 
-      System.out.println("Step 1: Resilient client ready (token refresh, error parsing, retry/backoff).");
+      System.out.println("Step 1: Resilient client ready (error parsing, retry/backoff).");
 
       System.out.println("\nStep 2: Interpreting API error responses...");
       demoErrorHandling(client);

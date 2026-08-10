@@ -4,21 +4,21 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
 
 ## Features
 
-- ✅ OAuth2 authentication with automatic token refresh
-- ✅ Full TypeScript type definitions for all API responses
-- ✅ Create new chat sessions with type safety
-- ✅ Continue conversations with context
-- ✅ Retrieve and display chat history
-- ✅ Comprehensive error handling with custom error types
-- ✅ Environment validation
-- ✅ Human flourishing conversation examples
+- API key authentication
+- Full TypeScript type definitions for all API responses
+- Create new chat sessions with type safety
+- Continue conversations with context
+- Retrieve and display chat history
+- Comprehensive error handling with custom error types
+- Environment validation
+- Human flourishing conversation examples
 
 ## Prerequisites
 
 - Node.js 18 or higher
 - npm package manager
 - TypeScript knowledge
-- Gloo AI API credentials (Client ID and Client Secret)
+- Gloo AI API key
 
 ## Setup
 
@@ -31,15 +31,15 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
    
    Create a `.env` file in this directory:
    ```env
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them in your shell:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
+
+   You can get your API key from [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -62,7 +62,7 @@ npm run build
 
 The example will:
 1. Validate environment variables
-2. Authenticate with the Gloo AI API
+2. Authenticate with the Gloo AI API using your API key
 3. Ask a deep question about finding meaning and purpose
 4. Follow up with practical questions
 5. Display the complete conversation history with timestamps
@@ -72,13 +72,6 @@ The example will:
 The example includes comprehensive TypeScript interfaces:
 
 ```typescript
-interface TokenInfo {
-    access_token: string;
-    expires_in: number;
-    expires_at: number;
-    token_type: string;
-}
-
 interface MessageResponse {
     query_id: string;
     message_id: string;
@@ -104,13 +97,11 @@ interface ChatHistory {
 
 ## API Endpoints Used
 
-- `POST /oauth2/token` - Authentication
 - `POST /ai/v1/message` - Send messages
 - `GET /ai/v1/chat` - Retrieve chat history
 
 ## Code Structure
 
-- `getAccessToken()` - Handles OAuth2 authentication with type safety
 - `sendMessage()` - Sends messages with proper request/response types
 - `getChatHistory()` - Retrieves conversation history with full typing
 - `validateEnvironment()` - Validates required environment variables
@@ -156,10 +147,10 @@ The TypeScript configuration includes:
 **Common issues:**
 
 1. **TypeScript compilation errors** - Check your tsconfig.json settings
-2. **"Please set your credentials"** - Ensure environment variables are set
+2. **"Please set your GLOO_API_KEY"** - Ensure your API key environment variable is set
 3. **Type errors** - All API responses are fully typed; check interface definitions
 4. **Network errors** - Check your internet connection
-5. **401 Unauthorized** - Verify your credentials are correct
+5. **401 Unauthorized** - Verify your API key is correct
 
 ## Learn More
 

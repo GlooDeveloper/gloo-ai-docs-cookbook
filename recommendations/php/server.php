@@ -18,27 +18,23 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/recommend_base.php';
 require_once __DIR__ . '/recommend_verbose.php';
 require_once __DIR__ . '/recommend_affiliates.php';
 
 $config        = loadConfig();
-$CLIENT_ID     = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$API_KEY       = $config['API_KEY'];
 $TENANT        = $config['TENANT'];
 $COLLECTION    = $config['COLLECTION'];
-$TOKEN_URL     = $config['TOKEN_URL'];
 $DEFAULT_ITEM_COUNT = $config['DEFAULT_ITEM_COUNT'];
 
-validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+validateApiKey($API_KEY);
 
-// Shared token manager and API clients
-$tokenManager    = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-$baseClient      = new RecommendationsClient($tokenManager, $config['RECOMMENDATIONS_BASE_URL'], $COLLECTION, $TENANT);
-$verboseClient   = new VerboseRecommendationsClient($tokenManager, $config['RECOMMENDATIONS_VERBOSE_URL'], $COLLECTION, $TENANT);
-$affiliatesClient = new AffiliatesClient($tokenManager, $config['AFFILIATES_URL']);
+// Shared API clients
+$baseClient      = new RecommendationsClient($API_KEY, $config['RECOMMENDATIONS_BASE_URL'], $COLLECTION, $TENANT);
+$verboseClient   = new VerboseRecommendationsClient($API_KEY, $config['RECOMMENDATIONS_VERBOSE_URL'], $COLLECTION, $TENANT);
+$affiliatesClient = new AffiliatesClient($API_KEY, $config['AFFILIATES_URL']);
 
 $FRONTEND_DIR = realpath(__DIR__ . '/../frontend-example/simple-html');
 

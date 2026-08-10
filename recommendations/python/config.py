@@ -11,12 +11,10 @@ def _parse_env_int(value, fallback):
         return fallback
 
 
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
+API_KEY = os.getenv("GLOO_API_KEY", "")
 TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
 COLLECTION = os.getenv("GLOO_COLLECTION", "GlooProd")
 
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
 RECOMMENDATIONS_BASE_URL = "https://platform.ai.gloo.com/ai/v1/data/items/recommendations/base"
 RECOMMENDATIONS_VERBOSE_URL = "https://platform.ai.gloo.com/ai/v1/data/items/recommendations/verbose"
 AFFILIATES_URL = "https://platform.ai.gloo.com/ai/v1/data/affiliates/referenced-items"

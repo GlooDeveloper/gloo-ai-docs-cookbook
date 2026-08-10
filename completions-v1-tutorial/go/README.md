@@ -17,19 +17,17 @@ This example demonstrates how to use the Gloo AI Completions API to generate tex
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them directly:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-3. **Get your credentials:**
+3. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -44,13 +42,12 @@ go build -o completions-tutorial
 ```
 
 This will run multiple completion tests that:
-1. Authenticate with the Gloo AI API
-2. Make completion requests for different prompts
-3. Display the generated responses
+1. Make completion requests for different prompts
+2. Display the generated responses
 
 ## Key Features
 
-- **Token Management**: Automatic token refresh when expired
+- **API Key Auth**: Simple API key authentication via Bearer token
 - **Error Handling**: Comprehensive error handling with proper Go error wrapping
 - **Environment Variables**: Secure credential management using godotenv
 - **Multiple Tests**: Tests multiple completion scenarios
@@ -100,15 +97,6 @@ func example() {
     // Extract the response
     response := completion.Choices[0].Message.Content
     fmt.Println(response)
-    
-    // Or get a token for other API calls
-    token, err := ensureValidToken()
-    if err != nil {
-        log.Fatalf("Failed to get token: %v", err)
-    }
-    
-    // Use token for other authenticated requests
-    fmt.Println("Token:", token)
 }
 ```
 
@@ -117,13 +105,6 @@ func example() {
 The example includes comprehensive type definitions:
 
 ```go
-type TokenInfo struct {
-    AccessToken string `json:"access_token"`
-    ExpiresIn   int    `json:"expires_in"`
-    ExpiresAt   int64  `json:"expires_at"`
-    TokenType   string `json:"token_type"`
-}
-
 type ChatMessage struct {
     Role    string `json:"role"`
     Content string `json:"content"`
@@ -144,16 +125,11 @@ type ChatCompletionResponse struct {
 }
 ```
 
-## Authentication
-
-This example uses the authentication methods from the [Authentication Tutorial](../../../tutorials/authentication). The token management is handled automatically, but you can also use the `ensureValidToken()` function to get a token for other API calls.
-
 ## Error Handling
 
 The example includes comprehensive error handling for:
 - HTTP request failures
 - JSON parsing errors
-- Token expiration
 - Network connectivity issues
 - API errors
 
@@ -162,7 +138,6 @@ All errors are properly wrapped using Go's error wrapping functionality.
 ## Security Features
 
 - Environment variable management
-- Secure token storage
 - Proper error handling without exposing sensitive information
 - Input validation
 - Request timeouts
@@ -183,7 +158,7 @@ go run main.go
 
 ## Troubleshooting
 
-- **401 Unauthorized**: Check your Client ID and Client Secret
+- **401 Unauthorized**: Check your API key
 - **403 Forbidden**: Verify your API access permissions
 - **Network errors**: Ensure you have internet connectivity
 - **Module errors**: Run `go mod tidy` to resolve dependencies

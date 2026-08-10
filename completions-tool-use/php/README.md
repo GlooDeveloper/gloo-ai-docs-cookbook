@@ -19,19 +19,17 @@ This example demonstrates how to use the Gloo AI Completions API with tool use t
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
-   Or export them directly:
+   Or export it directly:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-3. **Get your credentials:**
+3. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -42,7 +40,7 @@ php index.php
 ## What it does
 
 This script:
-- Handles authentication with automatic token refresh
+- Authenticates with the Gloo AI API using your API key
 - Makes a completions API call with tool use
 - Forces the AI to return structured data using the `create_growth_plan` tool
 - Parses the JSON response and displays it in a user-friendly format

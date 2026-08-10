@@ -16,16 +16,14 @@ Examples:
 import requests
 import sys
 from typing import Any
-from auth import TokenManager, validate_credentials
 from config import (
-    CLIENT_ID,
-    CLIENT_SECRET,
+    API_KEY,
     COLLECTION,
     TENANT,
-    TOKEN_URL,
     RECOMMENDATIONS_VERBOSE_URL,
     DEFAULT_ITEM_COUNT,
 )
+from recommend_base import validate_api_key
 
 SNIPPET_PREVIEW_CHARS = 200
 
@@ -33,8 +31,8 @@ SNIPPET_PREVIEW_CHARS = 200
 class VerboseRecommendationsClient:
     """Handles verbose recommendation requests to the Gloo AI API."""
 
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
     def get_verbose(self, query: str, item_count: int = DEFAULT_ITEM_COUNT) -> list[Any]:
         """
@@ -47,9 +45,8 @@ class VerboseRecommendationsClient:
         Returns:
             List of recommended items including snippet text
         """
-        token = self.token_manager.ensure_valid_token()
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
         payload = {
@@ -80,8 +77,7 @@ class RecommendVerboseApp:
     """Main application class for verbose recommendations."""
 
     def __init__(self):
-        self.token_manager = TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL)
-        self.client = VerboseRecommendationsClient(self.token_manager)
+        self.client = VerboseRecommendationsClient(API_KEY)
 
     def run(self, query: str, item_count: int = DEFAULT_ITEM_COUNT) -> None:
         """Fetch and display verbose recommendations with snippet previews."""
@@ -143,7 +139,7 @@ class RecommendVerboseApp:
 
 
 def main():
-    validate_credentials(CLIENT_ID, CLIENT_SECRET)
+    validate_api_key(API_KEY)
     app = RecommendVerboseApp()
 
     if len(sys.argv) < 2:

@@ -27,11 +27,9 @@ public class Main {
 
     // --- Configuration ---
     private static final Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-    private static final String CLIENT_ID = dotenv.get("GLOO_CLIENT_ID", "YOUR_CLIENT_ID");
-    private static final String CLIENT_SECRET = dotenv.get("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET");
+    private static final String API_KEY = dotenv.get("GLOO_API_KEY", "");
     private static final String PUBLISHER_ID = dotenv.get("GLOO_PUBLISHER_ID", "your-publisher-id");
 
-    private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
     private static final String UPLOAD_URL = "https://platform.ai.gloo.com/ingestion/v2/files";
     private static final String METADATA_URL = "https://platform.ai.gloo.com/engine/v2/item";
 
@@ -42,31 +40,18 @@ public class Main {
             .build();
     private static final Gson gson = new Gson();
 
-    // --- State Management ---
-    private static TokenInfo tokenInfo;
-
     static {
         // Validate credentials
-        if ("YOUR_CLIENT_ID".equals(CLIENT_ID) || "YOUR_CLIENT_SECRET".equals(CLIENT_SECRET) ||
-                CLIENT_ID == null || CLIENT_ID.isEmpty() ||
-                CLIENT_SECRET == null || CLIENT_SECRET.isEmpty()) {
-            System.err.println("Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set");
+        if (API_KEY == null || API_KEY.isEmpty()) {
+            System.err.println("Error: GLOO_API_KEY must be set");
             System.out.println("Create a .env file with your credentials:");
-            System.out.println("GLOO_CLIENT_ID=your_client_id_here");
-            System.out.println("GLOO_CLIENT_SECRET=your_client_secret_here");
+            System.out.println("GLOO_API_KEY=your_api_key_here");
             System.out.println("GLOO_PUBLISHER_ID=your_publisher_id_here");
             System.exit(1);
         }
     }
 
     // --- Types ---
-    static class TokenInfo {
-        String access_token;
-        int expires_in;
-        long expires_at;
-        String token_type;
-    }
-
     static class UploadResponse {
         boolean success;
         String message;
@@ -77,54 +62,6 @@ public class Main {
     static class MetadataResponse {
         boolean success;
         String message;
-    }
-
-    /**
-     * Get a new access token from the OAuth2 endpoint.
-     */
-    private static TokenInfo getAccessToken() throws IOException, InterruptedException {
-        String auth = CLIENT_ID + ":" + CLIENT_SECRET;
-        String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
-        String requestBody = "grant_type=client_credentials&scope=api/access";
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(TOKEN_URL))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Authorization", "Basic " + encodedAuth)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .timeout(Duration.ofSeconds(30))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            throw new IOException("Failed to obtain access token: " + response.body());
-        }
-
-        TokenInfo token = gson.fromJson(response.body(), TokenInfo.class);
-        token.expires_at = Instant.now().getEpochSecond() + token.expires_in;
-        return token;
-    }
-
-    /**
-     * Check if the current token is expired.
-     */
-    private static boolean isTokenExpired(TokenInfo token) {
-        if (token == null || token.expires_at == 0) {
-            return true;
-        }
-        return Instant.now().getEpochSecond() > (token.expires_at - 60);
-    }
-
-    /**
-     * Ensure we have a valid access token.
-     */
-    private static String ensureValidToken() throws IOException, InterruptedException {
-        if (isTokenExpired(tokenInfo)) {
-            System.out.println("Token is expired or missing. Fetching a new one...");
-            tokenInfo = getAccessToken();
-        }
-        return tokenInfo.access_token;
     }
 
     /**
@@ -158,7 +95,6 @@ public class Main {
             throw new IllegalArgumentException("Unsupported file type: " + getFileExtension(filePath));
         }
 
-        String token = ensureValidToken();
         String boundary = UUID.randomUUID().toString();
 
         // Build multipart body
@@ -190,7 +126,7 @@ public class Main {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + API_KEY)
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(baos.toByteArray()))
                 .timeout(Duration.ofSeconds(120))
@@ -214,8 +150,6 @@ public class Main {
             throw new IllegalArgumentException("Either itemId or producerId must be provided");
         }
 
-        String token = ensureValidToken();
-
         JsonObject data = new JsonObject();
         data.addProperty("publisher_id", PUBLISHER_ID);
         if (itemId != null && !itemId.isEmpty()) {
@@ -235,7 +169,7 @@ public class Main {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(METADATA_URL))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + API_KEY)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(data)))
                 .timeout(Duration.ofSeconds(30))

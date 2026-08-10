@@ -12,7 +12,7 @@ Compares responses side-by-side:
 
 - Java 11 or higher
 - Maven 3.6 or higher
-- Gloo AI account with API credentials
+- Gloo AI account with API key
 - Publisher created in [Gloo Studio](https://studio.ai.gloo.com) with content uploaded
 
 ## Setup
@@ -28,8 +28,7 @@ Compares responses side-by-side:
    ```
 
 3. **Edit `.env`** with your credentials:
-   - `GLOO_CLIENT_ID`: Your Client ID from [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
-   - `GLOO_CLIENT_SECRET`: Your Client Secret
+   - `GLOO_API_KEY`: Your API key from [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
    - `PUBLISHER_NAME`: Name of your Publisher (default: "Bezalel")
 
 ## Running the Demo
@@ -55,15 +54,11 @@ src/main/java/com/gloo/grounded/
 
 ## How It Works
 
-### Token Management
+### Authentication
 ```java
-private static JsonObject getAccessToken() throws Exception {
-    // Retrieve OAuth2 access token from Gloo AI
-}
-
-private static String ensureValidToken() throws Exception {
-    // Ensure we have a valid token, refreshing if needed
-}
+// API key is read from environment and used directly as Bearer token
+glooApiKey = dotenv.get("GLOO_API_KEY");
+request.header("Authorization", "Bearer " + glooApiKey);
 ```
 
 ### Non-Grounded Request
@@ -170,8 +165,8 @@ java -version
 ```
 
 ### Authentication Errors
-- Verify `GLOO_CLIENT_ID` and `GLOO_CLIENT_SECRET` are correct
-- Check credentials at [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
+- Verify `GLOO_API_KEY` is correct
+- Check your API key at [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
 
 ### Publisher Not Found
 - Confirm publisher name matches exactly (case-sensitive)
