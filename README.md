@@ -9,12 +9,11 @@ This repository serves as the reference for all Gloo AI tutorial code samples. E
 ## Available Tutorials
 
 ### 🔐 [Authentication](./authentication-tutorial/)
-Learn how to authenticate with the Gloo AI API using OAuth2 credentials.
+Learn how to authenticate with the Gloo AI API using your API key.
 
 **Topics Covered:**
-- OAuth2 client credentials flow
-- Access token management
-- Token refresh handling
+- API key authentication
+- Making authenticated API calls
 - Environment variable configuration
 
 **Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
@@ -56,7 +55,7 @@ Use the next-generation Completions API with intelligent routing strategies.
 - Auto-routing (AI Core) for optimal model selection
 - Model family selection (AI Core Select)
 - Direct model specification (AI Select)
-- Automatic token management
+- API key authentication
 - Tradition-aware parameters
 
 **Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
@@ -167,7 +166,7 @@ Part 2 of the Build an End-to-End RAG Pipeline series: update, bulk-edit, and de
 Part 3 of the Build an End-to-End RAG Pipeline series: make the integration production-ready.
 
 **Topics Covered:**
-- A resilient API client (structured error parsing, retry with backoff, token refresh on 401)
+- A resilient API client (structured error parsing, retry with backoff)
 - Interpreting API error responses (404 / 400 / 403)
 - Retrying transient failures (5xx, network) with exponential backoff
 - Ingestion health verification with graceful handling of missing items
@@ -223,10 +222,8 @@ Each language directory contains:
 
 Before using any tutorial, ensure you have:
 
-1. **Gloo AI API Credentials**
-   - Client ID
-   - Client Secret
-   - [Sign up for access](https://studio.ai.gloo.com/) if you don't have credentials
+1. **Gloo AI API Key**
+   - Get your API key at [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys)
 
 2. **Development Environment**
    - Choose your preferred programming language
