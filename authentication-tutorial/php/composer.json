@@ -17,7 +17,7 @@
         "start": "php index.php",
         "test": "php index.php"
     },
-    "keywords": ["gloo", "authentication", "oauth2", "api", "php"],
+    "keywords": ["gloo", "authentication", "api-key", "api", "php"],
     "authors": [
         {
             "name": "Gloo AI",

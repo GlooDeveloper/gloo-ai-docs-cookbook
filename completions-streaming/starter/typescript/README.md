@@ -61,7 +61,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 **Important:** All commands must be run from `final/typescript/`.
 
 ```bash
-# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
+# CP1: Auth & environment — API key loaded, endpoint returns 200
 npm run test:step1
 
 # CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
@@ -89,8 +89,7 @@ need to start the proxy manually before running it.
 typescript/
 ├── src/
 │   ├── index.ts                  # Entry point
-│   ├── types.ts                  # TokenInfo, StreamResult, SSEChunk interfaces
-│   ├── auth/tokenManager.ts      # OAuth2 token management
+│   ├── types.ts                  # StreamResult, SSEChunk interfaces
 │   ├── streaming/streamClient.ts # SSE parsing + accumulation
 │   ├── browser/renderer.ts       # Typing-effect CLI demo
 │   └── proxy/server.ts           # Express SSE proxy

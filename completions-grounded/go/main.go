@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -17,30 +16,15 @@ import (
 
 // Configuration
 var (
-	glooClientID     string
-	glooClientSecret string
-	publisherName    string
+	glooAPIKey    string
+	publisherName string
 )
 
 // API Endpoints
 const (
-	tokenURL       = "https://platform.ai.gloo.com/oauth2/token"
 	completionsURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 	groundedURL    = "https://platform.ai.gloo.com/ai/v2/chat/completions/grounded"
 )
-
-// Token management
-var (
-	accessToken string
-	tokenExpiry time.Time
-)
-
-// TokenResponse represents the OAuth2 token response
-type TokenResponse struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	TokenType   string `json:"token_type"`
-}
 
 // Message represents a chat message
 type Message struct {
@@ -78,67 +62,10 @@ type CompletionResponse struct {
 	Model           string `json:"model,omitempty"`
 }
 
-// getAccessToken retrieves an OAuth2 access token from Gloo AI
-func getAccessToken() (*TokenResponse, error) {
-	if glooClientID == "" || glooClientSecret == "" {
-		return nil, fmt.Errorf("missing credentials: set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables")
-	}
-
-	data := url.Values{}
-	data.Set("grant_type", "client_credentials")
-	data.Set("client_id", glooClientID)
-	data.Set("client_secret", glooClientSecret)
-
-	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(data.Encode()))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create token request: %w", err)
-	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("token request failed: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("token request failed with status %d", resp.StatusCode)
-	}
-
-	var tokenResp TokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
-		return nil, fmt.Errorf("failed to decode token response: %w", err)
-	}
-
-	return &tokenResp, nil
-}
-
-// ensureValidToken ensures we have a valid access token, refreshing if necessary
-func ensureValidToken() (string, error) {
-	if accessToken == "" || time.Now().After(tokenExpiry) {
-		tokenData, err := getAccessToken()
-		if err != nil {
-			return "", err
-		}
-
-		accessToken = tokenData.AccessToken
-		expiresIn := tokenData.ExpiresIn
-		if expiresIn == 0 {
-			expiresIn = 3600
-		}
-		tokenExpiry = time.Now().Add(time.Duration(expiresIn-300) * time.Second)
-	}
-
-	return accessToken, nil
-}
-
 // makeNonGroundedRequest makes a standard V2 completion request WITHOUT grounding
 func makeNonGroundedRequest(query string) (*CompletionResponse, error) {
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, err
+	if glooAPIKey == "" {
+		return nil, fmt.Errorf("missing API key: set GLOO_API_KEY environment variable")
 	}
 
 	payload := CompletionRequest{
@@ -151,7 +78,7 @@ func makeNonGroundedRequest(query string) (*CompletionResponse, error) {
 
 	jsonData, _ := json.Marshal(payload)
 	req, _ := http.NewRequest("POST", completionsURL, bytes.NewBuffer(jsonData))
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+glooAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -173,9 +100,8 @@ func makeNonGroundedRequest(query string) (*CompletionResponse, error) {
 
 // makePublisherGroundedRequest makes a grounded completion request WITH RAG
 func makePublisherGroundedRequest(query, publisher string, sourcesLimit int) (*CompletionResponse, error) {
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, err
+	if glooAPIKey == "" {
+		return nil, fmt.Errorf("missing API key: set GLOO_API_KEY environment variable")
 	}
 
 	payload := PublisherGroundedRequest{
@@ -190,7 +116,7 @@ func makePublisherGroundedRequest(query, publisher string, sourcesLimit int) (*C
 
 	jsonData, _ := json.Marshal(payload)
 	req, _ := http.NewRequest("POST", groundedURL, bytes.NewBuffer(jsonData))
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+glooAPIKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}
@@ -266,8 +192,7 @@ func main() {
 		fmt.Println("Warning: .env file not found, using system environment variables")
 	}
 
-	glooClientID = os.Getenv("GLOO_CLIENT_ID")
-	glooClientSecret = os.Getenv("GLOO_CLIENT_SECRET")
+	glooAPIKey = os.Getenv("GLOO_API_KEY")
 	publisherName = os.Getenv("PUBLISHER_NAME")
 	if publisherName == "" {
 		publisherName = "Bezalel"

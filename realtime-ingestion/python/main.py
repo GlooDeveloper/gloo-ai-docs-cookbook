@@ -22,61 +22,21 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
+API_KEY = os.getenv("GLOO_API_KEY", "")
 API_URL = "https://platform.ai.gloo.com/ingestion/v1/real_time_upload"
 PUBLISHER_ID = "your-publisher-id"  # Replace with your publisher ID
 
-# Validate credentials
-if CLIENT_ID in ("YOUR_CLIENT_ID", "", None) or CLIENT_SECRET in ("YOUR_CLIENT_SECRET", "", None):
-    print("Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set")
-    print("Create a .env file with your credentials:")
-    print("GLOO_CLIENT_ID=your_client_id_here")
-    print("GLOO_CLIENT_SECRET=your_client_secret_here")
+# Validate API key
+if not API_KEY:
+    print("Error: GLOO_API_KEY must be set")
+    print("Create a .env file with your API key:")
+    print("GLOO_API_KEY=your_api_key_here")
     sys.exit(1)
-
-# --- State Management ---
-access_token_info: Dict[str, Any] = {}
-
-class TokenManager:
-    """Manages OAuth2 token lifecycle for API authentication."""
-
-    @staticmethod
-    def get_access_token() -> Dict[str, Any]:
-        """Retrieves a new access token from the OAuth2 endpoint."""
-        headers = {"Content-Type": "application/x-www-form-urlencoded"}
-        data = {"grant_type": "client_credentials", "scope": "api/access"}
-
-        try:
-            response = requests.post(
-                TOKEN_URL,
-                headers=headers,
-                data=data,
-                auth=(CLIENT_ID, CLIENT_SECRET),
-                timeout=30
-            )
-            response.raise_for_status()
-
-            token_data = response.json()
-            token_data['expires_at'] = int(time.time()) + token_data['expires_in']
-            return token_data
-
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to obtain access token: {e}")
-
-    @staticmethod
-    def is_token_expired(token_info: Dict[str, Any]) -> bool:
-        """Checks if the token is expired or close to expiring."""
-        if not token_info or 'expires_at' not in token_info:
-            return True
-        return time.time() > (token_info['expires_at'] - 60)  # 60 second buffer
 
 class ContentProcessor:
     """Handles content processing and API uploads."""
 
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
+    def __init__(self):
         self.supported_extensions = {'.txt', '.md'}
 
     def is_supported_file(self, file_path: str) -> bool:
@@ -108,15 +68,8 @@ class ContentProcessor:
 
     def upload_content(self, content_data: Dict[str, Any]) -> Dict[str, Any]:
         """Upload content to the Realtime API."""
-        global access_token_info
-
-        # Check and refresh token if needed
-        if self.token_manager.is_token_expired(access_token_info):
-            print("Token is expired or missing. Fetching a new one...")
-            access_token_info = self.token_manager.get_access_token()
-
         headers = {
-            "Authorization": f"Bearer {access_token_info['access_token']}",
+            "Authorization": f"Bearer {API_KEY}",
             "Content-Type": "application/json"
         }
 
@@ -192,8 +145,7 @@ class RealtimeIngestionApp:
     """Main application class for Realtime Content Ingestion."""
 
     def __init__(self):
-        self.token_manager = TokenManager()
-        self.processor = ContentProcessor(self.token_manager)
+        self.processor = ContentProcessor()
 
     def start_file_watcher(self, watch_directory: str) -> None:
         """Start monitoring a directory for new content files."""

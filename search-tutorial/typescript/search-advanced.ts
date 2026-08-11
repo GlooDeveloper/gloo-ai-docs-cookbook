@@ -8,17 +8,15 @@
  */
 
 import axios from "axios";
-import { TokenManager, validateCredentials } from "./auth";
 import {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   TENANT,
-  TOKEN_URL,
   SEARCH_URL,
   COMPLETIONS_URL,
   RAG_MAX_TOKENS,
   RAG_CONTEXT_MAX_SNIPPETS,
   RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+  validateApiKey,
 } from "./config";
 import { normalizeLimit } from "./utils";
 
@@ -49,10 +47,10 @@ interface Snippet {
 }
 
 export class AdvancedSearchClient {
-  private tokenManager: TokenManager;
+  private apiKey: string;
 
-  constructor(tokenManager: TokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
   async search(
@@ -60,7 +58,7 @@ export class AdvancedSearchClient {
     limit: number = 10,
     sortBy: string = "relevance"
   ): Promise<SearchResponse> {
-    const token = await this.tokenManager.ensureValidToken();
+    const token = this.apiKey;
 
     const payload = {
       query,
@@ -115,10 +113,10 @@ export class AdvancedSearchClient {
 }
 
 export class RAGHelper {
-  private tokenManager: TokenManager;
+  private apiKey: string;
 
-  constructor(tokenManager: TokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
   extractSnippets(
@@ -153,7 +151,7 @@ export class RAGHelper {
     context: string,
     systemPrompt?: string
   ): Promise<string> {
-    const token = await this.tokenManager.ensureValidToken();
+    const token = this.apiKey;
 
     const defaultPrompt =
       "You are a helpful assistant. Answer the user's question based on the " +
@@ -197,8 +195,7 @@ async function filteredSearch(
   contentTypes: string[],
   limit: number = 10
 ): Promise<void> {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const searchClient = new AdvancedSearchClient(tokenManager);
+  const searchClient = new AdvancedSearchClient(API_KEY);
 
   console.log(`Searching for: '${query}'`);
   console.log(`Content types: ${contentTypes.join(", ")}`);
@@ -223,9 +220,8 @@ async function filteredSearch(
 }
 
 async function ragSearch(query: string, limit: number = 5): Promise<void> {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const searchClient = new AdvancedSearchClient(tokenManager);
-  const ragHelper = new RAGHelper(tokenManager);
+  const searchClient = new AdvancedSearchClient(API_KEY);
+  const ragHelper = new RAGHelper(API_KEY);
 
   console.log(`RAG Search for: '${query}'\n`);
 
@@ -275,7 +271,7 @@ function printUsage(): void {
 }
 
 async function main(): Promise<void> {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
 

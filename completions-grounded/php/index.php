@@ -19,79 +19,12 @@ $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->load();
 
 // Configuration
-$glooClientId = $_ENV['GLOO_CLIENT_ID'] ?? null;
-$glooClientSecret = $_ENV['GLOO_CLIENT_SECRET'] ?? null;
+$glooApiKey = $_ENV['GLOO_API_KEY'] ?? null;
 $publisherName = $_ENV['PUBLISHER_NAME'] ?? 'Bezalel';
 
 // API Endpoints
-const TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
 const COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
 const GROUNDED_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions/grounded';
-
-// Token management
-$accessToken = null;
-$tokenExpiry = null;
-
-/**
- * Retrieve an OAuth2 access token from Gloo AI.
- *
- * @return array Token response containing access_token and expires_in
- * @throws Exception If credentials are missing or request fails
- */
-function getAccessToken() {
-    global $glooClientId, $glooClientSecret;
-
-    if (empty($glooClientId) || empty($glooClientSecret)) {
-        throw new Exception(
-            'Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET ' .
-            'environment variables.'
-        );
-    }
-
-    $params = http_build_query([
-        'grant_type' => 'client_credentials',
-        'client_id' => $glooClientId,
-        'client_secret' => $glooClientSecret
-    ]);
-
-    $ch = curl_init(TOKEN_URL);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $params);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Content-Type: application/x-www-form-urlencoded'
-    ]);
-
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        throw new Exception("Failed to get access token. HTTP $httpCode");
-    }
-
-    return json_decode($response, true);
-}
-
-/**
- * Ensure we have a valid access token, refreshing if necessary.
- *
- * @return string Valid access token
- */
-function ensureValidToken() {
-    global $accessToken, $tokenExpiry;
-
-    // Check if we need a new token
-    if ($accessToken === null || $tokenExpiry === null || time() >= $tokenExpiry) {
-        $tokenData = getAccessToken();
-        $accessToken = $tokenData['access_token'];
-        // Set expiry with 5 minute buffer
-        $expiresIn = $tokenData['expires_in'] ?? 3600;
-        $tokenExpiry = time() + $expiresIn - 300;
-    }
-
-    return $accessToken;
-}
 
 /**
  * Make a standard V2 completion request WITHOUT grounding.
@@ -101,10 +34,16 @@ function ensureValidToken() {
  *
  * @param string $query The user's question
  * @return array API response
- * @throws Exception If request fails
+ * @throws Exception If API key is missing or request fails
  */
 function makeNonGroundedRequest($query) {
-    $token = ensureValidToken();
+    global $glooApiKey;
+
+    if (empty($glooApiKey)) {
+        throw new Exception(
+            'Missing API key. Set GLOO_API_KEY environment variable.'
+        );
+    }
 
     $payload = [
         'messages' => [['role' => 'user', 'content' => $query]],
@@ -116,7 +55,7 @@ function makeNonGroundedRequest($query) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $token",
+        "Authorization: Bearer $glooApiKey",
         'Content-Type: application/json'
     ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
@@ -143,10 +82,16 @@ function makeNonGroundedRequest($query) {
  * @param string $publisherName Name of the publisher in Gloo Studio
  * @param int $sourcesLimit Maximum number of sources to use (default: 3)
  * @return array API response with sources_returned flag
- * @throws Exception If request fails
+ * @throws Exception If API key is missing or request fails
  */
 function makePublisherGroundedRequest($query, $publisherName, $sourcesLimit = 3) {
-    $token = ensureValidToken();
+    global $glooApiKey;
+
+    if (empty($glooApiKey)) {
+        throw new Exception(
+            'Missing API key. Set GLOO_API_KEY environment variable.'
+        );
+    }
 
     $payload = [
         'messages' => [['role' => 'user', 'content' => $query]],
@@ -160,7 +105,7 @@ function makePublisherGroundedRequest($query, $publisherName, $sourcesLimit = 3)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        "Authorization: Bearer $token",
+        "Authorization: Bearer $glooApiKey",
         'Content-Type: application/json'
     ]);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));

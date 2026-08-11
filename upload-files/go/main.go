@@ -22,11 +22,9 @@ import (
 
 // --- Configuration ---
 var (
-	clientID     string
-	clientSecret string
-	publisherID  string
+	apiKey      string
+	publisherID string
 
-	tokenURL    = "https://platform.ai.gloo.com/oauth2/token"
 	uploadURL   = "https://platform.ai.gloo.com/ingestion/v2/files"
 	metadataURL = "https://platform.ai.gloo.com/engine/v2/item"
 
@@ -40,13 +38,6 @@ var (
 )
 
 // --- Types ---
-type TokenInfo struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	ExpiresAt   int64  `json:"expires_at"`
-	TokenType   string `json:"token_type"`
-}
-
 type UploadResponse struct {
 	Success    bool     `json:"success"`
 	Message    string   `json:"message"`
@@ -68,24 +59,18 @@ type Metadata struct {
 	ItemTags    []string `json:"item_tags,omitempty"`
 }
 
-// --- State Management ---
-var tokenInfo *TokenInfo
-
 func init() {
 	// Load .env file
 	godotenv.Load()
 
-	clientID = getEnv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-	clientSecret = getEnv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
+	apiKey = getEnv("GLOO_API_KEY", "")
 	publisherID = getEnv("GLOO_PUBLISHER_ID", "your-publisher-id")
 
 	// Validate credentials
-	if clientID == "YOUR_CLIENT_ID" || clientSecret == "YOUR_CLIENT_SECRET" ||
-		clientID == "" || clientSecret == "" {
-		fmt.Fprintln(os.Stderr, "Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set")
+	if apiKey == "" {
+		fmt.Fprintln(os.Stderr, "Error: GLOO_API_KEY must be set")
 		fmt.Println("Create a .env file with your credentials:")
-		fmt.Println("GLOO_CLIENT_ID=your_client_id_here")
-		fmt.Println("GLOO_CLIENT_SECRET=your_client_secret_here")
+		fmt.Println("GLOO_API_KEY=your_api_key_here")
 		fmt.Println("GLOO_PUBLISHER_ID=your_publisher_id_here")
 		os.Exit(1)
 	}
@@ -96,65 +81,6 @@ func getEnv(key, fallback string) string {
 		return value
 	}
 	return fallback
-}
-
-// getAccessToken retrieves a new access token from the OAuth2 endpoint.
-func getAccessToken() (*TokenInfo, error) {
-	data := strings.NewReader("grant_type=client_credentials&scope=api/access")
-
-	req, err := http.NewRequest("POST", tokenURL, data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to obtain token: %s - %s", resp.Status, string(body))
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	var token TokenInfo
-	if err := json.Unmarshal(body, &token); err != nil {
-		return nil, fmt.Errorf("failed to parse token: %w", err)
-	}
-
-	token.ExpiresAt = time.Now().Unix() + int64(token.ExpiresIn)
-	return &token, nil
-}
-
-// isTokenExpired checks if the current token is expired.
-func isTokenExpired(token *TokenInfo) bool {
-	if token == nil || token.ExpiresAt == 0 {
-		return true
-	}
-	return time.Now().Unix() > (token.ExpiresAt - 60)
-}
-
-// ensureValidToken ensures we have a valid access token.
-func ensureValidToken() (string, error) {
-	if isTokenExpired(tokenInfo) {
-		fmt.Println("Token is expired or missing. Fetching a new one...")
-		var err error
-		tokenInfo, err = getAccessToken()
-		if err != nil {
-			return "", err
-		}
-	}
-	return tokenInfo.AccessToken, nil
 }
 
 // isSupportedFile checks if a file extension is supported.
@@ -171,11 +97,6 @@ func uploadSingleFile(filePath string, producerID string) (*UploadResponse, erro
 
 	if !isSupportedFile(filePath) {
 		return nil, fmt.Errorf("unsupported file type: %s", filepath.Ext(filePath))
-	}
-
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, err
 	}
 
 	file, err := os.Open(filePath)
@@ -217,7 +138,7 @@ func uploadSingleFile(filePath string, producerID string) (*UploadResponse, erro
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	client := &http.Client{Timeout: 120 * time.Second}
@@ -250,11 +171,6 @@ func updateMetadata(itemID, producerID string, metadata Metadata) (*MetadataResp
 		return nil, fmt.Errorf("either itemID or producerID must be provided")
 	}
 
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, err
-	}
-
 	metadata.PublisherID = publisherID
 	if itemID != "" {
 		metadata.ItemID = itemID
@@ -273,7 +189,7 @@ func updateMetadata(itemID, producerID string, metadata Metadata) (*MetadataResp
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 30 * time.Second}

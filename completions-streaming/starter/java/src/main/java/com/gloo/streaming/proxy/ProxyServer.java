@@ -1,7 +1,6 @@
 package com.gloo.streaming.proxy;
 
 import com.google.gson.Gson;
-import com.gloo.streaming.auth.TokenManager;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;

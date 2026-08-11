@@ -48,9 +48,8 @@ type ErrorResponse struct {
 }
 
 func startServer(port string) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	sc := &SearchClient{TokenManager: tm}
-	rh := &RAGHelper{TokenManager: tm}
+	sc := &SearchClient{APIKey: apiKey}
+	rh := &RAGHelper{APIKey: apiKey}
 
 	frontendDir, _ := filepath.Abs(filepath.Join(".", "..", "frontend-example", "simple-html"))
 

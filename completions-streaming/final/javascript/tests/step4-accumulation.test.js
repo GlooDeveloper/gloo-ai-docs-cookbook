@@ -9,14 +9,13 @@
  */
 
 import "dotenv/config";
-import { ensureValidToken } from "../src/auth/tokenManager.js";
 import { extractTokenContent, streamCompletion } from "../src/streaming/streamClient.js";
 
 async function testStep3() {
   console.log("🧪 Testing: Token Extraction & Accumulation\n");
 
-  if (!process.env.GLOO_CLIENT_ID) {
-    console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+  if (!process.env.GLOO_API_KEY) {
+    console.error("❌ Missing GLOO_API_KEY — run Step 1 first");
     process.exit(1);
   }
 
@@ -54,7 +53,7 @@ async function testStep3() {
 
     // Test 6: Full streamCompletion integration test
     console.log("Test 6: streamCompletion — full response assembly...");
-    const token = await ensureValidToken();
+    const token = process.env.GLOO_API_KEY;
     const streamResult = await streamCompletion(
       "Count from 1 to 5, separated by spaces. Reply with only the numbers.",
       token

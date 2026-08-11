@@ -18,12 +18,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Configuration ---
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "")
+API_KEY = os.getenv("GLOO_API_KEY", "")
 PUBLISHER_ID = os.getenv("GLOO_PUBLISHER_ID", "")
 
 API_ROOT = "https://platform.ai.gloo.com"
-TOKEN_URL = f"{API_ROOT}/oauth2/token"
 UPLOAD_URL = f"{API_ROOT}/ingestion/v2/files"
 ITEM_METADATA_URL = f"{API_ROOT}/engine/v2/item"
 ITEM_STATUS_URL = f"{API_ROOT}/engine/v2/items"
@@ -36,48 +34,21 @@ PRODUCER_ID = "rag-pipeline-part1-building-stronger-communities"
 POLL_INTERVAL_SECONDS = 15
 POLL_TIMEOUT_SECONDS = 600
 
-for name, value in [("GLOO_CLIENT_ID", CLIENT_ID),
-                    ("GLOO_CLIENT_SECRET", CLIENT_SECRET),
+for name, value in [("GLOO_API_KEY", API_KEY),
                     ("GLOO_PUBLISHER_ID", PUBLISHER_ID)]:
     if not value:
         print(f"Error: {name} must be set. Copy .env.example to .env and fill in your values.")
         sys.exit(1)
 
 
-class TokenManager:
-    """Manages OAuth2 client-credentials token lifecycle."""
-
-    def __init__(self) -> None:
-        self._token_info: Dict[str, Any] = {}
-
-    def get_token(self) -> str:
-        """Return a valid access token, fetching a new one if needed."""
-        if self._is_expired():
-            response = requests.post(
-                TOKEN_URL,
-                headers={"Content-Type": "application/x-www-form-urlencoded"},
-                data={"grant_type": "client_credentials", "scope": "api/access"},
-                auth=(CLIENT_ID, CLIENT_SECRET),
-                timeout=30,
-            )
-            response.raise_for_status()
-            self._token_info = response.json()
-            self._token_info["expires_at"] = time.time() + self._token_info["expires_in"]
-        return self._token_info["access_token"]
-
-    def _is_expired(self) -> bool:
-        expires_at = self._token_info.get("expires_at")
-        return expires_at is None or time.time() > expires_at - 60
-
-
 class PipelineSetup:
     """Uploads content, sets metadata, and verifies indexing."""
 
-    def __init__(self, token_manager: TokenManager) -> None:
-        self.token_manager = token_manager
+    def __init__(self, api_key: str) -> None:
+        self.api_key = api_key
 
     def _headers(self) -> Dict[str, str]:
-        return {"Authorization": f"Bearer {self.token_manager.get_token()}"}
+        return {"Authorization": f"Bearer {self.api_key}"}
 
     def upload_file(self, file_path: Path) -> str:
         """Upload a single file; return its item ID.
@@ -164,7 +135,7 @@ class PipelineSetup:
 
 
 def main() -> None:
-    pipeline = PipelineSetup(TokenManager())
+    pipeline = PipelineSetup(API_KEY)
 
     print("Step 1: Uploading sample content...")
     item_id = pipeline.upload_file(SAMPLE_FILE)

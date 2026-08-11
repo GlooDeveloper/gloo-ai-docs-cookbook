@@ -24,12 +24,10 @@ $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
 // --- Configuration ---
-define('CLIENT_ID', $_ENV['GLOO_CLIENT_ID'] ?? '');
-define('CLIENT_SECRET', $_ENV['GLOO_CLIENT_SECRET'] ?? '');
+define('API_KEY', $_ENV['GLOO_API_KEY'] ?? '');
 define('PUBLISHER_ID', $_ENV['GLOO_PUBLISHER_ID'] ?? '');
 
 define('API_ROOT', 'https://platform.ai.gloo.com');
-define('TOKEN_URL', API_ROOT . '/oauth2/token');
 define('UPLOAD_URL', API_ROOT . '/ingestion/v2/files');
 define('ITEMS_URL', API_ROOT . '/engine/v2/items');
 
@@ -61,7 +59,7 @@ function guidv4(): string
     return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
 }
 
-foreach (['GLOO_CLIENT_ID' => CLIENT_ID, 'GLOO_CLIENT_SECRET' => CLIENT_SECRET, 'GLOO_PUBLISHER_ID' => PUBLISHER_ID] as $name => $value) {
+foreach (['GLOO_API_KEY' => API_KEY, 'GLOO_PUBLISHER_ID' => PUBLISHER_ID] as $name => $value) {
     if ($value === '') {
         fwrite(STDERR, "Error: {$name} must be set. Copy .env.example to .env and fill in your values.\n");
         exit(1);
@@ -87,51 +85,7 @@ class ApiError extends RuntimeException
 }
 
 /**
- * Manages OAuth2 client-credentials token lifecycle.
- */
-class TokenManager
-{
-    private ?array $tokenInfo = null;
-
-    public function getToken(): string
-    {
-        if ($this->isExpired()) {
-            $ch = curl_init(TOKEN_URL);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_USERPWD => CLIENT_ID . ':' . CLIENT_SECRET,
-                CURLOPT_POSTFIELDS => http_build_query(['grant_type' => 'client_credentials', 'scope' => 'api/access']),
-                CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-                CURLOPT_TIMEOUT => 30,
-            ]);
-            $body = curl_exec($ch);
-            $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-            if ($body === false || $status >= 400) {
-                throw new RuntimeException("Token request failed: HTTP {$status}");
-            }
-            $this->tokenInfo = json_decode((string) $body, true);
-            $this->tokenInfo['expires_at'] = time() + (int) $this->tokenInfo['expires_in'];
-        }
-        return $this->tokenInfo['access_token'];
-    }
-
-    /** Drop the cached token so the next call fetches a fresh one. */
-    public function forceRefresh(): void
-    {
-        $this->tokenInfo = null;
-    }
-
-    private function isExpired(): bool
-    {
-        return $this->tokenInfo === null || time() > ($this->tokenInfo['expires_at'] - 60);
-    }
-}
-
-/**
- * A thin HTTP client with structured error parsing, retry-with-backoff,
- * and one-shot token refresh on 401.
+ * A thin HTTP client with structured error parsing and retry-with-backoff.
  */
 class ResilientClient
 {
@@ -141,7 +95,7 @@ class ResilientClient
         503 => 'Service Unavailable', 504 => 'Gateway Timeout',
     ];
 
-    public function __construct(private readonly TokenManager $tokenManager)
+    public function __construct(private readonly string $apiKey)
     {
     }
 
@@ -200,21 +154,19 @@ class ResilientClient
     }
 
     /**
-     * Send a request, retrying transient failures and refreshing the token once
-     * on 401. Throws ApiError on non-retryable failures or exhausted retries.
+     * Send a request, retrying transient failures. Throws ApiError on
+     * non-retryable failures or exhausted retries.
      */
     public function request(string $method, string $url, array $opts = []): mixed
     {
         $json = $opts['json'] ?? null;
         $params = $opts['params'] ?? null;
         $token = $opts['token'] ?? null;
-        $allowRefresh = $opts['allowRefresh'] ?? true;
 
         $target = $params ? $url . '?' . http_build_query($params) : $url;
-        $refreshed = false;
 
         for ($attempt = 0; $attempt <= MAX_RETRIES; $attempt++) {
-            $bearer = $token ?? $this->tokenManager->getToken();
+            $bearer = $token ?? $this->apiKey;
             $headers = ["Authorization: Bearer {$bearer}", 'Content-Type: application/json'];
             $extra = $json !== null ? [CURLOPT_POSTFIELDS => json_encode($json)] : [];
 
@@ -226,12 +178,6 @@ class ResilientClient
                     continue;
                 }
                 throw new ApiError(null, 'network_error', "curl error {$errno}");
-            }
-
-            if ($status === 401 && $allowRefresh && !$refreshed) {
-                $refreshed = true;
-                $this->tokenManager->forceRefresh();
-                continue; // retry immediately with a fresh token
             }
 
             if (in_array($status, RETRYABLE_STATUSES, true) && $attempt < MAX_RETRIES) {
@@ -272,7 +218,7 @@ class ResilientClient
     {
         $operation = function () use ($filePath, $producerId) {
             $url = UPLOAD_URL . '?producer_id=' . urlencode($producerId);
-            $headers = ['Authorization: Bearer ' . $this->tokenManager->getToken()];
+            $headers = ['Authorization: Bearer ' . $this->apiKey];
             [$status, $body, $errno] = $this->httpRaw('POST', $url, $headers, [
                 CURLOPT_POSTFIELDS => [
                     'publisher_id' => PUBLISHER_ID,
@@ -333,7 +279,7 @@ function demoErrorHandling(ResilientClient $client): void
     $cases = [
         ['Missing item (random UUID)', 'GET', ITEMS_URL . '/' . guidv4(), []],
         ['Malformed item ID', 'GET', ITEMS_URL . '/not-a-valid-uuid', []],
-        ['Rejected bearer token', 'GET', ITEMS_URL . '/' . guidv4(), ['token' => 'invalid-token', 'allowRefresh' => false]],
+        ['Rejected bearer token', 'GET', ITEMS_URL . '/' . guidv4(), ['token' => 'invalid-token']],
     ];
     foreach ($cases as [$label, $method, $url, $opts]) {
         try {
@@ -406,9 +352,9 @@ function demoHealthCheck(ResilientClient $client): void
 }
 
 try {
-    $client = new ResilientClient(new TokenManager());
+    $client = new ResilientClient(API_KEY);
 
-    echo "Step 1: Resilient client ready (token refresh, error parsing, retry/backoff).\n";
+    echo "Step 1: Resilient client ready (error parsing, retry/backoff).\n";
 
     echo "\nStep 2: Interpreting API error responses...\n";
     demoErrorHandling($client);

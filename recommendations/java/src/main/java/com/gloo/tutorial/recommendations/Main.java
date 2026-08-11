@@ -86,15 +86,28 @@ public class Main {
         String item_url;
     }
 
+    // --- Validation ---
+
+    /**
+     * Validates that the API key is set.
+     */
+    public static void validateApiKey(String apiKey) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            System.err.println("Error: GLOO_API_KEY must be set");
+            System.out.println("Create a .env file with your API key:");
+            System.out.println("GLOO_API_KEY=your_api_key_here");
+            System.out.println("GLOO_TENANT=your_tenant_name_here");
+            System.exit(1);
+        }
+    }
+
     // --- API Client Methods ---
 
     /**
      * Fetch publisher-scoped recommendations (metadata only).
      */
-    static List<RecommendationItemBase> getBase(TokenManager tm, String query, int itemCount)
+    static List<RecommendationItemBase> getBase(String apiKey, String query, int itemCount)
             throws IOException, InterruptedException {
-        String token = tm.ensureValidToken();
-
         RecommendationsRequest payload = new RecommendationsRequest();
         payload.query = query;
         payload.item_count = itemCount;
@@ -104,7 +117,7 @@ public class Main {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(AppConfig.RECOMMENDATIONS_BASE_URL))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(payload)))
                 .timeout(Duration.ofSeconds(60))
@@ -124,10 +137,8 @@ public class Main {
     /**
      * Fetch publisher-scoped recommendations with snippet text.
      */
-    static List<RecommendationItemVerbose> getVerbose(TokenManager tm, String query, int itemCount)
+    static List<RecommendationItemVerbose> getVerbose(String apiKey, String query, int itemCount)
             throws IOException, InterruptedException {
-        String token = tm.ensureValidToken();
-
         RecommendationsRequest payload = new RecommendationsRequest();
         payload.query = query;
         payload.item_count = itemCount;
@@ -137,7 +148,7 @@ public class Main {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(AppConfig.RECOMMENDATIONS_VERBOSE_URL))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(payload)))
                 .timeout(Duration.ofSeconds(60))
@@ -158,10 +169,8 @@ public class Main {
      * Fetch items from across the Gloo affiliate publisher network.
      * No collection or tenant required.
      */
-    static List<AffiliateItem> getReferencedItems(TokenManager tm, String query, int itemCount)
+    static List<AffiliateItem> getReferencedItems(String apiKey, String query, int itemCount)
             throws IOException, InterruptedException {
-        String token = tm.ensureValidToken();
-
         AffiliatesRequest payload = new AffiliatesRequest();
         payload.query = query;
         payload.item_count = itemCount;
@@ -169,7 +178,7 @@ public class Main {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(AppConfig.AFFILIATES_URL))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(gson.toJson(payload)))
                 .timeout(Duration.ofSeconds(60))
@@ -189,14 +198,11 @@ public class Main {
     // --- Command Functions ---
 
     static void runBase(String query, int itemCount) throws Exception {
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET,
-                AppConfig.TOKEN_URL, httpClient);
-
         System.out.printf("Fetching recommendations for: '%s'%n", query);
         System.out.printf("Collection: %s | Tenant: %s%n", AppConfig.COLLECTION, AppConfig.TENANT);
         System.out.printf("Requesting up to %d items%n%n", itemCount);
 
-        List<RecommendationItemBase> items = getBase(tm, query, itemCount);
+        List<RecommendationItemBase> items = getBase(AppConfig.API_KEY, query, itemCount);
 
         if (items == null || items.isEmpty()) {
             System.out.println("No recommendations found.");
@@ -232,14 +238,11 @@ public class Main {
     }
 
     static void runVerbose(String query, int itemCount) throws Exception {
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET,
-                AppConfig.TOKEN_URL, httpClient);
-
         System.out.printf("Fetching verbose recommendations for: '%s'%n", query);
         System.out.printf("Collection: %s | Tenant: %s%n", AppConfig.COLLECTION, AppConfig.TENANT);
         System.out.printf("Requesting up to %d items%n%n", itemCount);
 
-        List<RecommendationItemVerbose> items = getVerbose(tm, query, itemCount);
+        List<RecommendationItemVerbose> items = getVerbose(AppConfig.API_KEY, query, itemCount);
 
         if (items == null || items.isEmpty()) {
             System.out.println("No recommendations found.");
@@ -281,14 +284,11 @@ public class Main {
     }
 
     static void runAffiliates(String query, int itemCount) throws Exception {
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET,
-                AppConfig.TOKEN_URL, httpClient);
-
         System.out.printf("Fetching affiliate recommendations for: '%s'%n", query);
         System.out.println("Searching across the Gloo affiliate network...");
         System.out.printf("Requesting up to %d items%n%n", itemCount);
 
-        List<AffiliateItem> items = getReferencedItems(tm, query, itemCount);
+        List<AffiliateItem> items = getReferencedItems(AppConfig.API_KEY, query, itemCount);
 
         if (items == null || items.isEmpty()) {
             System.out.println("No affiliate items found.");
@@ -336,7 +336,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        TokenManager.validateCredentials(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET);
+        validateApiKey(AppConfig.API_KEY);
 
         if (args.length < 1) {
             printUsage();

@@ -17,11 +17,9 @@ $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
 // --- Configuration ---
-$CLIENT_ID = $_ENV['GLOO_CLIENT_ID'] ?? 'YOUR_CLIENT_ID';
-$CLIENT_SECRET = $_ENV['GLOO_CLIENT_SECRET'] ?? 'YOUR_CLIENT_SECRET';
+$API_KEY = $_ENV['GLOO_API_KEY'] ?? '';
 $PUBLISHER_ID = $_ENV['GLOO_PUBLISHER_ID'] ?? 'your-publisher-id';
 
-$TOKEN_URL = 'https://platform.ai.gloo.com/oauth2/token';
 $UPLOAD_URL = 'https://platform.ai.gloo.com/ingestion/v2/files';
 $METADATA_URL = 'https://platform.ai.gloo.com/engine/v2/item';
 
@@ -29,77 +27,12 @@ $METADATA_URL = 'https://platform.ai.gloo.com/engine/v2/item';
 $SUPPORTED_EXTENSIONS = ['.txt', '.md', '.pdf', '.doc', '.docx'];
 
 // Validate credentials
-if ($CLIENT_ID === 'YOUR_CLIENT_ID' || $CLIENT_SECRET === 'YOUR_CLIENT_SECRET' ||
-    empty($CLIENT_ID) || empty($CLIENT_SECRET)) {
-    fwrite(STDERR, "Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set\n");
+if (empty($API_KEY)) {
+    fwrite(STDERR, "Error: GLOO_API_KEY must be set\n");
     echo "Create a .env file with your credentials:\n";
-    echo "GLOO_CLIENT_ID=your_client_id_here\n";
-    echo "GLOO_CLIENT_SECRET=your_client_secret_here\n";
+    echo "GLOO_API_KEY=your_api_key_here\n";
     echo "GLOO_PUBLISHER_ID=your_publisher_id_here\n";
     exit(1);
-}
-
-// --- State Management ---
-$tokenInfo = [];
-
-/**
- * Get a new access token from the OAuth2 endpoint.
- */
-function getAccessToken(): array {
-    global $CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL;
-
-    $postData = 'grant_type=client_credentials&scope=api/access';
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $TOKEN_URL);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
-    curl_setopt($ch, CURLOPT_USERPWD, $CLIENT_ID . ':' . $CLIENT_SECRET);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/x-www-form-urlencoded']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-
-    $result = curl_exec($ch);
-
-    if (curl_errno($ch)) {
-        throw new Exception('Failed to obtain access token: ' . curl_error($ch));
-    }
-
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-
-    if ($httpCode !== 200) {
-        throw new Exception('Failed to obtain access token: HTTP ' . $httpCode);
-    }
-
-    $tokenData = json_decode($result, true);
-    $tokenData['expires_at'] = time() + $tokenData['expires_in'];
-
-    return $tokenData;
-}
-
-/**
- * Check if the current token is expired.
- */
-function isTokenExpired(array $token): bool {
-    if (empty($token) || !isset($token['expires_at'])) {
-        return true;
-    }
-    return time() > ($token['expires_at'] - 60);
-}
-
-/**
- * Ensure we have a valid access token.
- */
-function ensureValidToken(): string {
-    global $tokenInfo;
-
-    if (isTokenExpired($tokenInfo)) {
-        echo "Token is expired or missing. Fetching a new one...\n";
-        $tokenInfo = getAccessToken();
-    }
-
-    return $tokenInfo['access_token'];
 }
 
 /**
@@ -115,7 +48,7 @@ function isSupportedFile(string $filePath): bool {
  * Upload a single file to the Data Engine.
  */
 function uploadSingleFile(string $filePath, ?string $producerId = null): array {
-    global $UPLOAD_URL, $PUBLISHER_ID;
+    global $UPLOAD_URL, $PUBLISHER_ID, $API_KEY;
 
     if (!file_exists($filePath)) {
         throw new Exception("File not found: $filePath");
@@ -124,8 +57,6 @@ function uploadSingleFile(string $filePath, ?string $producerId = null): array {
     if (!isSupportedFile($filePath)) {
         throw new Exception("Unsupported file type: " . pathinfo($filePath, PATHINFO_EXTENSION));
     }
-
-    $token = ensureValidToken();
 
     $url = $UPLOAD_URL;
     if ($producerId) {
@@ -147,7 +78,7 @@ function uploadSingleFile(string $filePath, ?string $producerId = null): array {
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $postFields);
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $token
+        'Authorization: Bearer ' . $API_KEY
     ]);
     curl_setopt($ch, CURLOPT_TIMEOUT, 120);
 
@@ -171,13 +102,11 @@ function uploadSingleFile(string $filePath, ?string $producerId = null): array {
  * Update metadata for an uploaded item.
  */
 function updateMetadata(?string $itemId, ?string $producerId, array $metadata): array {
-    global $METADATA_URL, $PUBLISHER_ID;
+    global $METADATA_URL, $PUBLISHER_ID, $API_KEY;
 
     if (!$itemId && !$producerId) {
         throw new Exception('Either itemId or producerId must be provided');
     }
-
-    $token = ensureValidToken();
 
     $data = ['publisher_id' => $PUBLISHER_ID];
     if ($itemId) {
@@ -194,7 +123,7 @@ function updateMetadata(?string $itemId, ?string $producerId, array $metadata): 
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
-        'Authorization: Bearer ' . $token,
+        'Authorization: Bearer ' . $API_KEY,
         'Content-Type: application/json'
     ]);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);

@@ -4,13 +4,13 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Pyt
 
 ## Features
 
-- **Clean Architecture**: Organized with separate classes for token management, content processing, and file handling
+- **Clean Architecture**: Organized with separate classes for content processing and file handling
 - **Environment-based Authentication**: Secure credential management using .env files
 - **File System Monitoring**: Automatic content upload when new files are added to a directory using Watchdog
 - **Batch Processing**: Upload multiple files at once with rate limiting
 - **Single File Upload**: Process individual files on demand
 - **Comprehensive Error Handling**: Robust error handling for network, file system, and API issues
-- **Token Management**: Automatic token refresh when expired with proper lifecycle management
+- **API Key Authentication**: Simple, direct API key-based authentication
 - **Type Hints**: Modern Python with type annotations for better code quality
 - **Pathlib Integration**: Modern path handling using Python's pathlib
 - **Unicode Support**: Proper UTF-8 file handling with encoding error detection
@@ -19,7 +19,7 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Pyt
 
 - Python 3.9+ installed
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -36,8 +36,7 @@ pip install -r requirements.txt
 
 3. Create a `.env` file in this directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 4. Update the `PUBLISHER_ID` in `main.py` with your actual publisher ID.
@@ -77,11 +76,6 @@ This will:
 
 The code is organized into several classes for maintainability:
 
-### TokenManager
-Handles OAuth2 token lifecycle:
-- `get_access_token()`: Retrieves new tokens from the OAuth2 endpoint
-- `is_token_expired()`: Checks token expiration with 60-second buffer
-
 ### ContentProcessor
 Manages content processing and uploads:
 - `process_file()`: Complete file processing pipeline
@@ -115,7 +109,7 @@ mkdir sample_content
 cat > sample_content/sample_article.txt << EOF
 This is a sample article about content ingestion using the Gloo AI Realtime API.
 
-The Python implementation provides robust error handling, automatic token management, and real-time file monitoring capabilities.
+The Python implementation provides robust error handling and real-time file monitoring capabilities.
 EOF
 ```
 
@@ -127,13 +121,11 @@ python main.py single ./sample_content/sample_article.txt
 ## Configuration
 
 ### Environment Variables
-- `GLOO_CLIENT_ID`: Your Gloo AI Client ID (required)
-- `GLOO_CLIENT_SECRET`: Your Gloo AI Client Secret (required)
+- `GLOO_API_KEY`: Your Gloo AI API key (required)
 
 ### Constants (modify in main.py)
 - `PUBLISHER_ID`: Your publisher UUID (required)
 - `API_URL`: Realtime ingestion endpoint
-- `TOKEN_URL`: OAuth2 token endpoint
 
 ## Content Metadata
 
@@ -152,9 +144,8 @@ The script automatically extracts and sets:
 The Python implementation includes comprehensive error handling:
 
 ### Authentication Errors
-- Automatic token refresh with proper error messages
-- Credential validation on startup
-- Timeout handling for OAuth2 requests
+- API key validation on startup
+- Timeout handling for API requests
 
 ### File System Errors
 - File existence validation
@@ -250,7 +241,7 @@ from unittest.mock import patch, mock_open
 
 class TestContentProcessor(unittest.TestCase):
     def test_extract_title_from_filename(self):
-        processor = ContentProcessor(TokenManager())
+        processor = ContentProcessor()
         title = processor.extract_title_from_filename("hello_world.txt")
         self.assertEqual(title, "Hello World")
 ```
@@ -270,7 +261,7 @@ pip install pathtools
 ### Authentication Issues
 - Verify credentials are correct in `.env` file
 - Check that environment variables are loaded properly
-- Ensure your Client ID and Secret have required permissions
+- Ensure your API key has the required permissions
 
 ### File Processing Issues
 - Verify files are UTF-8 encoded

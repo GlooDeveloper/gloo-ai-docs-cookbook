@@ -4,36 +4,21 @@ require('dotenv').config();
 const axios = require('axios');
 
 // --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
+const API_KEY = process.env.GLOO_API_KEY || "";
 const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
 
-// --- State Management ---
-let tokenInfo = {};
-
-async function getAccessToken() {
-    const body = 'grant_type=client_credentials&scope=api/access';
-    const response = await axios.post(TOKEN_URL, body, {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        auth: { username: CLIENT_ID, password: CLIENT_SECRET }
-    });
-    const tokenData = response.data;
-    tokenData.expires_at = Math.floor(Date.now() / 1000) + tokenData.expires_in;
-    return tokenData;
-}
-
-function isTokenExpired(token) {
-    if (!token || !token.expires_at) return true;
-    return (Date.now() / 1000) > (token.expires_at - 60);
+// Validate that API key is provided
+if (!API_KEY) {
+    console.error("Error: GLOO_API_KEY must be set");
+    console.error("Either:");
+    console.error("1. Create a .env file with your API key:");
+    console.error("   GLOO_API_KEY=your_api_key_here");
+    console.error("2. Export it as an environment variable:");
+    console.error('   export GLOO_API_KEY="your_api_key_here"');
+    process.exit(1);
 }
 
 async function createGoalSettingRequest(userGoal) {
-    if (isTokenExpired(tokenInfo)) {
-        console.log("Token is expired or missing. Fetching a new one...");
-        tokenInfo = await getAccessToken();
-    }
-
     const payload = {
         auto_routing: true,
         messages: [{ role: "user", content: userGoal }],
@@ -80,7 +65,7 @@ async function createGoalSettingRequest(userGoal) {
 
     const response = await axios.post(API_URL, payload, {
         headers: {
-            'Authorization': `Bearer ${tokenInfo.access_token}`,
+            'Authorization': `Bearer ${API_KEY}`,
             'Content-Type': 'application/json',
         },
     });
@@ -99,7 +84,7 @@ function parseGrowthPlan(apiResponse) {
 function displayGrowthPlan(growthPlan) {
     console.log(`\n🎯 ${growthPlan.goal_title}`);
     console.log("=".repeat(growthPlan.goal_title.length + 4));
-    
+
     growthPlan.steps.forEach(step => {
         console.log(`\n${step.step_number}. ${step.action}`);
         console.log(`   ⏰ Timeline: ${step.timeline}`);
@@ -111,20 +96,20 @@ async function main() {
     try {
         const userGoal = "I want to grow in my faith.";
         console.log(`Creating growth plan for: '${userGoal}'`);
-        
+
         // Make API call with tool use
         const response = await createGoalSettingRequest(userGoal);
-        
+
         // Parse the structured response
         const growthPlan = parseGrowthPlan(response);
-        
+
         // Display the results
         displayGrowthPlan(growthPlan);
-        
+
         // Also show raw JSON for developers
         console.log(`\n📊 Raw JSON output:`);
         console.log(JSON.stringify(growthPlan, null, 2));
-        
+
     } catch (error) {
         console.error("An error occurred:", error.response ? error.response.data : error.message);
     }

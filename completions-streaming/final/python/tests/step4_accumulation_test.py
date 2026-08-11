@@ -22,13 +22,12 @@ load_dotenv()
 def test_step3():
     print("🧪 Testing: Token Extraction & Accumulation\n")
 
-    client_id = os.getenv("GLOO_CLIENT_ID")
-    if not client_id:
-        print("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+    api_key = os.getenv("GLOO_API_KEY")
+    if not api_key:
+        print("❌ Missing GLOO_API_KEY — run Step 1 first")
         sys.exit(1)
 
     try:
-        from auth.token_manager import ensure_valid_token
         from streaming.stream_client import extract_token_content, stream_completion
 
         # Test 1: extract_token_content unit tests
@@ -64,7 +63,7 @@ def test_step3():
 
         # Test 6: Full stream_completion integration test
         print("Test 6: stream_completion — full response assembly...")
-        token = ensure_valid_token()
+        token = api_key
         result = stream_completion(
             "Count from 1 to 5, separated by spaces. Reply with only the numbers.",
             token,

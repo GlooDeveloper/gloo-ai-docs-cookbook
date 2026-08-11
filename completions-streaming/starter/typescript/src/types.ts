@@ -2,13 +2,6 @@
  * Shared TypeScript interfaces for the streaming completions implementation.
  */
 
-/** OAuth2 token response from the Gloo AI token endpoint. */
-export interface TokenInfo {
-  access_token: string;
-  expires_in: number;
-  token_type: string;
-}
-
 /**
  * Result returned by streamCompletion after the stream completes.
  */

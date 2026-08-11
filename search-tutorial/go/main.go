@@ -22,14 +22,12 @@ import (
 
 // --- Configuration ---
 var (
-	clientID     string
-	clientSecret string
+	apiKey       string
 	tenant       string
 	ragMaxTokens int
 	ragMaxSnips  int
 	ragMaxChars  int
 
-	tokenURL       = "https://platform.ai.gloo.com/oauth2/token"
 	searchURL      = "https://platform.ai.gloo.com/ai/data/v1/search"
 	completionsURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 )
@@ -109,15 +107,12 @@ type Snippet struct {
 
 // SearchClient handles search requests.
 type SearchClient struct {
-	TokenManager *TokenManager
+	APIKey string
 }
 
 // Search performs a semantic search query.
 func (sc *SearchClient) Search(query string, limit int) (*SearchResponse, error) {
-	token, err := sc.TokenManager.EnsureValidToken()
-	if err != nil {
-		return nil, err
-	}
+	token := sc.APIKey
 
 	payload := SearchRequest{
 		Query:      query,
@@ -195,7 +190,7 @@ func (sc *SearchClient) SortByCertainty(results *SearchResponse) {
 
 // RAGHelper provides RAG workflow utilities.
 type RAGHelper struct {
-	TokenManager *TokenManager
+	APIKey string
 }
 
 // ExtractSnippets extracts and formats snippets from search results.
@@ -235,10 +230,7 @@ func (rh *RAGHelper) FormatContextForLLM(snippets []Snippet) string {
 
 // GenerateWithContext calls Completions V2 API with custom context.
 func (rh *RAGHelper) GenerateWithContext(query, context, systemPrompt string) (string, error) {
-	token, err := rh.TokenManager.EnsureValidToken()
-	if err != nil {
-		return "", err
-	}
+	token := rh.APIKey
 
 	if systemPrompt == "" {
 		systemPrompt = "You are a helpful assistant. Answer the user's question based on the " +
@@ -295,8 +287,7 @@ func (rh *RAGHelper) GenerateWithContext(query, context, systemPrompt string) (s
 // --- Commands ---
 
 func basicSearch(query string, limit int) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	sc := &SearchClient{TokenManager: tm}
+	sc := &SearchClient{APIKey: apiKey}
 
 	fmt.Printf("Searching for: '%s'\n", query)
 	fmt.Printf("Limit: %d results\n\n", limit)
@@ -333,8 +324,7 @@ func basicSearch(query string, limit int) {
 }
 
 func filteredSearch(query string, contentTypes []string, limit int) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	sc := &SearchClient{TokenManager: tm}
+	sc := &SearchClient{APIKey: apiKey}
 
 	fmt.Printf("Searching for: '%s'\n", query)
 	fmt.Printf("Content types: %s\n", strings.Join(contentTypes, ", "))
@@ -361,9 +351,8 @@ func filteredSearch(query string, contentTypes []string, limit int) {
 }
 
 func ragSearch(query string, limit int) {
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	sc := &SearchClient{TokenManager: tm}
-	rh := &RAGHelper{TokenManager: tm}
+	sc := &SearchClient{APIKey: apiKey}
+	rh := &RAGHelper{APIKey: apiKey}
 
 	fmt.Printf("RAG Search for: '%s'\n\n", query)
 
@@ -438,6 +427,16 @@ func getEnvInt(key string, fallback int) int {
 	return parsed
 }
 
+func validateAPIKey(apiKey string) {
+	if apiKey == "" {
+		fmt.Fprintln(os.Stderr, "Error: GLOO_API_KEY must be set")
+		fmt.Println("Create a .env file with your API key:")
+		fmt.Println("GLOO_API_KEY=your_api_key_here")
+		fmt.Println("GLOO_TENANT=your_tenant_name_here")
+		os.Exit(1)
+	}
+}
+
 func normalizeLimit(value int, fallback int, min int, max int) int {
 	if value <= 0 {
 		value = fallback
@@ -463,14 +462,13 @@ func main() {
 	// Load .env file
 	godotenv.Load()
 
-	clientID = getEnv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-	clientSecret = getEnv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
+	apiKey = getEnv("GLOO_API_KEY", "")
 	tenant = getEnv("GLOO_TENANT", "your-tenant-name")
 	ragMaxTokens = getEnvInt("RAG_MAX_TOKENS", 3000)
 	ragMaxSnips = getEnvInt("RAG_CONTEXT_MAX_SNIPPETS", 5)
 	ragMaxChars = getEnvInt("RAG_CONTEXT_MAX_CHARS_PER_SNIPPET", 350)
 
-	ValidateCredentials(clientID, clientSecret)
+	validateAPIKey(apiKey)
 
 	if len(os.Args) < 2 {
 		printUsage()

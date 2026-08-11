@@ -21,8 +21,8 @@ public class Step2ErrorHandlingTest {
         System.out.println("🧪 Testing: Streaming Error Handling\n");
 
         Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-        if (dotenv.get("GLOO_CLIENT_ID", "").isBlank()) {
-            System.err.println("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+        if (dotenv.get("GLOO_API_KEY", "").isBlank()) {
+            System.err.println("❌ Missing GLOO_API_KEY — run Step 1 first");
             System.exit(1);
         }
 

@@ -11,7 +11,6 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
-use GlooStreaming\Auth\TokenManager;
 use GlooStreaming\Streaming\StreamClient;
 use GlooStreaming\Browser\Renderer;
 
@@ -21,11 +20,10 @@ $dotenv->safeLoad();
 
 echo "Streaming AI Responses in Real Time\n\n";
 
-$clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
-$clientSecret = $_ENV['GLOO_CLIENT_SECRET'] ?? getenv('GLOO_CLIENT_SECRET');
+$apiKey = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY');
 
-if (!$clientId || !$clientSecret) {
-    echo "Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET\n";
+if (!$apiKey) {
+    echo "Missing credentials. Set GLOO_API_KEY in your .env file\n";
     exit(1);
 }
 
@@ -33,7 +31,7 @@ echo "Environment variables loaded\n\n";
 
 // --- Example 1: Accumulate full response ---
 echo "Example: Streaming a completion (accumulate full text)...\n";
-$token = TokenManager::ensureValidToken();
+$token = $apiKey;
 $result = StreamClient::streamCompletion(
     'What is the significance of the resurrection?',
     $token

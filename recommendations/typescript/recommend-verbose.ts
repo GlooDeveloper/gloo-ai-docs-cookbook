@@ -13,13 +13,11 @@
  */
 
 import axios from "axios";
-import { TokenManager, validateCredentials } from "./auth";
+import { validateApiKey } from "./recommend-base";
 import {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   COLLECTION,
   TENANT,
-  TOKEN_URL,
   RECOMMENDATIONS_VERBOSE_URL,
   DEFAULT_ITEM_COUNT,
 } from "./config";
@@ -55,10 +53,10 @@ interface RecommendationItemVerbose {
 const SNIPPET_PREVIEW_CHARS = 200;
 
 export class VerboseRecommendationsClient {
-  private tokenManager: TokenManager;
+  private apiKey: string;
 
-  constructor(tokenManager: TokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -70,8 +68,6 @@ export class VerboseRecommendationsClient {
     query: string,
     itemCount: number = DEFAULT_ITEM_COUNT
   ): Promise<RecommendationItemVerbose[]> {
-    const token = await this.tokenManager.ensureValidToken();
-
     const payload = {
       query,
       collection: COLLECTION,
@@ -86,7 +82,7 @@ export class VerboseRecommendationsClient {
         payload,
         {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${this.apiKey}`,
             "Content-Type": "application/json",
           },
           timeout: 60000,
@@ -110,8 +106,7 @@ async function run(
   query: string,
   itemCount: number = DEFAULT_ITEM_COUNT
 ): Promise<void> {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const client = new VerboseRecommendationsClient(tokenManager);
+  const client = new VerboseRecommendationsClient(API_KEY);
 
   console.log(`Fetching recommendations (with previews) for: '${query}'`);
   console.log(`Requesting up to ${itemCount} items\n`);
@@ -164,7 +159,7 @@ function printUsage(): void {
 }
 
 async function main(): Promise<void> {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
   if (args.length < 1) {

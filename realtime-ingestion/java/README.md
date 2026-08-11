@@ -5,14 +5,14 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Jav
 ## Features
 
 - **Modern Java**: Uses Java 17+ with modern language features and patterns
-- **Clean Architecture**: Well-structured object-oriented design with separate classes for token management, content processing, and file monitoring
+- **Clean Architecture**: Well-structured object-oriented design with separate classes for content processing and file monitoring
 - **Environment-based Authentication**: Secure credential management using .env files with dotenv-java
 - **HTTP Client**: OkHttp3 for robust, efficient HTTP communication with connection pooling
 - **File System Monitoring**: Real-time file watching using `directory-watcher` library for cross-platform compatibility
 - **Batch Processing**: Upload multiple files at once with configurable rate limiting
 - **Single File Upload**: Process individual files on demand
 - **Comprehensive Error Handling**: Proper exception handling with detailed logging using SLF4J/Logback
-- **Token Management**: Automatic token refresh with proper lifecycle management
+- **API Key Authentication**: Simple, direct API key-based authentication
 - **Maven Integration**: Modern Maven setup with profiles and plugins for easy building and execution
 - **Production Ready**: Robust error handling, logging, monitoring, and resource management
 - **Concurrent Safe**: Thread-safe design suitable for concurrent operations
@@ -22,7 +22,7 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Jav
 - Java 17+ installed (JDK recommended)
 - Maven 3.6+ installed
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -33,8 +33,7 @@ mvn clean compile
 
 2. Create a `.env` file in the project root directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 3. Update the `PUBLISHER_ID` constant in `RealtimeIngestionApp.java` with your actual publisher ID.
@@ -85,14 +84,6 @@ java -jar target/realtime-ingestion-1.0.0.jar watch ./sample_content
 
 The Java implementation follows enterprise-grade patterns with clear separation of concerns:
 
-### TokenManager Class
-Handles OAuth2 token lifecycle with enterprise patterns:
-- `getValidToken()`: Returns valid token, refreshing automatically if needed
-- `fetchAccessToken()`: Retrieves new tokens with proper error handling
-- `isTokenExpired()`: Checks expiration with 60-second buffer
-- Uses OkHttp3 with connection pooling and timeout configuration
-- Proper credential validation and error reporting
-
 ### ContentProcessor Class
 Manages content processing and uploads:
 - `processFile()`: Complete file processing pipeline with comprehensive validation
@@ -120,7 +111,7 @@ Handles real-time file system monitoring:
 
 ### Main Application Class
 Application controller with dependency injection and lifecycle management:
-- Clean initialization and dependency management
+- Clean initialization and API key validation
 - Command-line argument parsing and validation
 - Centralized error handling and logging
 - Graceful resource cleanup and shutdown hooks
@@ -154,14 +145,12 @@ mvn exec:java -Psingle
 
 ### Environment Variables (.env file)
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 ### Constants (modify in RealtimeIngestionApp.java)
 - `PUBLISHER_ID`: Your publisher UUID (required)
 - `API_URL`: Realtime ingestion endpoint
-- `TOKEN_URL`: OAuth2 token endpoint
 - `SUPPORTED_EXTENSIONS`: Set of supported file extensions
 - `API_TIMEOUT`: HTTP request timeout duration
 - `RATE_LIMIT_DELAY`: Delay between API calls
@@ -349,16 +338,11 @@ spec:
       - name: app
         image: gloo-ai/realtime-ingestion:latest
         env:
-        - name: GLOO_CLIENT_ID
+        - name: GLOO_API_KEY
           valueFrom:
             secretKeyRef:
               name: gloo-credentials
-              key: client-id
-        - name: GLOO_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: gloo-credentials
-              key: client-secret
+              key: api-key
         volumeMounts:
         - name: content-volume
           mountPath: /content
@@ -381,7 +365,7 @@ java -XX:+UseG1GC \
 ```
 
 ### HTTP Client Optimization
-OkHttp3 configuration in TokenManager:
+OkHttp3 configuration in ContentProcessor:
 ```java
 OkHttpClient client = new OkHttpClient.Builder()
     .connectTimeout(30, TimeUnit.SECONDS)
@@ -498,7 +482,7 @@ java -XX:+PrintGCDetails -jar app.jar
 ### Network Issues
 ```bash
 # Test API connectivity
-curl -v https://platform.ai.gloo.com/oauth2/token
+curl -v https://platform.ai.gloo.com/ingestion/v1/real_time_upload
 
 # Check proxy settings
 java -Dhttps.proxyHost=proxy.company.com -Dhttps.proxyPort=8080 -jar app.jar

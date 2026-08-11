@@ -8,30 +8,17 @@ import (
 	"net/http"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/joho/godotenv"
 )
 
 // --- Configuration ---
 var (
-	clientID     string
-	clientSecret string
-	tokenURL     = "https://platform.ai.gloo.com/oauth2/token"
-	apiURL       = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+	apiKey string
+	apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 )
 
-// --- State Management ---
-var tokenInfo *TokenInfo
-
 // --- Data Structures ---
-type TokenInfo struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	ExpiresAt   int64  `json:"expires_at"`
-	TokenType   string `json:"token_type"`
-}
-
 type GrowthStep struct {
 	StepNumber int    `json:"step_number"`
 	Action     string `json:"action"`
@@ -61,59 +48,7 @@ type ApiResponse struct {
 }
 
 // --- Function Definitions ---
-func getAccessToken() (*TokenInfo, error) {
-	data := strings.NewReader("grant_type=client_credentials&scope=api/access")
-	req, err := http.NewRequest("POST", tokenURL, data)
-	if err != nil {
-		return nil, err
-	}
-
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-		return nil, fmt.Errorf("failed to get token: %s - %s", resp.Status, string(bodyBytes))
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var localTokenInfo TokenInfo
-	if err := json.Unmarshal(body, &localTokenInfo); err != nil {
-		return nil, err
-	}
-
-	localTokenInfo.ExpiresAt = time.Now().Unix() + int64(localTokenInfo.ExpiresIn)
-	return &localTokenInfo, nil
-}
-
-func isTokenExpired(token *TokenInfo) bool {
-	if token == nil || token.ExpiresAt == 0 {
-		return true
-	}
-	return time.Now().Unix() > (token.ExpiresAt - 60)
-}
-
 func createGoalSettingRequest(userGoal string) (*ApiResponse, error) {
-	var err error
-	if isTokenExpired(tokenInfo) {
-		fmt.Println("Token is expired or missing. Fetching a new one...")
-		tokenInfo, err = getAccessToken()
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	tools := []map[string]interface{}{
 		{
 			"type": "function",
@@ -166,7 +101,7 @@ func createGoalSettingRequest(userGoal string) (*ApiResponse, error) {
 		return nil, err
 	}
 
-	req.Header.Add("Authorization", "Bearer "+tokenInfo.AccessToken)
+	req.Header.Add("Authorization", "Bearer "+apiKey)
 	req.Header.Add("Content-Type", "application/json")
 
 	client := &http.Client{}
@@ -212,33 +147,22 @@ func displayGrowthPlan(growthPlan *GrowthPlan) {
 	}
 }
 
-// Helper to get environment variables
-func getEnv(key, fallback string) string {
-	if value, ok := os.LookupEnv(key); ok {
-		return value
-	}
-	return fallback
-}
-
 // Initialize loads environment variables and validates configuration
 func init() {
 	// Load environment variables from .env file if it exists
 	_ = godotenv.Load()
 
-	// Get credentials from environment
-	clientID = getEnv("GLOO_CLIENT_ID", "")
-	clientSecret = getEnv("GLOO_CLIENT_SECRET", "")
+	// Get API key from environment
+	apiKey = os.Getenv("GLOO_API_KEY")
 
-	// Validate that credentials are provided
-	if clientID == "" || clientSecret == "" {
-		fmt.Println("Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set")
+	// Validate that API key is provided
+	if apiKey == "" {
+		fmt.Println("Error: GLOO_API_KEY must be set")
 		fmt.Println("Either:")
-		fmt.Println("1. Create a .env file with your credentials:")
-		fmt.Println("   GLOO_CLIENT_ID=your_client_id_here")
-		fmt.Println("   GLOO_CLIENT_SECRET=your_client_secret_here")
-		fmt.Println("2. Export them as environment variables:")
-		fmt.Println("   export GLOO_CLIENT_ID=\"your_client_id_here\"")
-		fmt.Println("   export GLOO_CLIENT_SECRET=\"your_client_secret_here\"")
+		fmt.Println("1. Create a .env file with your API key:")
+		fmt.Println("   GLOO_API_KEY=your_api_key_here")
+		fmt.Println("2. Export it as an environment variable:")
+		fmt.Println("   export GLOO_API_KEY=\"your_api_key_here\"")
 		os.Exit(1)
 	}
 }

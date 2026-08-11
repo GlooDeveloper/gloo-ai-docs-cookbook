@@ -12,12 +12,10 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 // --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID ?? "";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET ?? "";
+const API_KEY = process.env.GLOO_API_KEY ?? "";
 const PUBLISHER_ID = process.env.GLOO_PUBLISHER_ID ?? "";
 
 const API_ROOT = "https://platform.ai.gloo.com";
-const TOKEN_URL = `${API_ROOT}/oauth2/token`;
 const UPLOAD_URL = `${API_ROOT}/ingestion/v2/files`;
 const ITEM_METADATA_URL = `${API_ROOT}/engine/v2/item`;
 const ITEM_STATUS_URL = `${API_ROOT}/engine/v2/items`;
@@ -29,12 +27,6 @@ const PRODUCER_ID = "rag-pipeline-part1-building-stronger-communities";
 // takes several minutes (observed ~6 minutes for a small file).
 const POLL_INTERVAL_MS = 15_000;
 const POLL_TIMEOUT_MS = 600_000;
-
-interface TokenInfo {
-  access_token: string;
-  expires_in: number;
-  expiresAt: number;
-}
 
 interface UploadResponse {
   success: boolean;
@@ -53,8 +45,7 @@ interface ItemMetadata {
 }
 
 const requiredEnv: Array<[string, string]> = [
-  ["GLOO_CLIENT_ID", CLIENT_ID],
-  ["GLOO_CLIENT_SECRET", CLIENT_SECRET],
+  ["GLOO_API_KEY", API_KEY],
   ["GLOO_PUBLISHER_ID", PUBLISHER_ID],
 ];
 for (const [name, value] of requiredEnv) {
@@ -66,40 +57,12 @@ for (const [name, value] of requiredEnv) {
 
 const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-/** Manages OAuth2 client-credentials token lifecycle. */
-class TokenManager {
-  private tokenInfo: TokenInfo | null = null;
-
-  async getToken(): Promise<string> {
-    if (this.isExpired()) {
-      const response = await fetch(TOKEN_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
-        },
-        body: new URLSearchParams({ grant_type: "client_credentials", scope: "api/access" }),
-      });
-      if (!response.ok) {
-        throw new Error(`Token request failed: ${response.status} ${await response.text()}`);
-      }
-      const data = (await response.json()) as Omit<TokenInfo, "expiresAt">;
-      this.tokenInfo = { ...data, expiresAt: Date.now() + data.expires_in * 1000 };
-    }
-    return this.tokenInfo!.access_token;
-  }
-
-  private isExpired(): boolean {
-    return !this.tokenInfo || Date.now() > this.tokenInfo.expiresAt - 60_000;
-  }
-}
-
 /** Uploads content, sets metadata, and verifies indexing. */
 class PipelineSetup {
-  constructor(private readonly tokenManager: TokenManager) {}
+  constructor(private readonly apiKey: string) {}
 
-  private async headers(): Promise<Record<string, string>> {
-    return { Authorization: `Bearer ${await this.tokenManager.getToken()}` };
+  private headers(): Record<string, string> {
+    return { Authorization: `Bearer ${this.apiKey}` };
   }
 
   /**
@@ -117,7 +80,7 @@ class PipelineSetup {
     const url = `${UPLOAD_URL}?producer_id=${encodeURIComponent(PRODUCER_ID)}`;
     const response = await fetch(url, {
       method: "POST",
-      headers: await this.headers(),
+      headers: this.headers(),
       body: form,
     });
     if (!response.ok) {
@@ -148,7 +111,7 @@ class PipelineSetup {
     };
     const response = await fetch(ITEM_METADATA_URL, {
       method: "PATCH",
-      headers: { ...(await this.headers()), "Content-Type": "application/json" },
+      headers: { ...this.headers(), "Content-Type": "application/json" },
       body: JSON.stringify(metadata),
     });
     if (!response.ok) {
@@ -160,7 +123,7 @@ class PipelineSetup {
   /** Fetch current item metadata, including ingestion status. */
   async getItem(itemId: string): Promise<ItemMetadata> {
     const response = await fetch(`${ITEM_STATUS_URL}/${itemId}`, {
-      headers: await this.headers(),
+      headers: this.headers(),
     });
     if (!response.ok) {
       throw new Error(`Status check failed: ${response.status} ${await response.text()}`);
@@ -199,7 +162,7 @@ class PipelineSetup {
 
 (async () => {
   try {
-    const pipeline = new PipelineSetup(new TokenManager());
+    const pipeline = new PipelineSetup(API_KEY);
 
     console.log("Step 1: Uploading sample content...");
     const itemId = await pipeline.uploadFile(SAMPLE_FILE);

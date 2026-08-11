@@ -4,22 +4,22 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
 
 ## Features
 
-- ✅ OAuth2 authentication with automatic token refresh
-- ✅ Modern Java 17+ features (records, text blocks, pattern matching)
-- ✅ Maven-based project structure
-- ✅ Create new chat sessions
-- ✅ Continue conversations with context
-- ✅ Retrieve and display chat history
-- ✅ Comprehensive error handling with custom exceptions
-- ✅ Environment validation and configuration
-- ✅ Formatted timestamp display
-- ✅ Human flourishing conversation examples
+- API key authentication
+- Modern Java 17+ features (records, text blocks, pattern matching)
+- Maven-based project structure
+- Create new chat sessions
+- Continue conversations with context
+- Retrieve and display chat history
+- Comprehensive error handling with custom exceptions
+- Environment validation and configuration
+- Formatted timestamp display
+- Human flourishing conversation examples
 
 ## Prerequisites
 
 - Java 17 or higher
 - Maven 3.6 or higher
-- Gloo AI API credentials (Client ID and Client Secret)
+- Gloo AI API key
 
 ## Setup
 
@@ -38,15 +38,15 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
    
    Create a `.env` file in this directory:
    ```env
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them in your shell:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
+
+   You can get your API key from [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -76,7 +76,7 @@ java -Xmx512m -jar target/chat-message-tutorial-1.0.0.jar
 
 The example will:
 1. Validate environment variables
-2. Authenticate with the Gloo AI API
+2. Authenticate with the Gloo AI API using your API key
 3. Ask a deep question about finding meaning and purpose
 4. Follow up with practical questions
 5. Display the complete conversation history with formatted timestamps
@@ -87,23 +87,22 @@ The example demonstrates modern Java patterns:
 
 ### Data Classes
 ```java
-public static class TokenInfo {
-    @SerializedName("access_token")
-    public String accessToken;
-    
-    @SerializedName("expires_in")
-    public int expiresIn;
-    
-    @SerializedName("expires_at")
-    public long expiresAt;
-    
-    @SerializedName("token_type")
-    public String tokenType;
+public static class MessageResponse {
+    @SerializedName("chat_id")
+    public String chatId;
+
+    @SerializedName("query_id")
+    public String queryId;
+
+    @SerializedName("message_id")
+    public String messageId;
+
+    public String message;
+    public String timestamp;
 }
 ```
 
 ### Methods
-- `getAccessToken()` - Handles OAuth2 authentication
 - `sendMessage()` - Sends messages to the chat API
 - `getChatHistory()` - Retrieves conversation history
 - `validateEnvironment()` - Validates required environment variables
@@ -118,7 +117,7 @@ The example includes comprehensive error handling:
 ```java
 public static class GlooApiException extends Exception {
     public final int statusCode;
-    
+
     public GlooApiException(String message, int statusCode) {
         super(message);
         this.statusCode = statusCode;
@@ -144,7 +143,6 @@ The example uses minimal, high-quality dependencies:
 
 ## API Endpoints Used
 
-- `POST /oauth2/token` - Authentication
 - `POST /ai/v1/message` - Send messages
 - `GET /ai/v1/chat` - Retrieve chat history
 
@@ -213,18 +211,18 @@ import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class ChatTutorialTest {
-    
+
     private ChatTutorial tutorial;
-    
+
     @BeforeEach
     void setUp() {
         tutorial = new ChatTutorial();
     }
-    
+
     @Test
-    void testTokenExpiration() {
-        // Test token expiration logic
-        assertTrue(tutorial.isTokenExpired(null));
+    void testValidateEnvironment() {
+        // Test environment validation logic
+        assertNotNull(tutorial);
     }
 }
 ```
@@ -276,11 +274,11 @@ mvn clean package -Dmaven.test.skip=true
 
 **Common issues:**
 
-1. **"Please set your credentials"** - Ensure environment variables are set
+1. **"Please set your GLOO_API_KEY"** - Ensure your API key environment variable is set
 2. **Java version errors** - Ensure Java 17+ is installed and configured
 3. **Maven errors** - Run `mvn clean install` to resolve dependencies
 4. **Network errors** - Check internet connection and proxy settings
-5. **401 Unauthorized** - Verify your credentials are correct
+5. **401 Unauthorized** - Verify your API key is correct
 6. **OutOfMemoryError** - Increase JVM heap size with `-Xmx` flag
 
 **Debugging:**

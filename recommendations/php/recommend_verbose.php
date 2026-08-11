@@ -16,15 +16,13 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/recommend_base.php';
 
 $config = loadConfig();
-$CLIENT_ID   = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$API_KEY     = $config['API_KEY'];
 $TENANT      = $config['TENANT'];
 $COLLECTION  = $config['COLLECTION'];
-$TOKEN_URL   = $config['TOKEN_URL'];
 $VERBOSE_URL = $config['RECOMMENDATIONS_VERBOSE_URL'];
 $DEFAULT_ITEM_COUNT = $config['DEFAULT_ITEM_COUNT'];
 
@@ -32,21 +30,21 @@ const SNIPPET_PREVIEW_CHARS = 200;
 
 class VerboseRecommendationsClient
 {
-    private TokenManager $tokenManager;
+    private string $apiKey;
     private string $verboseUrl;
     private string $collection;
     private string $tenant;
 
     public function __construct(
-        TokenManager $tokenManager,
+        string $apiKey,
         string $verboseUrl,
         string $collection,
         string $tenant
     ) {
-        $this->tokenManager = $tokenManager;
-        $this->verboseUrl   = $verboseUrl;
-        $this->collection   = $collection;
-        $this->tenant       = $tenant;
+        $this->apiKey     = $apiKey;
+        $this->verboseUrl = $verboseUrl;
+        $this->collection = $collection;
+        $this->tenant     = $tenant;
     }
 
     /**
@@ -54,8 +52,6 @@ class VerboseRecommendationsClient
      */
     public function getVerbose(string $query, int $itemCount = 5): array
     {
-        $token = $this->tokenManager->ensureValidToken();
-
         $payload = json_encode([
             'query'               => $query,
             'collection'          => $this->collection,
@@ -70,7 +66,7 @@ class VerboseRecommendationsClient
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
+            'Authorization: Bearer ' . $this->apiKey,
             'Content-Type: application/json',
         ]);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
@@ -156,7 +152,7 @@ function printVerboseUsage(): void
 
 // --- Main ---
 if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')) {
-    validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+    validateApiKey($API_KEY);
 
     if ($argc < 2) {
         printVerboseUsage();
@@ -167,8 +163,7 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     $itemCount = isset($argv[2]) ? parseItemCount($argv[2], $DEFAULT_ITEM_COUNT) : $DEFAULT_ITEM_COUNT;
 
     try {
-        $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-        $client = new VerboseRecommendationsClient($tokenManager, $VERBOSE_URL, $COLLECTION, $TENANT);
+        $client = new VerboseRecommendationsClient($API_KEY, $VERBOSE_URL, $COLLECTION, $TENANT);
         runVerbose($client, $query, $itemCount);
     } catch (Exception $e) {
         fwrite(STDERR, "Error: " . $e->getMessage() . "\n");

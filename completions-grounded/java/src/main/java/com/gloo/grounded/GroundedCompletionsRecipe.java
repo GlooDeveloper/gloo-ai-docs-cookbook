@@ -11,9 +11,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Grounded Completions Recipe - Java Implementation
@@ -27,18 +24,12 @@ import java.util.Map;
 public class GroundedCompletionsRecipe {
 
     // Configuration
-    private static String glooClientId;
-    private static String glooClientSecret;
+    private static String glooApiKey;
     private static String publisherName;
 
     // API Endpoints
-    private static final String TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
     private static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
     private static final String GROUNDED_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions/grounded";
-
-    // Token management
-    private static String accessToken = null;
-    private static Instant tokenExpiry = null;
 
     // HTTP Client
     private static final HttpClient httpClient = HttpClient.newBuilder()
@@ -49,63 +40,6 @@ public class GroundedCompletionsRecipe {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
 
     /**
-     * Retrieve an OAuth2 access token from Gloo AI.
-     *
-     * @return Token response containing access_token and expires_in
-     * @throws Exception If credentials are missing or request fails
-     */
-    private static JsonObject getAccessToken() throws Exception {
-        if (glooClientId == null || glooClientSecret == null ||
-            glooClientId.isEmpty() || glooClientSecret.isEmpty()) {
-            throw new Exception(
-                "Missing credentials. Set GLOO_CLIENT_ID and GLOO_CLIENT_SECRET " +
-                "environment variables."
-            );
-        }
-
-        String formData = String.format(
-            "grant_type=client_credentials&client_id=%s&client_secret=%s",
-            glooClientId, glooClientSecret
-        );
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(TOKEN_URL))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .POST(HttpRequest.BodyPublishers.ofString(formData))
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request,
-                HttpResponse.BodyHandlers.ofString());
-
-        if (response.statusCode() != 200) {
-            throw new Exception("Failed to get access token. HTTP " + response.statusCode());
-        }
-
-        return JsonParser.parseString(response.body()).getAsJsonObject();
-    }
-
-    /**
-     * Ensure we have a valid access token, refreshing if necessary.
-     *
-     * @return Valid access token
-     * @throws Exception If token retrieval fails
-     */
-    private static String ensureValidToken() throws Exception {
-        // Check if we need a new token
-        if (accessToken == null || tokenExpiry == null || Instant.now().isAfter(tokenExpiry)) {
-            JsonObject tokenData = getAccessToken();
-            accessToken = tokenData.get("access_token").getAsString();
-
-            // Set expiry with 5 minute buffer
-            int expiresIn = tokenData.has("expires_in") ?
-                    tokenData.get("expires_in").getAsInt() : 3600;
-            tokenExpiry = Instant.now().plusSeconds(expiresIn - 300);
-        }
-
-        return accessToken;
-    }
-
-    /**
      * Make a standard V2 completion request WITHOUT grounding.
      *
      * This uses the model's general knowledge and may produce generic
@@ -113,10 +47,14 @@ public class GroundedCompletionsRecipe {
      *
      * @param query The user's question
      * @return API response
-     * @throws Exception If request fails
+     * @throws Exception If API key is missing or request fails
      */
     private static JsonObject makeNonGroundedRequest(String query) throws Exception {
-        String token = ensureValidToken();
+        if (glooApiKey == null || glooApiKey.isEmpty()) {
+            throw new Exception(
+                "Missing API key. Set GLOO_API_KEY environment variable."
+            );
+        }
 
         JsonObject message = new JsonObject();
         message.addProperty("role", "user");
@@ -132,7 +70,7 @@ public class GroundedCompletionsRecipe {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(COMPLETIONS_URL))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + glooApiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .timeout(Duration.ofSeconds(30))
@@ -155,11 +93,15 @@ public class GroundedCompletionsRecipe {
      * @param publisherName Name of the publisher in Gloo Studio
      * @param sourcesLimit Maximum number of sources to use
      * @return API response with sources_returned flag
-     * @throws Exception If request fails
+     * @throws Exception If API key is missing or request fails
      */
     private static JsonObject makePublisherGroundedRequest(String query, String publisherName,
                                                    int sourcesLimit) throws Exception {
-        String token = ensureValidToken();
+        if (glooApiKey == null || glooApiKey.isEmpty()) {
+            throw new Exception(
+                "Missing API key. Set GLOO_API_KEY environment variable."
+            );
+        }
 
         JsonObject message = new JsonObject();
         message.addProperty("role", "user");
@@ -177,7 +119,7 @@ public class GroundedCompletionsRecipe {
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(GROUNDED_URL))
-                .header("Authorization", "Bearer " + token)
+                .header("Authorization", "Bearer " + glooApiKey)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(payload.toString()))
                 .timeout(Duration.ofSeconds(30))
@@ -278,8 +220,7 @@ public class GroundedCompletionsRecipe {
                 .ignoreIfMissing()
                 .load();
 
-        glooClientId = dotenv.get("GLOO_CLIENT_ID");
-        glooClientSecret = dotenv.get("GLOO_CLIENT_SECRET");
+        glooApiKey = dotenv.get("GLOO_API_KEY");
         publisherName = dotenv.get("PUBLISHER_NAME", "Bezalel");
 
         System.out.println("\n" + "=".repeat(80));

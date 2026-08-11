@@ -13,19 +13,17 @@ This example demonstrates how to use the Gloo AI Completions API to generate tex
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them directly:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-3. **Get your credentials:**
+3. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -40,14 +38,13 @@ node dist/index.js
 ```
 
 This will run multiple completion tests that:
-1. Authenticate with the Gloo AI API
-2. Make completion requests for different prompts
-3. Display the generated responses
+1. Make completion requests for different prompts
+2. Display the generated responses
 
 ## Key Features
 
 - **Full Type Safety**: Complete TypeScript types for all API interactions
-- **Token Management**: Automatic token refresh when expired
+- **API Key Auth**: Simple API key authentication via Bearer token
 - **Error Handling**: Comprehensive error handling for API failures
 - **Environment Variables**: Secure credential management
 - **Multiple Tests**: Tests multiple completion scenarios
@@ -69,13 +66,6 @@ This will run multiple completion tests that:
 The example includes comprehensive type definitions:
 
 ```typescript
-interface TokenInfo {
-    access_token: string;
-    expires_in: number;
-    expires_at: number;
-    token_type: string;
-}
-
 interface ChatMessage {
     role: 'user' | 'assistant';
     content: string;
@@ -119,7 +109,7 @@ Response: Building meaningful relationships requires intentionality, authenticit
 ## Usage in Your Application
 
 ```typescript
-import { makeChatCompletionRequest, ensureValidToken, ChatCompletionResponse } from './index.js';
+import { makeChatCompletionRequest, ChatCompletionResponse } from './index.js';
 
 async function example() {
     // Make a completion request with full type safety
@@ -128,16 +118,8 @@ async function example() {
     // Extract the response
     const response = result.choices[0].message.content;
     console.log(response);
-    
-    // Or get a token for other API calls
-    const token: string = await ensureValidToken();
-    // Use token for other authenticated requests
 }
 ```
-
-## Authentication
-
-This example uses the authentication methods from the [Authentication Tutorial](../../../tutorials/authentication). The token management is handled automatically, but you can also use the `ensureValidToken()` function to get a token for other API calls.
 
 ## Compilation
 
@@ -151,7 +133,6 @@ The TypeScript compiler is configured with strict mode enabled:
 The example includes comprehensive error handling for:
 - Network connectivity issues
 - Invalid credentials
-- Token expiration
 - API rate limiting
 - HTTP errors
 
@@ -163,7 +144,7 @@ This example requires Node.js 14 or higher.
 
 ## Troubleshooting
 
-- **401 Unauthorized**: Check your Client ID and Client Secret
+- **401 Unauthorized**: Check your API key
 - **403 Forbidden**: Verify your API access permissions
 - **Network errors**: Ensure you have internet connectivity
 - **Module not found**: Run `npm install` to install dependencies

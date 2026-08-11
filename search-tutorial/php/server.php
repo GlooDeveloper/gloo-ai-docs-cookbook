@@ -17,29 +17,25 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/search_basic.php';
 require_once __DIR__ . '/search_advanced.php';
 require_once __DIR__ . '/config.php';
 
 $config = loadConfig();
-$CLIENT_ID = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$API_KEY = $config['API_KEY'];
 $TENANT = $config['TENANT'];
-$TOKEN_URL = $config['TOKEN_URL'];
 $SEARCH_URL = $config['SEARCH_URL'];
 $COMPLETIONS_URL = $config['COMPLETIONS_URL'];
 $RAG_MAX_TOKENS = $config['RAG_MAX_TOKENS'];
 $RAG_CONTEXT_MAX_SNIPPETS = $config['RAG_CONTEXT_MAX_SNIPPETS'];
 $RAG_CONTEXT_MAX_CHARS_PER_SNIPPET = $config['RAG_CONTEXT_MAX_CHARS_PER_SNIPPET'];
 
-validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+validateApiKey($API_KEY);
 
 // Shared instances
-$tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-$searchClient = new SearchClient($tokenManager, $SEARCH_URL, $TENANT);
-$advancedSearchClient = new AdvancedSearchClient($tokenManager, $SEARCH_URL, $TENANT);
-$ragHelper = new RAGHelper($tokenManager, $COMPLETIONS_URL, $RAG_MAX_TOKENS);
+$searchClient = new SearchClient($API_KEY, $SEARCH_URL, $TENANT);
+$advancedSearchClient = new AdvancedSearchClient($API_KEY, $SEARCH_URL, $TENANT);
+$ragHelper = new RAGHelper($API_KEY, $COMPLETIONS_URL, $RAG_MAX_TOKENS);
 
 $FRONTEND_DIR = realpath(__DIR__ . '/../frontend-example/simple-html');
 

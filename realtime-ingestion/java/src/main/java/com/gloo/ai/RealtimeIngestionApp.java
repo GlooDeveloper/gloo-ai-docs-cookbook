@@ -10,10 +10,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 import okhttp3.*;
 import org.slf4j.Logger;
@@ -35,8 +33,6 @@ public class RealtimeIngestionApp {
         .create();
 
     // Configuration constants
-    private static final String TOKEN_URL =
-        "https://platform.ai.gloo.com/oauth2/token";
     private static final String API_URL =
         "https://platform.ai.gloo.com/ingestion/v1/real_time_upload";
     private static final String PUBLISHER_ID = "your-publisher-id"; // Replace with your publisher ID
@@ -156,97 +152,24 @@ public class RealtimeIngestionApp {
         watcher.watch(Paths.get(directoryPath));
     }
 
-    // Token management for OAuth2 authentication
-    static class TokenManager {
-
-        private final OkHttpClient httpClient;
-        private final String clientId;
-        private final String clientSecret;
-        private TokenInfo tokenInfo;
-
-        public TokenManager() {
-            Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
-            this.clientId = dotenv.get("GLOO_CLIENT_ID", "");
-            this.clientSecret = dotenv.get("GLOO_CLIENT_SECRET", "");
-
-            if (
-                clientId.isEmpty() ||
-                clientSecret.isEmpty() ||
-                "YOUR_CLIENT_ID".equals(clientId) ||
-                "YOUR_CLIENT_SECRET".equals(clientSecret)
-            ) {
-                throw new IllegalStateException(
-                    "Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set\n" +
-                    "Create a .env file with your credentials:\n" +
-                    "GLOO_CLIENT_ID=your_client_id_here\n" +
-                    "GLOO_CLIENT_SECRET=your_client_secret_here"
-                );
-            }
-
-            this.httpClient = new OkHttpClient.Builder()
-                .connectTimeout(API_TIMEOUT)
-                .readTimeout(API_TIMEOUT)
-                .writeTimeout(API_TIMEOUT)
-                .build();
-        }
-
-        public TokenInfo getValidToken() throws IOException {
-            if (isTokenExpired()) {
-                logger.info(
-                    "Token is expired or missing. Fetching a new one..."
-                );
-                tokenInfo = fetchAccessToken();
-            }
-            return tokenInfo;
-        }
-
-        private TokenInfo fetchAccessToken() throws IOException {
-            RequestBody body = new FormBody.Builder()
-                .add("grant_type", "client_credentials")
-                .add("scope", "api/access")
-                .build();
-
-            String credentials = Credentials.basic(clientId, clientSecret);
-            Request request = new Request.Builder()
-                .url(TOKEN_URL)
-                .post(body)
-                .header("Authorization", credentials)
-                .build();
-
-            try (Response response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
-                    throw new IOException(
-                        "Failed to get token: " +
-                        response.code() +
-                        " - " +
-                        response.message()
-                    );
-                }
-
-                String responseBody = response.body().string();
-                TokenInfo token = gson.fromJson(responseBody, TokenInfo.class);
-                token.expiresAt =
-                    Instant.now().getEpochSecond() + token.expiresIn;
-                return token;
-            }
-        }
-
-        private boolean isTokenExpired() {
-            if (tokenInfo == null || tokenInfo.expiresAt == 0) {
-                return true;
-            }
-            return Instant.now().getEpochSecond() > (tokenInfo.expiresAt - 60); // 60 second buffer
-        }
-    }
-
     // Content processing and upload management
     static class ContentProcessor {
 
-        private final TokenManager tokenManager;
+        private final String apiKey;
         private final OkHttpClient httpClient;
 
         public ContentProcessor() {
-            this.tokenManager = new TokenManager();
+            Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+            this.apiKey = dotenv.get("GLOO_API_KEY", "");
+
+            if (apiKey.isEmpty()) {
+                throw new IllegalStateException(
+                    "Error: GLOO_API_KEY must be set\n" +
+                    "Create a .env file with your API key:\n" +
+                    "GLOO_API_KEY=your_api_key_here"
+                );
+            }
+
             this.httpClient = new OkHttpClient.Builder()
                 .connectTimeout(API_TIMEOUT)
                 .readTimeout(API_TIMEOUT)
@@ -345,8 +268,6 @@ public class RealtimeIngestionApp {
 
         private ApiResponse uploadContent(ContentData contentData)
             throws IOException {
-            TokenInfo token = tokenManager.getValidToken();
-
             String jsonPayload = gson.toJson(contentData);
             RequestBody body = RequestBody.create(
                 jsonPayload,
@@ -356,7 +277,7 @@ public class RealtimeIngestionApp {
             Request request = new Request.Builder()
                 .url(API_URL)
                 .post(body)
-                .header("Authorization", "Bearer " + token.accessToken)
+                .header("Authorization", "Bearer " + apiKey)
                 .header("Content-Type", "application/json")
                 .build();
 
@@ -546,20 +467,6 @@ public class RealtimeIngestionApp {
     }
 
     // Data classes for JSON serialization
-    static class TokenInfo {
-
-        @com.google.gson.annotations.SerializedName("access_token")
-        public String accessToken;
-
-        @com.google.gson.annotations.SerializedName("expires_in")
-        public int expiresIn;
-
-        public long expiresAt;
-
-        @com.google.gson.annotations.SerializedName("token_type")
-        public String tokenType;
-    }
-
     static class ContentData {
 
         public String content;

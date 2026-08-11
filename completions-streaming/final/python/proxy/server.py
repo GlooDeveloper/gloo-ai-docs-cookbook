@@ -11,11 +11,6 @@ import requests
 from flask import Flask, Response, request
 from dotenv import load_dotenv
 
-# Import auth from parent package context (run from project root)
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from auth.token_manager import ensure_valid_token
-
 load_dotenv()
 
 API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
@@ -55,7 +50,7 @@ def stream_proxy():
 
     def generate():
         try:
-            auth_token = ensure_valid_token()
+            auth_token = os.getenv("GLOO_API_KEY")
             data = request_data
             headers = {
                 "Authorization": f"Bearer {auth_token}",

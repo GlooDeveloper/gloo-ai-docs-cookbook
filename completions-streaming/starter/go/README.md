@@ -92,7 +92,6 @@ go/
 ├── cmd/
 │   └── proxy/main.go              # Proxy server entry point
 ├── pkg/
-│   ├── auth/token.go              # OAuth2 token management
 │   ├── streaming/client.go        # SSE parsing + accumulation
 │   ├── browser/renderer.go        # Typing-effect CLI demo
 │   └── proxy/server.go            # net/http SSE proxy with http.Flusher

@@ -29,8 +29,8 @@ func main() {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
 	}
 
-	if os.Getenv("GLOO_CLIENT_ID") == "" {
-		fmt.Println("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+	if os.Getenv("GLOO_API_KEY") == "" {
+		fmt.Println("❌ Missing GLOO_API_KEY — run Step 1 first")
 		os.Exit(1)
 	}
 

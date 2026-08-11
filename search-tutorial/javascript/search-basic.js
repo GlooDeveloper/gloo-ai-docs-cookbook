@@ -6,19 +6,17 @@
  */
 
 const axios = require("axios");
-const { TokenManager, validateCredentials } = require("./auth");
 const { normalizeLimit } = require("./utils");
 const {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   TENANT,
-  TOKEN_URL,
   SEARCH_URL,
+  validateApiKey,
 } = require("./config");
 
 class SearchClient {
-  constructor(tokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -28,7 +26,7 @@ class SearchClient {
    * @returns {object} Search results
    */
   async search(query, limit = 10) {
-    const token = await this.tokenManager.ensureValidToken();
+    const token = this.apiKey;
 
     const payload = {
       query,
@@ -62,8 +60,7 @@ class SearchClient {
  * Perform a basic search and display results.
  */
 async function basicSearch(query, limit = 10) {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const searchClient = new SearchClient(tokenManager);
+  const searchClient = new SearchClient(API_KEY);
 
   console.log(`Searching for: '${query}'`);
   console.log(`Limit: ${limit} results\n`);
@@ -110,7 +107,7 @@ function printUsage() {
 }
 
 async function main() {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
 

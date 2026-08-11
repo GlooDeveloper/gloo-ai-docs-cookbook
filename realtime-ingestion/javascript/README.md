@@ -9,13 +9,13 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Jav
 - **Batch Processing**: Upload multiple files at once with rate limiting
 - **Single File Upload**: Process individual files on demand
 - **Error Handling**: Comprehensive error handling with retry logic for authentication
-- **Token Management**: Automatic token refresh when expired
+- **API Key Authentication**: Simple, direct API key-based authentication
 
 ## Prerequisites
 
 - Node.js 18+ installed
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -26,8 +26,7 @@ npm install
 
 2. Create a `.env` file in this directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 3. Update the `PUBLISHER_ID` in `index.js` with your actual publisher ID.
@@ -92,13 +91,11 @@ npm run single
 ## Configuration
 
 ### Environment Variables
-- `GLOO_CLIENT_ID`: Your Gloo AI Client ID
-- `GLOO_CLIENT_SECRET`: Your Gloo AI Client Secret
+- `GLOO_API_KEY`: Your Gloo AI API key
 
 ### Constants (modify in index.js)
 - `PUBLISHER_ID`: Your publisher UUID
 - `API_URL`: Realtime ingestion endpoint
-- `TOKEN_URL`: OAuth2 token endpoint
 
 ## Content Metadata
 
@@ -115,7 +112,7 @@ The script automatically extracts and sets:
 ## Error Handling
 
 The script handles:
-- **Authentication failures**: Automatic token refresh
+- **Authentication failures**: API key validation
 - **File system errors**: Missing files or directories
 - **Network issues**: HTTP request failures with detailed error messages
 - **API errors**: Validation failures and rate limiting
@@ -137,8 +134,7 @@ The script provides clear status updates:
 
 ### Authentication Issues
 - Verify your credentials are correct in the `.env` file
-- Ensure your Client ID and Secret have the required permissions
-- Check that the credentials haven't expired
+- Ensure your API key has the required permissions
 
 ### File Processing Issues
 - Ensure files are UTF-8 encoded

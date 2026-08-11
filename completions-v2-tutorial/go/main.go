@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/joho/godotenv"
@@ -15,19 +14,9 @@ import (
 
 // Configuration
 var (
-	clientID     string
-	clientSecret string
-	tokenURL     = "https://platform.ai.gloo.com/oauth2/token"
-	apiURL       = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+	apiKey string
+	apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 )
-
-// TokenInfo represents the OAuth2 token response
-type TokenInfo struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	ExpiresAt   int64  `json:"expires_at"`
-	TokenType   string `json:"token_type"`
-}
 
 // ChatMessage represents a chat message
 type ChatMessage struct {
@@ -47,9 +36,6 @@ type V2CompletionResponse struct {
 	} `json:"choices"`
 }
 
-// Global token storage
-var tokenInfo *TokenInfo
-
 // getEnv returns environment variable or default value
 func getEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
@@ -58,70 +44,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-// getAccessToken retrieves a new access token from the Gloo AI API
-func getAccessToken() (*TokenInfo, error) {
-	data := strings.NewReader("grant_type=client_credentials&scope=api/access")
-	req, err := http.NewRequest("POST", tokenURL, data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
-
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make request: %w", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get token: %s - %s", resp.Status, string(body))
-	}
-
-	var token TokenInfo
-	if err := json.Unmarshal(body, &token); err != nil {
-		return nil, fmt.Errorf("failed to parse response: %w", err)
-	}
-
-	token.ExpiresAt = time.Now().Unix() + int64(token.ExpiresIn)
-	return &token, nil
-}
-
-// isTokenExpired checks if the token is expired or close to expiring
-func isTokenExpired(token *TokenInfo) bool {
-	if token == nil || token.ExpiresAt == 0 {
-		return true
-	}
-	return time.Now().Unix() > (token.ExpiresAt - 60)
-}
-
-// ensureValidToken ensures we have a valid access token
-func ensureValidToken() (string, error) {
-	if isTokenExpired(tokenInfo) {
-		fmt.Println("Getting new access token...")
-		var err error
-		tokenInfo, err = getAccessToken()
-		if err != nil {
-			return "", fmt.Errorf("failed to get access token: %w", err)
-		}
-	}
-	return tokenInfo.AccessToken, nil
-}
-
 // makeRequest makes an API request
 func makeRequest(payload map[string]interface{}) (*V2CompletionResponse, error) {
-	token, err := ensureValidToken()
-	if err != nil {
-		return nil, err
-	}
-
 	jsonPayload, err := json.Marshal(payload)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal payload: %w", err)
@@ -132,7 +56,7 @@ func makeRequest(payload map[string]interface{}) (*V2CompletionResponse, error) 
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Add("Authorization", "Bearer "+token)
+	req.Header.Add("Authorization", "Bearer "+apiKey)
 	req.Header.Add("Content-Type", "application/json")
 
 	client := &http.Client{Timeout: 60 * time.Second}
@@ -251,14 +175,12 @@ func main() {
 	}
 
 	// Set configuration
-	clientID = getEnv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-	clientSecret = getEnv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
+	apiKey = getEnv("GLOO_API_KEY", "YOUR_API_KEY")
 
-	if clientID == "YOUR_CLIENT_ID" || clientSecret == "YOUR_CLIENT_SECRET" {
-		fmt.Println("Please set your GLOO_CLIENT_ID and GLOO_CLIENT_SECRET environment variables")
+	if apiKey == "YOUR_API_KEY" {
+		fmt.Println("Please set your GLOO_API_KEY environment variable")
 		fmt.Println("You can create a .env file with:")
-		fmt.Println("GLOO_CLIENT_ID=your_client_id")
-		fmt.Println("GLOO_CLIENT_SECRET=your_client_secret")
+		fmt.Println("GLOO_API_KEY=your_api_key")
 		return
 	}
 

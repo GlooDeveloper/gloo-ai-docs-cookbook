@@ -63,7 +63,7 @@ makes real API calls and prints `✓`/`✅` on success or `❌` with hints on fa
 **Important:** All commands must be run from `final/php/`.
 
 ```bash
-# CP1: Auth & environment — credentials load, token obtained, endpoint returns 200
+# CP1: Auth & environment — API key loads, endpoint returns 200
 php tests/Step1AuthTest.php
 
 # CP2: Error handling — 401/403/429 raise correct errors, bad credentials caught
@@ -91,7 +91,6 @@ the proxy manually before running it.
 php/
 ├── src/
 │   ├── index.php                 # Entry point
-│   ├── Auth/TokenManager.php     # OAuth2 token management
 │   ├── Streaming/StreamClient.php  # SSE parsing + accumulation
 │   ├── Browser/Renderer.php      # Typing-effect CLI demo
 │   └── Proxy/Server.php          # ob_flush SSE proxy

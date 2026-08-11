@@ -14,30 +14,27 @@ Endpoints:
 import sys
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from auth import TokenManager, validate_credentials
 from search_basic import SearchClient
 from search_advanced import AdvancedSearchClient, RAGHelper
 import os
 from config import (
-    CLIENT_ID,
-    CLIENT_SECRET,
-    TOKEN_URL,
+    API_KEY,
     PORT,
     RAG_CONTEXT_MAX_SNIPPETS,
     RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+    validate_api_key,
 )
 from utils import normalize_limit
 
 FRONTEND_DIR = os.path.join(os.path.dirname(__file__), "..", "frontend-example", "simple-html")
 
-# Validate credentials on startup
-validate_credentials(CLIENT_ID, CLIENT_SECRET)
+# Validate API key on startup
+validate_api_key(API_KEY)
 
 # Shared instances
-token_manager = TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL)
-search_client = SearchClient(token_manager)
-advanced_search_client = AdvancedSearchClient(token_manager)
-rag_helper = RAGHelper(token_manager)
+search_client = SearchClient(API_KEY)
+advanced_search_client = AdvancedSearchClient(API_KEY)
+rag_helper = RAGHelper(API_KEY)
 
 app = Flask(__name__, static_folder=FRONTEND_DIR)
 CORS(app)

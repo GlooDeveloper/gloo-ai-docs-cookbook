@@ -12,10 +12,9 @@ import (
 func startServer() {
 	port := getEnv("PORT", "3000")
 
-	tm := NewTokenManager(clientID, clientSecret, tokenURL)
-	baseClient := NewRecommendationsClient(tm, recommendationsBaseURL, collection, tenant)
-	verboseClient := NewVerboseRecommendationsClient(tm, recommendationsVerboseURL, collection, tenant)
-	affiliatesClient := NewAffiliatesClient(tm, affiliatesURL)
+	baseClient := NewRecommendationsClient(apiKey, recommendationsBaseURL, collection, tenant)
+	verboseClient := NewVerboseRecommendationsClient(apiKey, recommendationsVerboseURL, collection, tenant)
+	affiliatesClient := NewAffiliatesClient(apiKey, affiliatesURL)
 
 	mux := http.NewServeMux()
 

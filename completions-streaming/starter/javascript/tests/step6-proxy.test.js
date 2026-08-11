@@ -18,8 +18,8 @@ import { setTimeout as sleep } from "timers/promises";
 async function testStep6() {
   console.log("🧪 Testing: Server-Side Proxy\n");
 
-  if (!process.env.GLOO_CLIENT_ID) {
-    console.error("❌ Missing GLOO_CLIENT_ID — run Step 1 first");
+  if (!process.env.GLOO_API_KEY) {
+    console.error("❌ Missing GLOO_API_KEY — run Step 1 first");
     process.exitCode = 1;
   }
 
@@ -149,8 +149,8 @@ async function testStep6() {
     console.error("\n💡 Hints:");
     console.error("   - Check that express is installed: npm install");
     console.error(`   - Verify port ${process.env.PROXY_PORT ?? 3001} is not already in use`);
-    console.error("   - Check src/proxy/server.js imports ensureValidToken correctly");
-    console.error("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n");
+    console.error("   - Check src/proxy/server.js reads process.env.GLOO_API_KEY correctly");
+    console.error("   - Confirm GLOO_API_KEY is set in .env\n");
     process.exitCode = 1;
   } finally {
     if (server) server.kill("SIGKILL");

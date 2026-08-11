@@ -71,9 +71,7 @@ public class Server {
     }
 
     public static void start(int port) throws Exception {
-        TokenManager.validateCredentials(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET);
-
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
+        AppConfig.validateApiKey(AppConfig.API_KEY);
 
         Path frontendDir = Path.of(".", "..", "frontend-example", "simple-html").toAbsolutePath().normalize();
 
@@ -104,7 +102,7 @@ public class Server {
             limit = AppConfig.normalizeLimit(limit, 10, 1, 100);
 
             try {
-                Main.SearchResponse results = Main.search(tm, q, limit);
+                Main.SearchResponse results = Main.search(AppConfig.API_KEY, q, limit);
                 sendJson(exchange, 200, gson.toJson(results));
             } catch (Exception e) {
                 System.err.println("Search error: " + e.getMessage());
@@ -134,7 +132,7 @@ public class Server {
 
             try {
                 // Step 1: Search
-                Main.SearchResponse results = Main.search(tm, ragReq.query, limit);
+                Main.SearchResponse results = Main.search(AppConfig.API_KEY, ragReq.query, limit);
 
                 if (results.data == null || results.data.isEmpty()) {
                     sendJson(exchange, 200,
@@ -149,7 +147,7 @@ public class Server {
                 String context = Main.formatContextForLLM(snippets);
 
                 // Step 3: Generate response
-                String generatedResponse = Main.generateWithContext(tm, ragReq.query, context, ragReq.systemPrompt);
+                String generatedResponse = Main.generateWithContext(AppConfig.API_KEY, ragReq.query, context, ragReq.systemPrompt);
 
                 List<SourceInfo> sources = snippets.stream()
                         .map(s -> new SourceInfo(s.title, s.type))

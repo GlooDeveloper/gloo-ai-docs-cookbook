@@ -1,5 +1,4 @@
 import requests
-import time
 import json
 import os
 from dotenv import load_dotenv
@@ -8,44 +7,26 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # --- Configuration ---
-# It's recommended to load credentials from environment variables
-CLIENT_ID = os.getenv("GLOO_CLIENT_ID", "YOUR_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GLOO_CLIENT_SECRET", "YOUR_CLIENT_SECRET")
-TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token"
+API_KEY = os.getenv("GLOO_API_KEY", "")
 API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
 
-# --- State Management ---
-# In a real application, you would persist this token information
-access_token_info = {}
-
-def get_access_token():
-    """Retrieves a new access token."""
-    headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data = {"grant_type": "client_credentials", "scope": "api/access"}
-    response = requests.post(TOKEN_URL, headers=headers, data=data, auth=(CLIENT_ID, CLIENT_SECRET))
-    response.raise_for_status()
-    token_data = response.json()
-    token_data['expires_at'] = int(time.time()) + token_data['expires_in']
-    return token_data
-
-def is_token_expired(token_info):
-    """Checks if the token is expired or close to expiring."""
-    if not token_info or 'expires_at' not in token_info:
-        return True
-    return time.time() > (token_info['expires_at'] - 60)
+# Validate that API key is provided
+if not API_KEY:
+    print("Error: GLOO_API_KEY must be set")
+    print("Either:")
+    print("1. Create a .env file with your API key:")
+    print("   GLOO_API_KEY=your_api_key_here")
+    print("2. Export it as an environment variable:")
+    print('   export GLOO_API_KEY="your_api_key_here"')
+    exit(1)
 
 def create_goal_setting_request(user_goal):
     """Creates a goal-setting request with tool use."""
-    global access_token_info
-    if is_token_expired(access_token_info):
-        print("Token is expired or missing. Fetching a new one...")
-        access_token_info = get_access_token()
-
     headers = {
-        "Authorization": f"Bearer {access_token_info['access_token']}",
+        "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json"
     }
-    
+
     payload = {
         "auto_routing": True,
         "messages": [{"role": "user", "content": user_goal}],
@@ -89,7 +70,7 @@ def create_goal_setting_request(user_goal):
         ],
         "tool_choice": "required"
     }
-    
+
     response = requests.post(API_URL, headers=headers, json=payload)
     response.raise_for_status()
     return response.json()
@@ -107,7 +88,7 @@ def display_growth_plan(growth_plan):
     """Displays the growth plan in a user-friendly format."""
     print(f"\n🎯 {growth_plan['goal_title']}")
     print("=" * (len(growth_plan['goal_title']) + 4))
-    
+
     for step in growth_plan['steps']:
         print(f"\n{step['step_number']}. {step['action']}")
         print(f"   ⏰ Timeline: {step['timeline']}")
@@ -117,20 +98,20 @@ if __name__ == "__main__":
     try:
         user_goal = "I want to grow in my faith."
         print(f"Creating growth plan for: '{user_goal}'")
-        
+
         # Make API call with tool use
         response = create_goal_setting_request(user_goal)
-        
+
         # Parse the structured response
         growth_plan = parse_growth_plan(response)
-        
+
         # Display the results
         display_growth_plan(growth_plan)
-        
+
         # Also show raw JSON for developers
         print(f"\n📊 Raw JSON output:")
         print(json.dumps(growth_plan, indent=2))
-        
+
     except requests.exceptions.HTTPError as err:
         print(f"An HTTP error occurred: {err}")
     except Exception as err:

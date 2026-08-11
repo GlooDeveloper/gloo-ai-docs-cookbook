@@ -9,25 +9,22 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
 
 $config = loadConfig();
-$CLIENT_ID = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$API_KEY = $config['API_KEY'];
 $TENANT = $config['TENANT'];
-$TOKEN_URL = $config['TOKEN_URL'];
 $SEARCH_URL = $config['SEARCH_URL'];
 
 class SearchClient
 {
-    private TokenManager $tokenManager;
+    private string $apiKey;
     private string $searchUrl;
     private string $tenant;
 
-    public function __construct(TokenManager $tokenManager, string $searchUrl, string $tenant)
+    public function __construct(string $apiKey, string $searchUrl, string $tenant)
     {
-        $this->tokenManager = $tokenManager;
+        $this->apiKey = $apiKey;
         $this->searchUrl = $searchUrl;
         $this->tenant = $tenant;
     }
@@ -37,7 +34,7 @@ class SearchClient
      */
     public function search(string $query, int $limit = 10): array
     {
-        $token = $this->tokenManager->ensureValidToken();
+        $token = $this->apiKey;
 
         $payload = json_encode([
             'query' => $query,
@@ -123,7 +120,7 @@ function printBasicUsage(): void
 
 // --- Main ---
 if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')) {
-    validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+    validateApiKey($API_KEY);
 
     if ($argc < 2) {
         printBasicUsage();
@@ -134,8 +131,7 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     $limit = isset($argv[2]) ? normalizeLimit($argv[2], 10) : 10;
 
     try {
-        $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-        $searchClient = new SearchClient($tokenManager, $SEARCH_URL, $TENANT);
+        $searchClient = new SearchClient($API_KEY, $SEARCH_URL, $TENANT);
         basicSearch($searchClient, $query, $limit);
     } catch (Exception $e) {
         fwrite(STDERR, "An error occurred: " . $e->getMessage() . "\n");

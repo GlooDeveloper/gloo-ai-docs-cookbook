@@ -11,7 +11,7 @@ Compares responses side-by-side:
 ## Prerequisites
 
 - Go 1.21 or higher
-- Gloo AI account with API credentials
+- Gloo AI account with API key
 - Publisher created in [Gloo Studio](https://studio.ai.gloo.com) with content uploaded
 
 ## Setup
@@ -27,8 +27,7 @@ Compares responses side-by-side:
    ```
 
 3. **Edit `.env`** with your credentials:
-   - `GLOO_CLIENT_ID`: Your Client ID from [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
-   - `GLOO_CLIENT_SECRET`: Your Client Secret
+   - `GLOO_API_KEY`: Your API key from [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
    - `PUBLISHER_NAME`: Name of your Publisher (default: "Bezalel")
 
 ## Running the Demo
@@ -49,12 +48,6 @@ The script will run 3 comparison queries showing the difference between grounded
 
 ### Type Definitions
 ```go
-type TokenResponse struct {
-    AccessToken string `json:"access_token"`
-    ExpiresIn   int    `json:"expires_in"`
-    TokenType   string `json:"token_type"`
-}
-
 type CompletionResponse struct {
     Choices []struct {
         Message struct {
@@ -66,15 +59,11 @@ type CompletionResponse struct {
 }
 ```
 
-### Token Management
+### Authentication
 ```go
-func getAccessToken() (*TokenResponse, error) {
-    // Retrieve OAuth2 access token from Gloo AI
-}
-
-func ensureValidToken() (string, error) {
-    // Ensure we have a valid token, refreshing if needed
-}
+// API key is read from environment and used directly as Bearer token
+glooAPIKey = os.Getenv("GLOO_API_KEY")
+req.Header.Set("Authorization", "Bearer "+glooAPIKey)
 ```
 
 ### Non-Grounded Request
@@ -185,8 +174,8 @@ go build
 ```
 
 ### Authentication Errors
-- Verify `GLOO_CLIENT_ID` and `GLOO_CLIENT_SECRET` are correct
-- Check credentials at [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
+- Verify `GLOO_API_KEY` is correct
+- Check your API key at [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
 
 ### Publisher Not Found
 - Confirm publisher name matches exactly (case-sensitive)

@@ -16,35 +16,44 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/vendor/autoload.php';
-require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/config.php';
 
 $config = loadConfig();
-$CLIENT_ID   = $config['CLIENT_ID'];
-$CLIENT_SECRET = $config['CLIENT_SECRET'];
+$API_KEY     = $config['API_KEY'];
 $TENANT      = $config['TENANT'];
 $COLLECTION  = $config['COLLECTION'];
-$TOKEN_URL   = $config['TOKEN_URL'];
 $BASE_URL    = $config['RECOMMENDATIONS_BASE_URL'];
 $DEFAULT_ITEM_COUNT = $config['DEFAULT_ITEM_COUNT'];
 
+function validateApiKey(string $apiKey): void
+{
+    if (empty($apiKey)) {
+        fwrite(STDERR, "Error: GLOO_API_KEY must be set\n");
+        echo "Create a .env file with your API key:\n";
+        echo "GLOO_API_KEY=your_api_key_here\n";
+        echo "GLOO_TENANT=your_tenant_name_here\n";
+        echo "GLOO_COLLECTION=GlooProd\n";
+        exit(1);
+    }
+}
+
 class RecommendationsClient
 {
-    private TokenManager $tokenManager;
+    private string $apiKey;
     private string $baseUrl;
     private string $collection;
     private string $tenant;
 
     public function __construct(
-        TokenManager $tokenManager,
+        string $apiKey,
         string $baseUrl,
         string $collection,
         string $tenant
     ) {
-        $this->tokenManager = $tokenManager;
-        $this->baseUrl      = $baseUrl;
-        $this->collection   = $collection;
-        $this->tenant       = $tenant;
+        $this->apiKey     = $apiKey;
+        $this->baseUrl    = $baseUrl;
+        $this->collection = $collection;
+        $this->tenant     = $tenant;
     }
 
     /**
@@ -52,8 +61,6 @@ class RecommendationsClient
      */
     public function getBase(string $query, int $itemCount = 5): array
     {
-        $token = $this->tokenManager->ensureValidToken();
-
         $payload = json_encode([
             'query'               => $query,
             'collection'          => $this->collection,
@@ -68,7 +75,7 @@ class RecommendationsClient
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'Authorization: Bearer ' . $token,
+            'Authorization: Bearer ' . $this->apiKey,
             'Content-Type: application/json',
         ]);
         curl_setopt($ch, CURLOPT_TIMEOUT, 60);
@@ -149,7 +156,7 @@ function printBaseUsage(): void
 
 // --- Main ---
 if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')) {
-    validateCredentials($CLIENT_ID, $CLIENT_SECRET);
+    validateApiKey($API_KEY);
 
     if ($argc < 2) {
         printBaseUsage();
@@ -160,8 +167,7 @@ if (php_sapi_name() === 'cli' && basename(__FILE__) === basename($argv[0] ?? '')
     $itemCount = isset($argv[2]) ? parseItemCount($argv[2], $DEFAULT_ITEM_COUNT) : $DEFAULT_ITEM_COUNT;
 
     try {
-        $tokenManager = new TokenManager($CLIENT_ID, $CLIENT_SECRET, $TOKEN_URL);
-        $client = new RecommendationsClient($tokenManager, $BASE_URL, $COLLECTION, $TENANT);
+        $client = new RecommendationsClient($API_KEY, $BASE_URL, $COLLECTION, $TENANT);
         runBase($client, $query, $itemCount);
     } catch (Exception $e) {
         fwrite(STDERR, "Error: " . $e->getMessage() . "\n");

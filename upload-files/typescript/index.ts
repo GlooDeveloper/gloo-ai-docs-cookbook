@@ -14,13 +14,6 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 // --- Type Definitions ---
-interface TokenInfo {
-  access_token: string;
-  expires_in: number;
-  expires_at: number;
-  token_type: string;
-}
-
 interface UploadResponse {
   success: boolean;
   message: string;
@@ -45,11 +38,9 @@ interface Metadata {
 }
 
 // --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID || "YOUR_CLIENT_ID";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET || "YOUR_CLIENT_SECRET";
+const API_KEY = process.env.GLOO_API_KEY || "";
 const PUBLISHER_ID = process.env.GLOO_PUBLISHER_ID || "your-publisher-id";
 
-const TOKEN_URL = "https://platform.ai.gloo.com/oauth2/token";
 const UPLOAD_URL = "https://platform.ai.gloo.com/ingestion/v2/files";
 const METADATA_URL = "https://platform.ai.gloo.com/engine/v2/item";
 
@@ -57,55 +48,12 @@ const METADATA_URL = "https://platform.ai.gloo.com/engine/v2/item";
 const SUPPORTED_EXTENSIONS = [".txt", ".md", ".pdf", ".doc", ".docx"];
 
 // Validate credentials
-if (
-  CLIENT_ID === "YOUR_CLIENT_ID" ||
-  CLIENT_SECRET === "YOUR_CLIENT_SECRET" ||
-  !CLIENT_ID ||
-  !CLIENT_SECRET
-) {
-  console.error("Error: GLOO_CLIENT_ID and GLOO_CLIENT_SECRET must be set");
+if (!API_KEY) {
+  console.error("Error: GLOO_API_KEY must be set");
   console.log("Create a .env file with your credentials:");
-  console.log("GLOO_CLIENT_ID=your_client_id_here");
-  console.log("GLOO_CLIENT_SECRET=your_client_secret_here");
+  console.log("GLOO_API_KEY=your_api_key_here");
   console.log("GLOO_PUBLISHER_ID=your_publisher_id_here");
   process.exit(1);
-}
-
-// --- State Management ---
-let tokenInfo: TokenInfo | null = null;
-
-/**
- * Get a new access token from the OAuth2 endpoint.
- */
-async function getAccessToken(): Promise<TokenInfo> {
-  const body = "grant_type=client_credentials&scope=api/access";
-  const response = await axios.post<TokenInfo>(TOKEN_URL, body, {
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    auth: { username: CLIENT_ID, password: CLIENT_SECRET },
-  });
-  const tokenData = response.data;
-  (tokenData as any).expires_at =
-    Math.floor(Date.now() / 1000) + tokenData.expires_in;
-  return tokenData;
-}
-
-/**
- * Check if the current token is expired.
- */
-function isTokenExpired(token: TokenInfo | null): boolean {
-  if (!token || !(token as any).expires_at) return true;
-  return Date.now() / 1000 > (token as any).expires_at - 60;
-}
-
-/**
- * Ensure we have a valid access token.
- */
-async function ensureValidToken(): Promise<string> {
-  if (isTokenExpired(tokenInfo)) {
-    console.log("Token is expired or missing. Fetching a new one...");
-    tokenInfo = await getAccessToken();
-  }
-  return tokenInfo!.access_token;
 }
 
 /**
@@ -131,14 +79,13 @@ async function uploadSingleFile(
     throw new Error(`Unsupported file type: ${path.extname(filePath)}`);
   }
 
-  const token = await ensureValidToken();
   const formData = new FormData();
   formData.append("files", fs.createReadStream(filePath));
   formData.append("publisher_id", PUBLISHER_ID);
 
   const config: any = {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${API_KEY}`,
       ...formData.getHeaders(),
     },
     timeout: 120000,
@@ -156,7 +103,6 @@ async function uploadSingleFile(
  * Upload multiple files to the Data Engine.
  */
 async function uploadMultipleFiles(filePaths: string[]): Promise<UploadResponse> {
-  const token = await ensureValidToken();
   const formData = new FormData();
 
   let validFiles = 0;
@@ -181,7 +127,7 @@ async function uploadMultipleFiles(filePaths: string[]): Promise<UploadResponse>
 
   const response = await axios.post<UploadResponse>(UPLOAD_URL, formData, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${API_KEY}`,
       ...formData.getHeaders(),
     },
     timeout: 300000,
@@ -202,7 +148,6 @@ async function updateMetadata(
     throw new Error("Either itemId or producerId must be provided");
   }
 
-  const token = await ensureValidToken();
   const data: any = {
     publisher_id: PUBLISHER_ID,
     ...(itemId && { item_id: itemId }),
@@ -212,7 +157,7 @@ async function updateMetadata(
 
   const response = await axios.post<MetadataResponse>(METADATA_URL, data, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${API_KEY}`,
       "Content-Type": "application/json",
     },
     timeout: 30000,

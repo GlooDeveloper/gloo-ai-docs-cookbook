@@ -1,6 +1,6 @@
 # Gloo AI Authentication Tutorial - Python
 
-This example demonstrates how to authenticate with the Gloo AI API using OAuth2 client credentials flow in Python.
+This example demonstrates how to authenticate with the Gloo AI API using API key authentication in Python.
 
 ## Setup
 
@@ -19,19 +19,17 @@ This example demonstrates how to authenticate with the Gloo AI API using OAuth2 
    
    Create a `.env` file in this directory:
    ```bash
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them directly:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
 
-4. **Get your credentials:**
+4. **Get your API key:**
    
-   Obtain your Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/).
+   Obtain your API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -40,13 +38,12 @@ python main.py
 ```
 
 This will run a complete authentication test that:
-1. Retrieves an access token
-2. Validates token management
-3. Makes an authenticated API call
+1. Verifies the API key is configured
+2. Makes an authenticated API call
 
 ## Key Features
 
-- **Token Management**: Automatic token refresh when expired
+- **API Key Auth**: Simple, direct authentication using an API key as a Bearer token
 - **Error Handling**: Comprehensive error handling for authentication failures
 - **Environment Variables**: Secure credential management using python-dotenv
 - **Test Suite**: Built-in tests to verify authentication setup
@@ -62,16 +59,11 @@ This will run a complete authentication test that:
 ```
 === Gloo AI Authentication Test ===
 
-1. Testing token retrieval...
-   ✓ Token retrieved successfully
-   Token type: Bearer
-   Expires in: 3600 seconds
+1. Verifying API key is configured...
+   API key is set
 
-2. Testing token validation...
-   ✓ Token validation successful
-
-3. Testing authenticated API call...
-   ✓ API call successful
+2. Testing authenticated API call...
+   API call successful
    Response: Hello! I'm ready when you are. How can I help you today?...
 
 === All tests passed! ===
@@ -80,12 +72,9 @@ This will run a complete authentication test that:
 ## Usage in Your Application
 
 ```python
-from main import ensure_valid_token, make_authenticated_request
+from main import make_authenticated_request
 
 def example():
-    # Get a valid token
-    token = ensure_valid_token()
-    
     # Make authenticated API calls
     result = make_authenticated_request(
         "https://platform.ai.gloo.com/ai/v2/chat/completions",
@@ -102,8 +91,7 @@ def example():
 
 The example includes comprehensive error handling for:
 - Network connectivity issues
-- Invalid credentials
-- Token expiration
+- Invalid API key
 - API rate limiting
 - HTTP errors
 
@@ -113,7 +101,7 @@ This example requires Python 3.7 or higher.
 
 ## Troubleshooting
 
-- **401 Unauthorized**: Check your Client ID and Client Secret
+- **401 Unauthorized**: Check your API key
 - **403 Forbidden**: Verify your API access permissions
 - **Network errors**: Ensure you have internet connectivity
 - **Module not found**: Run `pip install -r requirements.txt`

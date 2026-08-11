@@ -13,27 +13,24 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { TokenManager, validateCredentials } = require("./auth");
 const { SearchClient } = require("./search-basic");
 const { AdvancedSearchClient, RAGHelper } = require("./search-advanced");
 const { normalizeLimit } = require("./utils");
 const {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  TOKEN_URL,
+  API_KEY,
   PORT,
   RAG_CONTEXT_MAX_SNIPPETS,
   RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+  validateApiKey,
 } = require("./config");
 
-// Validate credentials on startup
-validateCredentials(CLIENT_ID, CLIENT_SECRET);
+// Validate API key on startup
+validateApiKey(API_KEY);
 
-// Shared token manager (single instance for the server)
-const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-const searchClient = new SearchClient(tokenManager);
-const advancedSearchClient = new AdvancedSearchClient(tokenManager);
-const ragHelper = new RAGHelper(tokenManager);
+// Shared instances
+const searchClient = new SearchClient(API_KEY);
+const advancedSearchClient = new AdvancedSearchClient(API_KEY);
+const ragHelper = new RAGHelper(API_KEY);
 
 const app = express();
 app.use(cors());

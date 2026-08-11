@@ -37,8 +37,8 @@ func main() {
 		fmt.Println("⚠️  No .env file found, using existing environment variables")
 	}
 
-	if os.Getenv("GLOO_CLIENT_ID") == "" {
-		fmt.Println("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+	if os.Getenv("GLOO_API_KEY") == "" {
+		fmt.Println("❌ Missing GLOO_API_KEY — run Step 1 first")
 		os.Exit(1)
 	}
 
@@ -189,7 +189,7 @@ func failProxy(msg, port string) {
 	fmt.Println("\n💡 Hints:")
 	fmt.Println("   - Check that all dependencies are installed: go mod tidy")
 	fmt.Printf("   - Verify port %s is not already in use\n", port)
-	fmt.Println("   - Check pkg/proxy/server.go imports auth.EnsureValidToken correctly")
-	fmt.Println("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env")
+	fmt.Println("   - Check pkg/proxy/server.go reads GLOO_API_KEY correctly")
+	fmt.Println("   - Confirm GLOO_API_KEY is set in .env")
 	os.Exit(1)
 }

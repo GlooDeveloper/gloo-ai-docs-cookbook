@@ -4,18 +4,18 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
 
 ## Features
 
-- ✅ OAuth2 authentication with automatic token refresh
-- ✅ Create new chat sessions
-- ✅ Continue conversations with context
-- ✅ Retrieve and display chat history
-- ✅ Error handling and validation
-- ✅ Human flourishing conversation examples
+- API key authentication
+- Create new chat sessions
+- Continue conversations with context
+- Retrieve and display chat history
+- Error handling and validation
+- Human flourishing conversation examples
 
 ## Prerequisites
 
 - Node.js 18 or higher
 - npm package manager
-- Gloo AI API credentials (Client ID and Client Secret)
+- Gloo AI API key
 
 ## Setup
 
@@ -28,15 +28,15 @@ This example demonstrates how to use the Gloo AI Message API to create interacti
    
    Create a `.env` file in this directory:
    ```env
-   GLOO_CLIENT_ID=your_client_id_here
-   GLOO_CLIENT_SECRET=your_client_secret_here
+   GLOO_API_KEY=your_api_key_here
    ```
 
    Or export them in your shell:
    ```bash
-   export GLOO_CLIENT_ID="your_client_id_here"
-   export GLOO_CLIENT_SECRET="your_client_secret_here"
+   export GLOO_API_KEY="your_api_key_here"
    ```
+
+   You can get your API key from [https://studio.ai.gloo.com/api-keys](https://studio.ai.gloo.com/api-keys).
 
 ## Running the Example
 
@@ -53,20 +53,18 @@ node index.js
 ## Expected Output
 
 The example will:
-1. Authenticate with the Gloo AI API
+1. Authenticate with the Gloo AI API using your API key
 2. Ask a deep question about finding meaning and purpose
 3. Follow up with practical questions
 4. Display the complete conversation history
 
 ## API Endpoints Used
 
-- `POST /oauth2/token` - Authentication
 - `POST /ai/v1/message` - Send messages
 - `GET /ai/v1/chat` - Retrieve chat history
 
 ## Code Structure
 
-- `getAccessToken()` - Handles OAuth2 authentication
 - `sendMessage()` - Sends messages to the chat API
 - `getChatHistory()` - Retrieves conversation history
 - `main()` - Demonstrates the complete flow
@@ -91,9 +89,9 @@ You can modify the conversation by:
 
 **Common issues:**
 
-1. **"Please set your credentials"** - Ensure environment variables are set
+1. **"Please set your GLOO_API_KEY"** - Ensure your API key environment variable is set
 2. **Network errors** - Check your internet connection
-3. **401 Unauthorized** - Verify your credentials are correct
+3. **401 Unauthorized** - Verify your API key is correct
 4. **Rate limiting** - The example includes automatic retry logic
 
 ## Learn More

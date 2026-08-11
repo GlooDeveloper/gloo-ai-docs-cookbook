@@ -25,9 +25,9 @@ function testStep4(): void
 {
     echo "🧪 Testing: Streaming Error Handling\n\n";
 
-    $clientId = $_ENV['GLOO_CLIENT_ID'] ?? getenv('GLOO_CLIENT_ID');
-    if (!$clientId) {
-        echo "❌ Missing GLOO_CLIENT_ID — run Step 1 first\n";
+    $apiKey = $_ENV['GLOO_API_KEY'] ?? getenv('GLOO_API_KEY');
+    if (!$apiKey) {
+        echo "❌ Missing GLOO_API_KEY — run Step 1 first\n";
         exit(1);
     }
 

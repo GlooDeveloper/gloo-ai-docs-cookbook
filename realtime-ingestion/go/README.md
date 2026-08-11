@@ -5,14 +5,14 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Go 
 ## Features
 
 - **Modern Go**: Uses Go 1.20+ with modules and modern Go patterns
-- **Clean Architecture**: Well-structured code with separate packages for token management, content processing, and file monitoring
+- **Clean Architecture**: Well-structured code with separate packages for content processing and file monitoring
 - **Environment-based Authentication**: Secure credential management using .env files with godotenv
 - **Native HTTP Client**: Uses Go's standard `net/http` package with proper timeout handling
 - **File System Monitoring**: Real-time file watching using `fsnotify` for cross-platform compatibility
 - **Batch Processing**: Upload multiple files at once with configurable rate limiting
 - **Single File Upload**: Process individual files on demand
 - **Comprehensive Error Handling**: Proper Go error handling with detailed error wrapping
-- **Token Management**: Automatic token refresh with proper lifecycle management
+- **API Key Authentication**: Simple, direct API key-based authentication
 - **Concurrent Safe**: Thread-safe design suitable for concurrent operations
 - **Production Ready**: Robust error handling, logging, and resource management
 
@@ -20,7 +20,7 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with Go 
 
 - Go 1.20+ installed
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -31,8 +31,7 @@ go mod tidy
 
 2. Create a `.env` file in this directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 3. Update the `publisherID` constant in `main.go` with your actual publisher ID.
@@ -72,13 +71,6 @@ This will:
 
 The Go implementation follows clean architecture principles with clear separation of concerns:
 
-### TokenManager
-Handles OAuth2 token lifecycle with proper error handling:
-- `GetAccessToken()`: Retrieves new tokens with HTTP client configuration
-- `IsTokenExpired()`: Checks expiration with 60-second buffer
-- Uses standard `net/http` package with timeout configuration
-- Proper error wrapping and context propagation
-
 ### ContentProcessor
 Manages content processing and uploads:
 - `ProcessFile()`: Complete file processing pipeline with validation
@@ -103,7 +95,7 @@ Manages bulk file processing:
 
 ### Application
 Main application controller with dependency injection:
-- Clean initialization and dependency management
+- Clean initialization and API key validation
 - Command-line argument parsing and validation
 - Centralized error handling and logging
 - Graceful resource cleanup
@@ -137,14 +129,12 @@ go run main.go single ./sample_content/sample_article.txt
 
 ### Environment Variables (.env file)
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 ### Constants (modify in main.go)
 - `publisherID`: Your publisher UUID (required)
 - `apiURL`: Realtime ingestion endpoint
-- `tokenURL`: OAuth2 token endpoint
 
 ## Content Metadata
 
@@ -265,7 +255,7 @@ func TestExtractTitleFromFilename(t *testing.T) {
 Go provides excellent benchmarking support:
 ```go
 func BenchmarkProcessFile(b *testing.B) {
-    processor := NewContentProcessor(tokenManager)
+    processor := NewContentProcessor()
     for i := 0; i < b.N; i++ {
         processor.ProcessFile("test.txt")
     }
@@ -374,10 +364,9 @@ go clean -cache
 # Check file permissions
 ls -la sample_content/
 
-# Test credentials
-curl -u "$GLOO_CLIENT_ID:$GLOO_CLIENT_SECRET" \
-  -d "grant_type=client_credentials&scope=api/access" \
-  https://platform.ai.gloo.com/oauth2/token
+# Test API key
+curl -H "Authorization: Bearer $GLOO_API_KEY" \
+  https://platform.ai.gloo.com/ingestion/v1/real_time_upload
 ```
 
 ### Performance Issues
@@ -434,10 +423,9 @@ var (
 Use structured configuration:
 ```go
 type Config struct {
-    ClientID     string `env:"GLOO_CLIENT_ID" required:"true"`
-    ClientSecret string `env:"GLOO_CLIENT_SECRET" required:"true"`
-    PublisherID  string `env:"GLOO_PUBLISHER_ID" required:"true"`
-    APITimeout   time.Duration `env:"API_TIMEOUT" default:"30s"`
+    APIKey      string        `env:"GLOO_API_KEY" required:"true"`
+    PublisherID string        `env:"GLOO_PUBLISHER_ID" required:"true"`
+    APITimeout  time.Duration `env:"API_TIMEOUT" default:"30s"`
 }
 ```
 

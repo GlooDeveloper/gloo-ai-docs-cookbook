@@ -8,23 +8,21 @@
  */
 
 const axios = require("axios");
-const { TokenManager, validateCredentials } = require("./auth");
 const { normalizeLimit } = require("./utils");
 const {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   TENANT,
-  TOKEN_URL,
   SEARCH_URL,
   COMPLETIONS_URL,
   RAG_MAX_TOKENS,
   RAG_CONTEXT_MAX_SNIPPETS,
   RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+  validateApiKey,
 } = require("./config");
 
 class AdvancedSearchClient {
-  constructor(tokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -35,7 +33,7 @@ class AdvancedSearchClient {
    * @returns {object} Search results
    */
   async search(query, limit = 10, sortBy = "relevance") {
-    const token = await this.tokenManager.ensureValidToken();
+    const token = this.apiKey;
 
     const payload = {
       query,
@@ -93,8 +91,8 @@ class AdvancedSearchClient {
 }
 
 class RAGHelper {
-  constructor(tokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -140,7 +138,7 @@ class RAGHelper {
    * @returns {{responseText: string, finishReason: string | null, usage: object | null, model: string | null}} Generated response data
    */
   async generateWithContext(query, context, systemPrompt) {
-    const token = await this.tokenManager.ensureValidToken();
+    const token = this.apiKey;
 
     if (!systemPrompt) {
       systemPrompt =
@@ -188,8 +186,7 @@ class RAGHelper {
  * Execute a search with content type filtering.
  */
 async function filteredSearch(query, contentTypes, limit = 10) {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const searchClient = new AdvancedSearchClient(tokenManager);
+  const searchClient = new AdvancedSearchClient(API_KEY);
 
   console.log(`Searching for: '${query}'`);
   console.log(`Content types: ${contentTypes.join(", ")}`);
@@ -217,9 +214,8 @@ async function filteredSearch(query, contentTypes, limit = 10) {
  * Execute a search and use results for RAG with Completions API.
  */
 async function ragSearch(query, limit = 5) {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const searchClient = new AdvancedSearchClient(tokenManager);
-  const ragHelper = new RAGHelper(tokenManager);
+  const searchClient = new AdvancedSearchClient(API_KEY);
+  const ragHelper = new RAGHelper(API_KEY);
 
   console.log(`RAG Search for: '${query}'\n`);
 
@@ -279,7 +275,7 @@ function printUsage() {
 }
 
 async function main() {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
 

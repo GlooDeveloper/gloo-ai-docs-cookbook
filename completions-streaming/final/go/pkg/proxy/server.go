@@ -11,8 +11,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-
-	"completions-streaming/pkg/auth"
 )
 
 const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
@@ -60,9 +58,9 @@ func streamProxy(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := auth.EnsureValidToken()
-	if err != nil {
-		fmt.Fprintf(w, "data: {\"error\": \"%s\"}\n\n", err.Error())
+	token := os.Getenv("GLOO_API_KEY")
+	if token == "" {
+		fmt.Fprintf(w, "data: {\"error\": \"GLOO_API_KEY not set\"}\n\n")
 		flusher.Flush()
 		return
 	}

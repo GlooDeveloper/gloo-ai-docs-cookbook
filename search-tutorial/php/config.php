@@ -28,10 +28,8 @@ function loadConfig(): array
     $dotenv->safeLoad();
 
     $config = [
-        'CLIENT_ID' => $_ENV['GLOO_CLIENT_ID'] ?? 'YOUR_CLIENT_ID',
-        'CLIENT_SECRET' => $_ENV['GLOO_CLIENT_SECRET'] ?? 'YOUR_CLIENT_SECRET',
+        'API_KEY' => $_ENV['GLOO_API_KEY'] ?? '',
         'TENANT' => $_ENV['GLOO_TENANT'] ?? 'your-tenant-name',
-        'TOKEN_URL' => 'https://platform.ai.gloo.com/oauth2/token',
         'SEARCH_URL' => 'https://platform.ai.gloo.com/ai/data/v1/search',
         'COMPLETIONS_URL' => 'https://platform.ai.gloo.com/ai/v2/chat/completions',
         'PORT' => parseEnvInt($_ENV['PORT'] ?? null, 3000),
@@ -53,4 +51,15 @@ function normalizeLimit($value, int $fallback = 10, int $min = 1, int $max = 100
     }
     $parsed = (int) $value;
     return max($min, min($max, $parsed));
+}
+
+function validateApiKey(string $apiKey): void
+{
+    if (empty($apiKey)) {
+        fwrite(STDERR, "Error: GLOO_API_KEY must be set\n");
+        echo "Create a .env file with your API key:\n";
+        echo "GLOO_API_KEY=your_api_key_here\n";
+        echo "GLOO_TENANT=your_tenant_name_here\n";
+        exit(1);
+    }
 }

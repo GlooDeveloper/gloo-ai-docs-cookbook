@@ -12,7 +12,7 @@ Compares responses side-by-side:
 
 - Node.js 14.0 or higher
 - npm or yarn
-- Gloo AI account with API credentials
+- Gloo AI account with API key
 - Publisher created in [Gloo Studio](https://studio.ai.gloo.com) with content uploaded
 
 ## Setup
@@ -28,8 +28,7 @@ Compares responses side-by-side:
    ```
 
 3. **Edit `.env`** with your credentials:
-   - `GLOO_CLIENT_ID`: Your Client ID from [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
-   - `GLOO_CLIENT_SECRET`: Your Client Secret
+   - `GLOO_API_KEY`: Your API key from [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
    - `PUBLISHER_NAME`: Name of your Publisher (default: "Bezalel")
 
 ## Running the Demo
@@ -54,12 +53,6 @@ The script will run 3 comparison queries showing the difference between grounded
 ## Type Definitions
 
 ```typescript
-interface TokenResponse {
-  access_token: string;
-  expires_in: number;
-  token_type: string;
-}
-
 interface CompletionResponse {
   choices: Array<{
     message: {
@@ -75,15 +68,11 @@ interface CompletionResponse {
 
 ## How It Works
 
-### Token Management
+### Authentication
 ```typescript
-async function getAccessToken(): Promise<TokenResponse> {
-  // Retrieve OAuth2 access token from Gloo AI
-}
-
-async function ensureValidToken(): Promise<string> {
-  // Ensure we have a valid token, refreshing if needed
-}
+// API key is read from environment and used directly as Bearer token
+const GLOO_API_KEY = process.env.GLOO_API_KEY;
+headers: { 'Authorization': `Bearer ${GLOO_API_KEY}` }
 ```
 
 ### Non-Grounded Request
@@ -180,8 +169,8 @@ npm run build
 ```
 
 ### Authentication Errors
-- Verify `GLOO_CLIENT_ID` and `GLOO_CLIENT_SECRET` are correct
-- Check credentials at [Studio Settings](https://studio.ai.gloo.com/settings/api-keys)
+- Verify `GLOO_API_KEY` is correct
+- Check your API key at [Gloo Studio API Keys](https://studio.ai.gloo.com/api-keys)
 
 ### Publisher Not Found
 - Confirm publisher name matches exactly (case-sensitive)

@@ -28,9 +28,9 @@ load_dotenv()
 def test_step6():
     print("🧪 Testing: Server-Side Proxy\n")
 
-    client_id = os.getenv("GLOO_CLIENT_ID")
-    if not client_id:
-        print("❌ Missing GLOO_CLIENT_ID — run Step 1 first")
+    api_key = os.getenv("GLOO_API_KEY")
+    if not api_key:
+        print("❌ Missing GLOO_API_KEY — run Step 1 first")
         sys.exit(1)
 
     try:
@@ -164,8 +164,8 @@ def test_step6():
             "   - Check that Flask and requests are installed: pip install flask requests"
         )
         print(f"   - Verify port {os.getenv('PROXY_PORT', 3001)} is not already in use")
-        print("   - Check proxy/server.py imports ensure_valid_token correctly")
-        print("   - Confirm GLOO_CLIENT_ID and GLOO_CLIENT_SECRET are set in .env\n")
+        print("   - Check proxy/server.py reads GLOO_API_KEY correctly")
+        print("   - Confirm GLOO_API_KEY is set in .env\n")
         sys.exit(1)
 
 

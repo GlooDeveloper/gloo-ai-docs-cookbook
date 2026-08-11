@@ -14,26 +14,22 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { TokenManager, validateCredentials } = require("./auth");
-const { RecommendationsClient } = require("./recommend-base");
+const { RecommendationsClient, validateApiKey } = require("./recommend-base");
 const { VerboseRecommendationsClient } = require("./recommend-verbose");
 const { AffiliatesClient } = require("./recommend-affiliates");
 const {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  TOKEN_URL,
+  API_KEY,
   PORT,
   DEFAULT_ITEM_COUNT,
 } = require("./config");
 
-// Validate credentials on startup
-validateCredentials(CLIENT_ID, CLIENT_SECRET);
+// Validate API key on startup
+validateApiKey(API_KEY);
 
-// Shared token manager and API clients
-const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-const baseClient = new RecommendationsClient(tokenManager);
-const verboseClient = new VerboseRecommendationsClient(tokenManager);
-const affiliatesClient = new AffiliatesClient(tokenManager);
+// Shared API clients
+const baseClient = new RecommendationsClient(API_KEY);
+const verboseClient = new VerboseRecommendationsClient(API_KEY);
+const affiliatesClient = new AffiliatesClient(API_KEY);
 
 const app = express();
 app.use(cors());

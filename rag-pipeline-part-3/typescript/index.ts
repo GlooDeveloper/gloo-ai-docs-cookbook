@@ -20,12 +20,10 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 // --- Configuration ---
-const CLIENT_ID = process.env.GLOO_CLIENT_ID ?? "";
-const CLIENT_SECRET = process.env.GLOO_CLIENT_SECRET ?? "";
+const API_KEY = process.env.GLOO_API_KEY ?? "";
 const PUBLISHER_ID = process.env.GLOO_PUBLISHER_ID ?? "";
 
 const API_ROOT = "https://platform.ai.gloo.com";
-const TOKEN_URL = `${API_ROOT}/oauth2/token`;
 const UPLOAD_URL = `${API_ROOT}/ingestion/v2/files`;
 const ITEMS_URL = `${API_ROOT}/engine/v2/items`;
 
@@ -45,23 +43,15 @@ const BASE_DELAY_MS = 1000;
 const POLL_INTERVAL_MS = 15_000;
 const POLL_TIMEOUT_MS = 600_000;
 
-interface TokenInfo {
-  access_token: string;
-  expires_in: number;
-  expiresAt: number;
-}
-
 interface RequestOptions {
   json?: unknown;
   params?: Record<string, string>;
   token?: string;
-  allowRefresh?: boolean;
   parse?: boolean;
 }
 
 const requiredEnv: Array<[string, string]> = [
-  ["GLOO_CLIENT_ID", CLIENT_ID],
-  ["GLOO_CLIENT_SECRET", CLIENT_SECRET],
+  ["GLOO_API_KEY", API_KEY],
   ["GLOO_PUBLISHER_ID", PUBLISHER_ID],
 ];
 for (const [name, value] of requiredEnv) {
@@ -89,41 +79,9 @@ class ApiError extends Error {
   }
 }
 
-/** Manages OAuth2 client-credentials token lifecycle. */
-class TokenManager {
-  private tokenInfo: TokenInfo | null = null;
-
-  async getToken(): Promise<string> {
-    if (this.isExpired()) {
-      const response = await fetch(TOKEN_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          Authorization: `Basic ${Buffer.from(`${CLIENT_ID}:${CLIENT_SECRET}`).toString("base64")}`,
-        },
-        body: new URLSearchParams({ grant_type: "client_credentials", scope: "api/access" }),
-      });
-      if (!response.ok) throw new Error(`Token request failed: ${response.status}`);
-      const data = (await response.json()) as Omit<TokenInfo, "expiresAt">;
-      this.tokenInfo = { ...data, expiresAt: Date.now() + data.expires_in * 1000 };
-    }
-    return this.tokenInfo!.access_token;
-  }
-
-  /** Drop the cached token so the next call fetches a fresh one. */
-  forceRefresh(): void {
-    this.tokenInfo = null;
-  }
-
-  private isExpired(): boolean {
-    return !this.tokenInfo || Date.now() > this.tokenInfo.expiresAt - 60_000;
-  }
-}
-
-/** A thin HTTP client with structured error parsing, retry-with-backoff,
- * and one-shot token refresh on 401. */
+/** A thin HTTP client with structured error parsing and retry-with-backoff. */
 class ResilientClient {
-  constructor(private readonly tokenManager: TokenManager) {}
+  constructor(private readonly apiKey: string) {}
 
   /** Extract [code, message] from the API's error shapes:
    * {"detail": {"code", "message"}}, {"detail": "..."}, {"error", "message"}. */
@@ -157,16 +115,15 @@ class ResilientClient {
     await sleep(delay);
   }
 
-  /** Send a request, retrying transient failures and refreshing the token once
-   * on 401. Throws ApiError on non-retryable failures or exhausted retries. */
+  /** Send a request, retrying transient failures. Throws ApiError on
+   * non-retryable failures or exhausted retries. */
   async request(method: string, url: string, options: RequestOptions = {}): Promise<any> {
-    const { json, params, token, allowRefresh = true, parse = true } = options;
+    const { json, params, token, parse = true } = options;
     let target = url;
     if (params) target += `?${new URLSearchParams(params)}`;
-    let refreshed = false;
 
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      const bearer = token ?? (await this.tokenManager.getToken());
+      const bearer = token ?? this.apiKey;
       let response: Response;
       try {
         response = await fetch(target, {
@@ -180,12 +137,6 @@ class ResilientClient {
           continue;
         }
         throw new ApiError(null, "network_error", e instanceof Error ? e.message : String(e));
-      }
-
-      if (response.status === 401 && allowRefresh && !refreshed) {
-        refreshed = true;
-        this.tokenManager.forceRefresh();
-        continue; // retry immediately with a fresh token
       }
 
       if (RETRYABLE_STATUSES.has(response.status) && attempt < MAX_RETRIES) {
@@ -229,7 +180,7 @@ class ResilientClient {
       form.append("files", new Blob([fileBytes]), path.basename(filePath));
       const response = await fetch(
         `${UPLOAD_URL}?producer_id=${encodeURIComponent(producerId)}`,
-        { method: "POST", headers: { Authorization: `Bearer ${await this.tokenManager.getToken()}` }, body: form }
+        { method: "POST", headers: { Authorization: `Bearer ${this.apiKey}` }, body: form }
       );
       if (!response.ok) {
         const [code, message] = await this.parseError(response);
@@ -274,7 +225,7 @@ async function demoErrorHandling(client: ResilientClient): Promise<void> {
   const cases: Array<[string, string, string, RequestOptions]> = [
     ["Missing item (random UUID)", "GET", `${ITEMS_URL}/${randomUUID()}`, {}],
     ["Malformed item ID", "GET", `${ITEMS_URL}/not-a-valid-uuid`, {}],
-    ["Rejected bearer token", "GET", `${ITEMS_URL}/${randomUUID()}`, { token: "invalid-token", allowRefresh: false }],
+    ["Rejected bearer token", "GET", `${ITEMS_URL}/${randomUUID()}`, { token: "invalid-token" }],
   ];
   for (const [label, method, url, opts] of cases) {
     try {
@@ -336,9 +287,9 @@ async function demoHealthCheck(client: ResilientClient): Promise<void> {
 
 (async () => {
   try {
-    const client = new ResilientClient(new TokenManager());
+    const client = new ResilientClient(API_KEY);
 
-    console.log("Step 1: Resilient client ready (token refresh, error parsing, retry/backoff).");
+    console.log("Step 1: Resilient client ready (error parsing, retry/backoff).");
 
     console.log("\nStep 2: Interpreting API error responses...");
     await demoErrorHandling(client);

@@ -9,16 +9,15 @@ to perform semantic search on your ingested content.
 import requests
 import sys
 from typing import Dict, Any
-from auth import TokenManager, validate_credentials
-from config import CLIENT_ID, CLIENT_SECRET, TENANT, TOKEN_URL, SEARCH_URL
+from config import API_KEY, TENANT, SEARCH_URL, validate_api_key
 from utils import normalize_limit
 
 
 class SearchClient:
     """Handles search requests to the Gloo AI Search API."""
 
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
     def search(self, query: str, limit: int = 10) -> Dict[str, Any]:
         """
@@ -31,7 +30,7 @@ class SearchClient:
         Returns:
             Dictionary containing search results
         """
-        token = self.token_manager.ensure_valid_token()
+        token = self.api_key
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json"
@@ -65,8 +64,7 @@ class SearchApp:
     """Main application class for search operations."""
 
     def __init__(self):
-        self.token_manager = TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL)
-        self.search_client = SearchClient(self.token_manager)
+        self.search_client = SearchClient(API_KEY)
 
     def basic_search(self, query: str, limit: int = 10) -> None:
         """
@@ -125,7 +123,7 @@ class SearchApp:
 
 def main():
     """Main entry point."""
-    validate_credentials(CLIENT_ID, CLIENT_SECRET)
+    validate_api_key(API_KEY)
     app = SearchApp()
 
     if len(sys.argv) < 2:

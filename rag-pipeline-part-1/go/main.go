@@ -23,7 +23,6 @@ import (
 
 const (
 	apiRoot         = "https://platform.ai.gloo.com"
-	tokenURL        = apiRoot + "/oauth2/token"
 	uploadURL       = apiRoot + "/ingestion/v2/files"
 	itemMetadataURL = apiRoot + "/engine/v2/item"
 	itemStatusURL   = apiRoot + "/engine/v2/items"
@@ -38,47 +37,9 @@ const (
 )
 
 var (
-	clientID     string
-	clientSecret string
-	publisherID  string
+	apiKey      string
+	publisherID string
 )
-
-// TokenManager manages OAuth2 client-credentials token lifecycle.
-type TokenManager struct {
-	accessToken string
-	expiresAt   time.Time
-}
-
-// GetToken returns a valid access token, fetching a new one if needed.
-func (tm *TokenManager) GetToken() (string, error) {
-	if time.Now().Before(tm.expiresAt.Add(-60 * time.Second)) {
-		return tm.accessToken, nil
-	}
-
-	form := url.Values{"grant_type": {"client_credentials"}, "scope": {"api/access"}}
-	req, err := http.NewRequest(http.MethodPost, tokenURL, strings.NewReader(form.Encode()))
-	if err != nil {
-		return "", err
-	}
-	req.SetBasicAuth(clientID, clientSecret)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-
-	body, err := doRequest(req)
-	if err != nil {
-		return "", fmt.Errorf("token request failed: %w", err)
-	}
-
-	var token struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-	if err := json.Unmarshal(body, &token); err != nil {
-		return "", err
-	}
-	tm.accessToken = token.AccessToken
-	tm.expiresAt = time.Now().Add(time.Duration(token.ExpiresIn) * time.Second)
-	return tm.accessToken, nil
-}
 
 // UploadResponse is the Data Engine response to a file upload.
 type UploadResponse struct {
@@ -99,7 +60,7 @@ type ItemMetadata struct {
 
 // PipelineSetup uploads content, sets metadata, and verifies indexing.
 type PipelineSetup struct {
-	tokens *TokenManager
+	apiKey string
 }
 
 // UploadFile uploads a single file and returns its item ID.
@@ -134,9 +95,7 @@ func (p *PipelineSetup) UploadFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if err := p.authorize(req); err != nil {
-		return "", err
-	}
+	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	body, err := doRequest(req)
@@ -180,9 +139,7 @@ func (p *PipelineSetup) SetMetadata(itemID string) error {
 	if err != nil {
 		return err
 	}
-	if err := p.authorize(req); err != nil {
-		return err
-	}
+	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	if _, err := doRequest(req); err != nil {
@@ -198,9 +155,7 @@ func (p *PipelineSetup) GetItem(itemID string) (*ItemMetadata, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := p.authorize(req); err != nil {
-		return nil, err
-	}
+	req.Header.Set("Authorization", "Bearer "+p.apiKey)
 
 	body, err := doRequest(req)
 	if err != nil {
@@ -244,15 +199,6 @@ func (p *PipelineSetup) WaitUntilIndexed(itemID string) (*ItemMetadata, error) {
 	return nil, fmt.Errorf("item %s not indexed within %s (last status: %s)", itemID, pollTimeout, lastStatus)
 }
 
-func (p *PipelineSetup) authorize(req *http.Request) error {
-	token, err := p.tokens.GetToken()
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+token)
-	return nil
-}
-
 // doRequest executes a request and returns the body, treating HTTP >= 400 as an error.
 func doRequest(req *http.Request) ([]byte, error) {
 	client := &http.Client{Timeout: 120 * time.Second}
@@ -276,12 +222,10 @@ func main() {
 	// .env is optional if variables are already exported.
 	_ = godotenv.Load()
 
-	clientID = os.Getenv("GLOO_CLIENT_ID")
-	clientSecret = os.Getenv("GLOO_CLIENT_SECRET")
+	apiKey = os.Getenv("GLOO_API_KEY")
 	publisherID = os.Getenv("GLOO_PUBLISHER_ID")
 	for name, value := range map[string]string{
-		"GLOO_CLIENT_ID":     clientID,
-		"GLOO_CLIENT_SECRET": clientSecret,
+		"GLOO_API_KEY":       apiKey,
 		"GLOO_PUBLISHER_ID":  publisherID,
 	} {
 		if value == "" {
@@ -289,7 +233,7 @@ func main() {
 		}
 	}
 
-	pipeline := &PipelineSetup{tokens: &TokenManager{}}
+	pipeline := &PipelineSetup{apiKey: apiKey}
 
 	fmt.Println("Step 1: Uploading sample content...")
 	itemID, err := pipeline.UploadFile(sampleFile)

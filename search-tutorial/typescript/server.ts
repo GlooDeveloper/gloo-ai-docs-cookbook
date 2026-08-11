@@ -13,27 +13,24 @@
 import express, { Request, Response } from "express";
 import cors from "cors";
 import path from "path";
-import { TokenManager, validateCredentials } from "./auth";
 import { SearchClient } from "./search-basic";
 import { AdvancedSearchClient, RAGHelper } from "./search-advanced";
 import {
-  CLIENT_ID,
-  CLIENT_SECRET,
-  TOKEN_URL,
+  API_KEY,
   PORT,
   RAG_CONTEXT_MAX_SNIPPETS,
   RAG_CONTEXT_MAX_CHARS_PER_SNIPPET,
+  validateApiKey,
 } from "./config";
 import { normalizeLimit } from "./utils";
 
-// Validate credentials on startup
-validateCredentials(CLIENT_ID, CLIENT_SECRET);
+// Validate API key on startup
+validateApiKey(API_KEY);
 
-// Shared token manager (single instance for the server)
-const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-const searchClient = new SearchClient(tokenManager);
-const advancedSearchClient = new AdvancedSearchClient(tokenManager);
-const ragHelper = new RAGHelper(tokenManager);
+// Shared instances
+const searchClient = new SearchClient(API_KEY);
+const advancedSearchClient = new AdvancedSearchClient(API_KEY);
+const ragHelper = new RAGHelper(API_KEY);
 
 const app = express();
 app.use(cors());

@@ -28,11 +28,9 @@ function loadConfig(): array
     $dotenv->safeLoad();
 
     $config = [
-        'CLIENT_ID'                => $_ENV['GLOO_CLIENT_ID']     ?? 'YOUR_CLIENT_ID',
-        'CLIENT_SECRET'            => $_ENV['GLOO_CLIENT_SECRET']  ?? 'YOUR_CLIENT_SECRET',
+        'API_KEY'                  => $_ENV['GLOO_API_KEY']       ?? '',
         'TENANT'                   => $_ENV['GLOO_TENANT']         ?? 'your-tenant-name',
         'COLLECTION'               => $_ENV['GLOO_COLLECTION']     ?? 'GlooProd',
-        'TOKEN_URL'                => 'https://platform.ai.gloo.com/oauth2/token',
         'RECOMMENDATIONS_BASE_URL' => 'https://platform.ai.gloo.com/ai/v1/data/items/recommendations/base',
         'RECOMMENDATIONS_VERBOSE_URL' => 'https://platform.ai.gloo.com/ai/v1/data/items/recommendations/verbose',
         'AFFILIATES_URL'           => 'https://platform.ai.gloo.com/ai/v1/data/affiliates/referenced-items',

@@ -13,13 +13,11 @@
  */
 
 const axios = require("axios");
-const { TokenManager, validateCredentials } = require("./auth");
+const { validateApiKey } = require("./recommend-base");
 const {
-  CLIENT_ID,
-  CLIENT_SECRET,
+  API_KEY,
   COLLECTION,
   TENANT,
-  TOKEN_URL,
   RECOMMENDATIONS_VERBOSE_URL,
   DEFAULT_ITEM_COUNT,
 } = require("./config");
@@ -27,8 +25,8 @@ const {
 const SNIPPET_PREVIEW_CHARS = 200;
 
 class VerboseRecommendationsClient {
-  constructor(tokenManager) {
-    this.tokenManager = tokenManager;
+  constructor(apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -38,8 +36,6 @@ class VerboseRecommendationsClient {
    * @returns {Array} List of recommended items including snippet text
    */
   async getVerbose(query, itemCount = DEFAULT_ITEM_COUNT) {
-    const token = await this.tokenManager.ensureValidToken();
-
     const payload = {
       query,
       collection: COLLECTION,
@@ -51,7 +47,7 @@ class VerboseRecommendationsClient {
     try {
       const response = await axios.post(RECOMMENDATIONS_VERBOSE_URL, payload, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${this.apiKey}`,
           "Content-Type": "application/json",
         },
         timeout: 60000,
@@ -69,8 +65,7 @@ class VerboseRecommendationsClient {
 }
 
 async function run(query, itemCount = DEFAULT_ITEM_COUNT) {
-  const tokenManager = new TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL);
-  const client = new VerboseRecommendationsClient(tokenManager);
+  const client = new VerboseRecommendationsClient(API_KEY);
 
   console.log(`Fetching recommendations (with previews) for: '${query}'`);
   console.log(`Requesting up to ${itemCount} items\n`);
@@ -126,7 +121,7 @@ function printUsage() {
 }
 
 async function main() {
-  validateCredentials(CLIENT_ID, CLIENT_SECRET);
+  validateApiKey(API_KEY);
 
   const args = process.argv.slice(2);
   if (args.length < 1) {

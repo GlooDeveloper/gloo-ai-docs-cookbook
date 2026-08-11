@@ -16,23 +16,31 @@ Examples:
 import requests
 import sys
 from typing import Any
-from auth import TokenManager, validate_credentials
 from config import (
-    CLIENT_ID,
-    CLIENT_SECRET,
+    API_KEY,
     COLLECTION,
     TENANT,
-    TOKEN_URL,
     RECOMMENDATIONS_BASE_URL,
     DEFAULT_ITEM_COUNT,
 )
 
 
+def validate_api_key(api_key: str):
+    """Validate that the API key is set. Exits if missing."""
+    if not api_key:
+        print("Error: GLOO_API_KEY must be set")
+        print("Create a .env file with your API key:")
+        print("GLOO_API_KEY=your_api_key_here")
+        print("GLOO_TENANT=your_tenant_name_here")
+        print("GLOO_COLLECTION=GlooProd")
+        sys.exit(1)
+
+
 class RecommendationsClient:
     """Handles base recommendation requests to the Gloo AI API."""
 
-    def __init__(self, token_manager: TokenManager):
-        self.token_manager = token_manager
+    def __init__(self, api_key: str):
+        self.api_key = api_key
 
     def get_base(self, query: str, item_count: int = DEFAULT_ITEM_COUNT) -> list[Any]:
         """
@@ -45,9 +53,8 @@ class RecommendationsClient:
         Returns:
             List of recommended items with metadata
         """
-        token = self.token_manager.ensure_valid_token()
         headers = {
-            "Authorization": f"Bearer {token}",
+            "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
         payload = {
@@ -78,8 +85,7 @@ class RecommendBaseApp:
     """Main application class for base recommendations."""
 
     def __init__(self):
-        self.token_manager = TokenManager(CLIENT_ID, CLIENT_SECRET, TOKEN_URL)
-        self.client = RecommendationsClient(self.token_manager)
+        self.client = RecommendationsClient(API_KEY)
 
     def run(self, query: str, item_count: int = DEFAULT_ITEM_COUNT) -> None:
         """Fetch and display base recommendations."""
@@ -136,7 +142,7 @@ class RecommendBaseApp:
 
 
 def main():
-    validate_credentials(CLIENT_ID, CLIENT_SECRET)
+    validate_api_key(API_KEY)
     app = RecommendBaseApp()
 
     if len(sys.argv) < 2:

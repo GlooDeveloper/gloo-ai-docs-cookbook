@@ -99,9 +99,9 @@ public class Main {
     /**
      * Perform a semantic search query.
      */
-    static SearchResponse search(TokenManager tokenManager, String query, int limit)
+    static SearchResponse search(String apiKey, String query, int limit)
             throws IOException, InterruptedException {
-        String token = tokenManager.ensureValidToken();
+        String token = apiKey;
 
         SearchRequest payload = new SearchRequest();
         payload.query = query;
@@ -181,9 +181,9 @@ public class Main {
     /**
      * Call Completions V2 API with custom context.
      */
-    static String generateWithContext(TokenManager tokenManager, String query, String context, String systemPrompt)
+    static String generateWithContext(String apiKey, String query, String context, String systemPrompt)
             throws IOException, InterruptedException {
-        String token = tokenManager.ensureValidToken();
+        String token = apiKey;
 
         if (systemPrompt == null || systemPrompt.isEmpty()) {
             systemPrompt = "You are a helpful assistant. Answer the user's question based on the "
@@ -222,12 +222,10 @@ public class Main {
     // --- Commands ---
 
     static void basicSearch(String query, int limit) throws Exception {
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
-
         System.out.printf("Searching for: '%s'%n", query);
         System.out.printf("Limit: %d results%n%n", limit);
 
-        SearchResponse results = search(tm, query, limit);
+        SearchResponse results = search(AppConfig.API_KEY, query, limit);
 
         if (results.data == null || results.data.isEmpty()) {
             System.out.println("No results found.");
@@ -255,13 +253,11 @@ public class Main {
     }
 
     static void filteredSearch(String query, List<String> contentTypes, int limit) throws Exception {
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
-
         System.out.printf("Searching for: '%s'%n", query);
         System.out.printf("Content types: %s%n", String.join(", ", contentTypes));
         System.out.printf("Limit: %d%n%n", limit);
 
-        SearchResponse results = search(tm, query, limit);
+        SearchResponse results = search(AppConfig.API_KEY, query, limit);
         SearchResponse filtered = filterByContentType(results, contentTypes);
 
         if (filtered.data == null || filtered.data.isEmpty()) {
@@ -280,12 +276,10 @@ public class Main {
     }
 
     static void ragSearch(String query, int limit) throws Exception {
-        TokenManager tm = new TokenManager(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET, AppConfig.TOKEN_URL, httpClient);
-
         System.out.printf("RAG Search for: '%s'%n%n", query);
 
         System.out.println("Step 1: Searching for relevant content...");
-        SearchResponse results = search(tm, query, limit);
+        SearchResponse results = search(AppConfig.API_KEY, query, limit);
 
         if (results.data == null || results.data.isEmpty()) {
             System.out.println("No results found.");
@@ -301,7 +295,7 @@ public class Main {
         System.out.printf("Extracted %d snippets%n%n", snippets.size());
 
         System.out.println("Step 3: Generating response with context...\n");
-        String response = generateWithContext(tm, query, context, null);
+        String response = generateWithContext(AppConfig.API_KEY, query, context, null);
 
         System.out.println("=== Generated Response ===");
         System.out.println(response);
@@ -326,7 +320,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        TokenManager.validateCredentials(AppConfig.CLIENT_ID, AppConfig.CLIENT_SECRET);
+        AppConfig.validateApiKey(AppConfig.API_KEY);
 
         if (args.length < 1) {
             printUsage();

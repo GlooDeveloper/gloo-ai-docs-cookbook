@@ -5,14 +5,14 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with PHP
 ## Features
 
 - **Modern PHP**: Uses PHP 8.1+ features with strong typing and modern patterns
-- **Clean Architecture**: Object-oriented design with separate classes for token management, content processing, and file monitoring
+- **Clean Architecture**: Object-oriented design with separate classes for content processing and file monitoring
 - **Environment-based Authentication**: Secure credential management using .env files with phpdotenv
 - **HTTP Client**: Guzzle HTTP client for robust API communication with timeout and error handling
 - **File System Monitoring**: Directory polling for automatic content upload (simple but effective)
 - **Batch Processing**: Upload multiple files at once with configurable rate limiting
 - **Single File Upload**: Process individual files on demand
 - **Comprehensive Error Handling**: Detailed error reporting for all failure scenarios
-- **Token Management**: Automatic token refresh with proper lifecycle management
+- **API Key Authentication**: Simple, direct API key-based authentication
 - **PSR Standards**: Follows PSR-4 autoloading and coding standards
 - **Composer Integration**: Modern dependency management with useful scripts
 
@@ -21,7 +21,7 @@ This example demonstrates how to use the Gloo AI Realtime Ingestion API with PHP
 - PHP 8.1+ installed
 - Composer installed for dependency management
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -32,8 +32,7 @@ composer install
 
 2. Create a `.env` file in this directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 3. Update the `PUBLISHER_ID` constant in the `Config` class within `index.php` with your actual publisher ID.
@@ -88,13 +87,6 @@ Central configuration management:
 - Rate limiting configuration
 - Publisher ID management
 
-### TokenManager Class
-Handles OAuth2 token lifecycle:
-- `getAccessToken()`: Retrieves new tokens with proper error handling
-- `isTokenExpired()`: Checks expiration with 60-second buffer
-- `getValidToken()`: Returns valid token, refreshing if necessary
-- Uses Guzzle HTTP client for reliable API communication
-
 ### ContentProcessor Class
 Manages content processing and uploads:
 - `processFile()`: Complete file processing pipeline with validation
@@ -115,7 +107,7 @@ Main application controller:
 - `batchProcessDirectory()`: Bulk file processing with statistics
 - `startWatching()`: Directory monitoring setup
 - `processSingleFile()`: Individual file handling
-- Credential validation and application initialization
+- API key validation and application initialization
 
 ## Supported File Types
 
@@ -132,7 +124,7 @@ mkdir sample_content
 cat > sample_content/sample_article.txt << 'EOF'
 This is a sample article about content ingestion using the Gloo AI Realtime API.
 
-The PHP implementation provides robust error handling, automatic token management, 
+The PHP implementation provides robust error handling 
 and efficient file monitoring capabilities using modern PHP patterns.
 EOF
 ```
@@ -151,14 +143,12 @@ composer run single
 
 ### Environment Variables (.env file)
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 ```
 
 ### Constants (modify Config class in index.php)
 - `PUBLISHER_ID`: Your publisher UUID (required)
 - `API_URL`: Realtime ingestion endpoint
-- `TOKEN_URL`: OAuth2 token endpoint
 - `SUPPORTED_EXTENSIONS`: Array of supported file extensions
 - `RATE_LIMIT_DELAY`: Delay between API calls in seconds
 
@@ -179,10 +169,8 @@ The script automatically extracts and sets:
 The PHP implementation includes comprehensive error handling:
 
 ### Authentication Errors
-- Credential validation on startup
-- Automatic token refresh with detailed error messages
+- API key validation on startup
 - HTTP timeout handling (30 seconds)
-- Malformed response detection
 
 ### File System Errors
 - File existence validation using `file_exists()`
@@ -272,8 +260,7 @@ class ContentProcessorTest extends TestCase
 {
     public function testExtractTitleFromFilename(): void
     {
-        $tokenManager = new TokenManager(new Client(), 'test', 'test');
-        $processor = new ContentProcessor($tokenManager, new Client());
+        $processor = new ContentProcessor(new Client(), 'test_api_key');
         
         $title = $processor->extractTitleFromFilename('hello_world.txt');
         $this->assertEquals('Hello World', $title);
@@ -377,15 +364,15 @@ ini_set('memory_limit', '512M');
 ### Authentication Issues
 - Verify credentials in `.env` file are correct
 - Check that `.env` file is in the correct directory
-- Ensure your Client ID and Secret have required permissions
-- Test credentials with a simple API call first
+- Ensure your API key has the required permissions
+- Test the API key with a simple API call first
 
 ### Network Issues
 - Verify internet connectivity to API endpoints
 - Check corporate firewall settings
 - Test with curl to verify API accessibility:
 ```bash
-curl -I https://platform.ai.gloo.com/oauth2/token
+curl -I https://platform.ai.gloo.com/ingestion/v1/real_time_upload
 ```
 
 ## Performance Optimization

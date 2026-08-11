@@ -17,12 +17,10 @@ $dotenv = Dotenv::createImmutable(__DIR__);
 $dotenv->safeLoad();
 
 // --- Configuration ---
-define('CLIENT_ID', $_ENV['GLOO_CLIENT_ID'] ?? '');
-define('CLIENT_SECRET', $_ENV['GLOO_CLIENT_SECRET'] ?? '');
+define('API_KEY', $_ENV['GLOO_API_KEY'] ?? '');
 define('PUBLISHER_ID', $_ENV['GLOO_PUBLISHER_ID'] ?? '');
 
 define('API_ROOT', 'https://platform.ai.gloo.com');
-define('TOKEN_URL', API_ROOT . '/oauth2/token');
 define('UPLOAD_URL', API_ROOT . '/ingestion/v2/files');
 define('ITEM_METADATA_URL', API_ROOT . '/engine/v2/item');
 define('ITEM_STATUS_URL', API_ROOT . '/engine/v2/items');
@@ -35,52 +33,10 @@ define('PRODUCER_ID', 'rag-pipeline-part1-building-stronger-communities');
 define('POLL_INTERVAL_SECONDS', 15);
 define('POLL_TIMEOUT_SECONDS', 600);
 
-foreach (['GLOO_CLIENT_ID' => CLIENT_ID, 'GLOO_CLIENT_SECRET' => CLIENT_SECRET, 'GLOO_PUBLISHER_ID' => PUBLISHER_ID] as $name => $value) {
+foreach (['GLOO_API_KEY' => API_KEY, 'GLOO_PUBLISHER_ID' => PUBLISHER_ID] as $name => $value) {
     if ($value === '') {
         fwrite(STDERR, "Error: {$name} must be set. Copy .env.example to .env and fill in your values.\n");
         exit(1);
-    }
-}
-
-/**
- * Manages OAuth2 client-credentials token lifecycle.
- */
-class TokenManager
-{
-    private ?array $tokenInfo = null;
-
-    public function getToken(): string
-    {
-        if ($this->isExpired()) {
-            $ch = curl_init(TOKEN_URL);
-            curl_setopt_array($ch, [
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_USERPWD => CLIENT_ID . ':' . CLIENT_SECRET,
-                CURLOPT_POSTFIELDS => http_build_query([
-                    'grant_type' => 'client_credentials',
-                    'scope' => 'api/access',
-                ]),
-                CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
-                CURLOPT_TIMEOUT => 30,
-            ]);
-            $body = curl_exec($ch);
-            $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($body === false || $status >= 400) {
-                throw new RuntimeException("Token request failed: HTTP {$status} {$body}");
-            }
-
-            $this->tokenInfo = json_decode((string) $body, true);
-            $this->tokenInfo['expires_at'] = time() + (int) $this->tokenInfo['expires_in'];
-        }
-        return $this->tokenInfo['access_token'];
-    }
-
-    private function isExpired(): bool
-    {
-        return $this->tokenInfo === null || time() > ($this->tokenInfo['expires_at'] - 60);
     }
 }
 
@@ -89,7 +45,7 @@ class TokenManager
  */
 class PipelineSetup
 {
-    public function __construct(private readonly TokenManager $tokenManager)
+    public function __construct(private readonly string $apiKey)
     {
     }
 
@@ -190,7 +146,7 @@ class PipelineSetup
     private function request(string $method, string $url, array $options = [], array $extraHeaders = []): array
     {
         $headers = array_merge(
-            ['Authorization: Bearer ' . $this->tokenManager->getToken()],
+            ['Authorization: Bearer ' . $this->apiKey],
             $extraHeaders
         );
 
@@ -214,7 +170,7 @@ class PipelineSetup
 }
 
 try {
-    $pipeline = new PipelineSetup(new TokenManager());
+    $pipeline = new PipelineSetup(API_KEY);
 
     echo "Step 1: Uploading sample content...\n";
     $itemId = $pipeline->uploadFile(SAMPLE_FILE);

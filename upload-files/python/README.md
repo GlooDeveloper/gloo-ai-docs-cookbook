@@ -7,14 +7,13 @@ This example demonstrates how to use the Gloo AI Data Engine Files API with Pyth
 - **Single File Upload**: Upload individual files with optional producer ID
 - **Batch Upload**: Upload all supported files in a directory
 - **Metadata Support**: Add metadata to uploaded files
-- **Token Management**: Automatic token refresh when expired
 - **Error Handling**: Comprehensive error handling for network and API issues
 
 ## Prerequisites
 
 - Python 3.9+ installed
 - Gloo AI Studio account
-- Valid Client ID and Client Secret from API Credentials in [Gloo AI Studio](https://studio.ai.gloo.com/)
+- Valid API Key from [Gloo AI Studio](https://studio.ai.gloo.com/api-keys)
 
 ## Installation
 
@@ -31,8 +30,7 @@ pip install -r requirements.txt
 
 3. Create a `.env` file in this directory:
 ```bash
-GLOO_CLIENT_ID=your_actual_client_id_here
-GLOO_CLIENT_SECRET=your_actual_client_secret_here
+GLOO_API_KEY=your_api_key_here
 GLOO_PUBLISHER_ID=your_publisher_id_here
 ```
 
@@ -71,15 +69,13 @@ python main.py meta ../sample_files/developer_happiness.txt --title "Developer H
 ## Configuration
 
 ### Environment Variables
-- `GLOO_CLIENT_ID`: Your Gloo AI Client ID (required)
-- `GLOO_CLIENT_SECRET`: Your Gloo AI Client Secret (required)
+- `GLOO_API_KEY`: Your Gloo AI API Key (required)
 - `GLOO_PUBLISHER_ID`: Your Publisher ID (required for metadata updates)
 
 ## Example Output
 
 ```
 Uploading: ../sample_files/developer_happiness.txt
-Token is expired or missing. Fetching a new one...
 Upload successful!
   Message: File processing started in background.
   Ingesting: 1 file(s)
