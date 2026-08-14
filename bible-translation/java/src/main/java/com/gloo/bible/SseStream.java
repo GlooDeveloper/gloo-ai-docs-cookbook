@@ -44,8 +44,11 @@ public final class SseStream {
                 } catch (IOException exc) {
                     throw new IOException("Received malformed JSON in an SSE data event", exc);
                 }
-                JsonNode content = chunk.path("choices").get(0)
-                    .path("delta").path("content");
+                JsonNode choices = chunk.path("choices");
+                if (!choices.isArray() || choices.size() == 0) {
+                    continue;
+                }
+                JsonNode content = choices.get(0).path("delta").path("content");
                 if (content != null && content.isTextual()) {
                     consumer.accept(content.asText());
                 }

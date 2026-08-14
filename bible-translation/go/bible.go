@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -330,6 +331,7 @@ func FetchBibleVerse(reference, translation string, client *http.Client) (string
 		for v := range verseMap {
 			verses = append(verses, v)
 		}
+		sort.Ints(verses)
 	}
 
 	selected := make([]string, 0, len(verses))
@@ -372,51 +374,11 @@ func extractText(content interface{}) string {
 		if t, ok := v["text"].(string); ok {
 			return t
 		}
-		var parts []string
-		for _, value := range v {
-			parts = append(parts, extractText(value))
+		if content, ok := v["content"]; ok {
+			return extractText(content)
 		}
-		return strings.Join(parts, " ")
 	}
 	return ""
-}
-
-// ExtractSSEContentLines yields content deltas from a Gloo AI streaming SSE response.
-func ExtractSSEContentLines(r io.Reader) ([]string, error) {
-	var deltas []string
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.TrimSpace(line) == "" {
-			continue
-		}
-		if !strings.HasPrefix(line, "data: ") {
-			continue
-		}
-		payload := line[len("data: "):]
-		if payload == "[DONE]" {
-			break
-		}
-		var chunk struct {
-			Choices []struct {
-				Delta struct {
-					Content string `json:"content"`
-				} `json:"delta"`
-			} `json:"choices"`
-		}
-		if err := json.Unmarshal([]byte(payload), &chunk); err != nil {
-			return nil, fmt.Errorf("received malformed JSON in an SSE data event: %w", err)
-		}
-		if len(chunk.Choices) > 0 {
-			if content := chunk.Choices[0].Delta.Content; content != "" {
-				deltas = append(deltas, content)
-			}
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, err
-	}
-	return deltas, nil
 }
 
 // FindIncompletePrefix returns the index at which a placeholder prefix begins, if any.
@@ -449,12 +411,35 @@ func StreamWithSubstitution(
 	write func(string),
 	errWrite func(string),
 ) error {
-	deltas, err := ExtractSSEContentLines(r)
-	if err != nil {
-		return err
-	}
 	buffer := ""
-	for _, delta := range deltas {
+	scanner := bufio.NewScanner(r)
+	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.TrimSpace(line) == "" || !strings.HasPrefix(line, "data: ") {
+			continue
+		}
+
+		payload := line[len("data: "):]
+		if payload == "[DONE]" {
+			break
+		}
+
+		var chunk struct {
+			Choices []struct {
+				Delta struct {
+					Content string `json:"content"`
+				} `json:"delta"`
+			} `json:"choices"`
+		}
+		if err := json.Unmarshal([]byte(payload), &chunk); err != nil {
+			return fmt.Errorf("received malformed JSON in an SSE data event: %w", err)
+		}
+		if len(chunk.Choices) == 0 || chunk.Choices[0].Delta.Content == "" {
+			continue
+		}
+
+		delta := chunk.Choices[0].Delta.Content
 		buffer += delta
 		for {
 			match := placeholderRe.FindStringSubmatchIndex(buffer)
@@ -479,6 +464,9 @@ func StreamWithSubstitution(
 			write(buffer)
 			buffer = ""
 		}
+	}
+	if err := scanner.Err(); err != nil {
+		return err
 	}
 	write(buffer)
 	return nil

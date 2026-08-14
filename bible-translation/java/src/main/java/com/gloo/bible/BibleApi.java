@@ -119,25 +119,34 @@ public final class BibleApi {
     }
 
     private static String extractText(JsonNode node) {
-        StringBuilder sb = new StringBuilder();
-        extractText(node, sb);
-        return sb.toString();
+        List<String> parts = new ArrayList<>();
+        collectText(node, parts);
+        return String.join(" ", parts);
     }
 
-    private static void extractText(JsonNode node, StringBuilder sb) {
+    private static void collectText(JsonNode node, List<String> parts) {
         if (node.isTextual()) {
-            sb.append(node.asText());
+            String text = node.asText().strip();
+            if (!text.isEmpty()) {
+                parts.add(text);
+            }
         } else if (node.isArray()) {
             for (JsonNode child : node) {
-                extractText(child, sb);
+                collectText(child, parts);
             }
         } else if (node.isObject()) {
             JsonNode text = node.get("text");
             if (text != null && text.isTextual()) {
-                sb.append(text.asText());
-            } else {
-                // Recurse into other object fields (e.g., nested content arrays).
-                node.elements().forEachRemaining(child -> extractText(child, sb));
+                String value = text.asText().strip();
+                if (!value.isEmpty()) {
+                    parts.add(value);
+                }
+                return;
+            }
+
+            JsonNode content = node.get("content");
+            if (content != null && content.isArray()) {
+                collectText(content, parts);
             }
         }
     }

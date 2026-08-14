@@ -101,21 +101,30 @@ class BibleApi
      */
     private static function extractText($content): string
     {
-        $texts = [];
         if (is_string($content)) {
             return $content;
         }
-        if (is_array($content)) {
-            foreach ($content as $fragment) {
-                if (is_string($fragment)) {
-                    $texts[] = $fragment;
-                } elseif (is_array($fragment) && isset($fragment['text']) && is_string($fragment['text'])) {
-                    $texts[] = $fragment['text'];
-                } elseif (is_array($fragment)) {
-                    $texts[] = self::extractText($fragment);
-                }
+        if (!is_array($content)) {
+            return '';
+        }
+
+        if (!array_is_list($content)) {
+            if (isset($content['text']) && is_string($content['text'])) {
+                return $content['text'];
+            }
+            if (isset($content['content']) && is_array($content['content'])) {
+                return self::extractText($content['content']);
+            }
+            return '';
+        }
+
+        $texts = [];
+        foreach ($content as $fragment) {
+            $text = self::extractText($fragment);
+            if ($text !== '') {
+                $texts[] = $text;
             }
         }
-        return trim(implode(' ', array_filter($texts, fn ($t) => is_string($t) && $t !== '')));
+        return trim(implode(' ', $texts));
     }
 }

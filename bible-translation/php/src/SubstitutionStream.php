@@ -76,10 +76,12 @@ class SubstitutionStream
      */
     public static function findIncompletePrefix(string $buffer): ?int
     {
-        $markerIndex = mb_strrpos($buffer, self::PLACEHOLDER_START, 0, 'UTF-8');
+        // PHP string slicing uses byte offsets. The marker is ASCII, so use
+        // byte-based searches here as well to avoid splitting UTF-8 characters.
+        $markerIndex = strrpos($buffer, self::PLACEHOLDER_START);
         if ($markerIndex !== false) {
             $referenceStart = $markerIndex + strlen(self::PLACEHOLDER_START);
-            if (mb_strpos($buffer, '}}', $referenceStart, 'UTF-8') === false) {
+            if (strpos($buffer, '}}', $referenceStart) === false) {
                 return $markerIndex;
             }
         }

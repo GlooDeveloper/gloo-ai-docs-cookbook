@@ -350,10 +350,11 @@ export async function fetchBibleVerse(reference: string, translation = "BSB"): P
 }
 
 export function extractContentFromSSE(line: string): string | undefined {
-  if (!line.startsWith("data: ")) {
+  const normalizedLine = line.endsWith("\r") ? line.slice(0, -1) : line;
+  if (!normalizedLine.startsWith("data: ")) {
     return undefined;
   }
-  const payload = line.slice("data: ".length);
+  const payload = normalizedLine.slice("data: ".length);
   if (payload === "[DONE]") {
     return undefined;
   }
