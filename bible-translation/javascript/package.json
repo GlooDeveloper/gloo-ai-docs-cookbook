@@ -1,0 +1,15 @@
+{
+  "name": "bible-translation-javascript",
+  "version": "1.0.0",
+  "description": "JavaScript implementation of the Bible Translation output-transform recipe for Gloo AI.",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
