@@ -5,12 +5,17 @@ Python reference implementation for the Gloo AI docs cookbook recipe.
 This CLI streams a response from the Gloo AI completions API and replaces every
 `{{SCRIPTURE:reference}}` placeholder with the actual verse text from
 [bible.helloao.org](https://bible.helloao.org). This is the **output transform**
-approach: the model never writes verse text from memory, so the quoted text is
-always the text returned by the Bible API.
+approach: every successfully substituted placeholder contains text returned by
+the selected Bible API.
+
+The placeholder instruction is still a system prompt, not a hard constraint.
+A model could ignore it and include memorized Scripture in its commentary. For
+high-assurance applications, validate responses before displaying them, reject
+unexpected direct quotations, retry failures, or use schema-constrained output.
 
 ## Prerequisites
 
-- Python 3.7+
+- Python 3.9+
 - A [Gloo AI API key](https://studio.ai.gloo.com/api-keys)
 - A free Bible API from [bible.helloao.org](https://bible.helloao.org) (no key required)
 

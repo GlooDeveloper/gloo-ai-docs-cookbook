@@ -4,8 +4,8 @@ Working with Bible Translations, Reliably — Python Implementation
 
 Demonstrates the output transform method: the model emits {{SCRIPTURE:reference}}
 placeholders, and this harness deterministically fetches and substitutes the
-actual verse text from bible.helloao.org. This guarantees exact quotation
-accuracy because the model never writes verse text from memory.
+actual verse text from bible.helloao.org. Successfully substituted placeholders
+therefore contain the text returned by the selected Bible API.
 """
 
 import argparse
@@ -37,7 +37,8 @@ SYSTEM_PROMPT = (
     "placeholder mechanism."
 )
 
-# Regex for complete placeholders emitted by the model.
+# Marker and regex for placeholders emitted by the model.
+PLACEHOLDER_START = "{{SCRIPTURE:"
 PLACEHOLDER_RE = re.compile(r"\{\{SCRIPTURE:([^}]+)\}\}")
 
 # Book name → USFM identifier mapping for all 66 Protestant canon books plus
@@ -241,6 +242,12 @@ BOOK_IDS = {
     "Apocalypse": "REV",
 }
 
+# References originate in model output, so capitalization should not affect
+# whether a valid book name can be resolved.
+CASEFOLDED_BOOK_IDS = {
+    name.casefold(): book_id for name, book_id in BOOK_IDS.items()
+}
+
 
 def normalize_reference(raw_reference: str) -> str:
     """Normalize whitespace and Roman numerals in a reference string.
@@ -281,11 +288,10 @@ def parse_reference(reference: str) -> Tuple[str, int, List[int]]:
     start_verse = match.group(3)
     end_verse = match.group(4)
 
-    # Try the cleaned book name first, then progressively looser forms.
-    book_id = BOOK_IDS.get(book_part)
+    # Try the cleaned book name first, then a compact form such as "1John".
+    book_id = CASEFOLDED_BOOK_IDS.get(book_part.casefold())
     if book_id is None:
-        # Remove spaces entirely for compact forms like "1John".
-        book_id = BOOK_IDS.get(book_part.replace(" ", ""))
+        book_id = CASEFOLDED_BOOK_IDS.get(book_part.replace(" ", "").casefold())
     if book_id is None:
         raise ValueError(f"Unknown book name: {book_part}")
 
@@ -357,8 +363,8 @@ def extract_sse_content_lines(response: requests.Response) -> Iterable[str]:
     """Yield content deltas from a Gloo AI streaming SSE response.
 
     Handles the `data: ` prefix, the `[DONE]` sentinel, and JSON parsing of
-    each chunk. Invalid lines are skipped so one malformed chunk does not
-    terminate the stream.
+    each chunk. Malformed JSON raises an error instead of silently returning a
+    truncated response.
     """
     for line in response.iter_lines():
         if not line:
@@ -371,8 +377,8 @@ def extract_sse_content_lines(response: requests.Response) -> Iterable[str]:
             break
         try:
             chunk = json.loads(payload)
-        except json.JSONDecodeError:
-            continue
+        except json.JSONDecodeError as exc:
+            raise ValueError("Received malformed JSON in an SSE data event") from exc
         delta = chunk.get("choices", [{}])[0].get("delta", {})
         content = delta.get("content")
         if content:
@@ -382,27 +388,25 @@ def extract_sse_content_lines(response: requests.Response) -> Iterable[str]:
 def find_incomplete_prefix(buffer: str) -> Optional[int]:
     """Return the index at which a placeholder prefix begins, if any.
 
-    We hold back any trailing substring that could be the start of a
-    {{SCRIPTURE:...}} placeholder. Specifically, we look for an unmatched
-    '{{' anywhere in the last (max placeholder prefix length) characters.
-    If found, we return the index of that opening brace so content before it
-    can be emitted and the rest kept in the buffer.
+    We hold back either a full marker whose closing braces have not arrived or
+    the longest trailing substring that could become ``{{SCRIPTURE:``. This
+    includes a single trailing ``{``, because an SSE chunk can split between
+    the two opening braces.
     """
-    # The longest meaningful incomplete prefix we need to retain is the full
-    # marker start "{{SCRIPTURE:". Anything before that can safely be emitted.
-    if "{{" not in buffer:
-        return None
+    marker_index = buffer.rfind(PLACEHOLDER_START)
+    if marker_index != -1:
+        reference_start = marker_index + len(PLACEHOLDER_START)
+        if "}}" not in buffer[reference_start:]:
+            return marker_index
 
-    # Find the last occurrence of '{{' that is not part of a complete placeholder.
-    idx = buffer.rfind("{{")
-    if idx == -1:
-        return None
+    # Retain a partial marker only while it still matches PLACEHOLDER_START.
+    # Iterate longest-first so, for example, "{{SCRIPT" is preferred over "{".
+    max_prefix_length = min(len(buffer), len(PLACEHOLDER_START) - 1)
+    for prefix_length in range(max_prefix_length, 0, -1):
+        if buffer.endswith(PLACEHOLDER_START[:prefix_length]):
+            return len(buffer) - prefix_length
 
-    # If this '{{' is already closed before the end of the buffer, it is complete.
-    if buffer.find("}}", idx) != -1 and buffer.find("}}", idx) < len(buffer):
-        return None
-
-    return idx
+    return None
 
 
 def stream_with_substitution(
