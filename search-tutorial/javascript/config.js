@@ -8,7 +8,7 @@ const API_KEY = process.env.GLOO_API_KEY || "";
 const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
 
 const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
-const COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 const PORT = process.env.PORT || 3000;
 

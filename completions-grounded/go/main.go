@@ -22,8 +22,8 @@ var (
 
 // API Endpoints
 const (
-	completionsURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
-	groundedURL    = "https://platform.ai.gloo.com/ai/v2/chat/completions/grounded"
+	completionsURL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
+	groundedURL    = "https://platform.ai.gloo.com/ai/v2/grounded/chat/completions"
 )
 
 // Message represents a chat message

@@ -77,7 +77,7 @@ func makeNonGroundedRequest(query string) (*CompletionResponse, error) {
         AutoRouting: true,
         MaxTokens:   500,
     }
-    // POST to /ai/v2/chat/completions
+    // POST to /ai/v2/guarded/chat/completions
 }
 ```
 
@@ -94,7 +94,7 @@ func makeGroundedRequest(query, publisher string, sourcesLimit int) (*Completion
         SourcesLimit: sourcesLimit,
         MaxTokens:    500,
     }
-    // POST to /ai/v2/chat/completions/grounded
+    // POST to /ai/v2/grounded/chat/completions
 }
 ```
 

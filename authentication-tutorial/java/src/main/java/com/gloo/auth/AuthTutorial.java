@@ -20,7 +20,7 @@ import java.util.List;
 public class AuthTutorial {
 
     // Configuration
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
     // HTTP client and JSON parser
     private static final HttpClient httpClient = HttpClient.newBuilder()

@@ -5,7 +5,7 @@
  * real-time streaming responses using the fetch API with ReadableStream.
  */
 
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 /**
  * Check HTTP status before reading stream and throw specific errors.

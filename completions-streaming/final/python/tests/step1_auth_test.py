@@ -50,7 +50,7 @@ def test_step1():
         }
 
         with requests.post(
-            "https://platform.ai.gloo.com/ai/v2/chat/completions",
+            "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions",
             headers=headers,
             json=payload,
             stream=True,

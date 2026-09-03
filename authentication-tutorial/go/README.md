@@ -92,7 +92,7 @@ func example() {
     }
 
     result, err := makeAuthenticatedRequest(
-        "https://platform.ai.gloo.com/ai/v2/chat/completions",
+        "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions",
         request,
     )
     if err != nil {

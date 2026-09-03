@@ -7,7 +7,7 @@
 
 import type { SSEChunk, StreamResult } from "../types.js";
 
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 /**
  * Check HTTP status before reading stream and throw specific errors.

@@ -23,7 +23,7 @@ import com.google.gson.reflect.TypeToken;
  */
 public class StreamClient {
 
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final Gson GSON = new Gson();
 

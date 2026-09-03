@@ -17,7 +17,7 @@ import java.net.http.HttpResponse;
  */
 public class Step1AuthTest {
 
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
     public static void main(String[] args) {
         System.out.println("🧪 Testing: Environment Setup & Auth Verification\n");

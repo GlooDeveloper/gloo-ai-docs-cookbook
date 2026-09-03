@@ -77,7 +77,7 @@ from main import make_authenticated_request
 def example():
     # Make authenticated API calls
     result = make_authenticated_request(
-        "https://platform.ai.gloo.com/ai/v2/chat/completions",
+        "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions",
         {
             "auto_routing": True,
             "messages": [{"role": "user", "content": "Your message here"}]

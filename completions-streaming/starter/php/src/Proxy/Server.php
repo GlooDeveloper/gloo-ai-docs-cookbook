@@ -17,7 +17,7 @@ namespace GlooStreaming\Proxy;
  */
 class Server
 {
-    private const API_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+    private const API_URL = 'https://platform.ai.gloo.com/ai/v2/guarded/chat/completions';
 
     /**
      * Handle an incoming SSE proxy request.

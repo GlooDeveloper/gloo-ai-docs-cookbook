@@ -12,7 +12,7 @@ export const TENANT = process.env.GLOO_TENANT || "your-tenant-name";
 
 export const SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
 export const COMPLETIONS_URL =
-  "https://platform.ai.gloo.com/ai/v2/chat/completions";
+  "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 export const PORT = parseEnvInt(process.env.PORT, 3000);
 

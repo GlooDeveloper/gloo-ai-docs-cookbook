@@ -35,7 +35,7 @@ interface ApiResponse {
 
 // --- Configuration ---
 const API_KEY = process.env.GLOO_API_KEY || "";
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 // Validate that API key is provided
 if (!API_KEY) {

@@ -12,7 +12,7 @@ namespace GlooStreaming\Streaming;
  */
 class StreamClient
 {
-    private const API_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+    private const API_URL = 'https://platform.ai.gloo.com/ai/v2/guarded/chat/completions';
 
     /**
      * Check HTTP status before reading stream and throw specific errors.
