@@ -13,7 +13,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 
 app = Flask(__name__)
 

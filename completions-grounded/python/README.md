@@ -89,7 +89,7 @@ def make_non_grounded_request(query):
         "auto_routing": True,
         "max_tokens": 500
     }
-    # POST to /ai/v2/chat/completions
+    # POST to /ai/v2/guarded/chat/completions
 ```
 
 ### Grounded Request
@@ -103,7 +103,7 @@ def make_grounded_request(query, publisher_name, sources_limit=3):
         "sources_limit": sources_limit,
         "max_tokens": 500
     }
-    # POST to /ai/v2/chat/completions/grounded
+    # POST to /ai/v2/grounded/chat/completions
 ```
 
 ### Side-by-Side Comparison

@@ -51,7 +51,7 @@ class CompletionsToolUse {
             .load();
 
     private static final String API_KEY = dotenv.get("GLOO_API_KEY", "");
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
     public final Gson gson = new Gson();

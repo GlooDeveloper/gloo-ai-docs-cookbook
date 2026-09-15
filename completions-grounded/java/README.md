@@ -69,7 +69,7 @@ private static JsonObject makeNonGroundedRequest(String query) throws Exception 
     payload.add("messages", messages);
     payload.addProperty("auto_routing", true);
     payload.addProperty("max_tokens", 500);
-    // POST to /ai/v2/chat/completions
+    // POST to /ai/v2/guarded/chat/completions
 }
 ```
 
@@ -87,7 +87,7 @@ private static JsonObject makeGroundedRequest(
     payload.addProperty("rag_publisher", publisherName);
     payload.addProperty("sources_limit", sourcesLimit);
     payload.addProperty("max_tokens", 500);
-    // POST to /ai/v2/chat/completions/grounded
+    // POST to /ai/v2/grounded/chat/completions
 }
 ```
 

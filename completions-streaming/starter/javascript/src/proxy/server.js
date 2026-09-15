@@ -12,7 +12,7 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 const CORS_ORIGIN = process.env.PROXY_CORS_ORIGIN ?? "http://localhost:3000";
 const PORT = parseInt(process.env.PROXY_PORT ?? "3001", 10);
 

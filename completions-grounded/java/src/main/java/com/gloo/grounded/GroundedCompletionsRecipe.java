@@ -28,8 +28,8 @@ public class GroundedCompletionsRecipe {
     private static String publisherName;
 
     // API Endpoints
-    private static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
-    private static final String GROUNDED_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions/grounded";
+    private static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
+    private static final String GROUNDED_URL = "https://platform.ai.gloo.com/ai/v2/grounded/chat/completions";
 
     // HTTP Client
     private static final HttpClient httpClient = HttpClient.newBuilder()

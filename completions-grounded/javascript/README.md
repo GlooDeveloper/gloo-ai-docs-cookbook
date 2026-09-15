@@ -59,7 +59,7 @@ async function makeNonGroundedRequest(query) {
     auto_routing: true,
     max_tokens: 500
   };
-  // POST to /ai/v2/chat/completions
+  // POST to /ai/v2/guarded/chat/completions
 }
 ```
 
@@ -74,7 +74,7 @@ async function makeGroundedRequest(query, publisherName, sourcesLimit = 3) {
     sources_limit: sourcesLimit,
     max_tokens: 500
   };
-  // POST to /ai/v2/chat/completions/grounded
+  // POST to /ai/v2/grounded/chat/completions
 }
 ```
 

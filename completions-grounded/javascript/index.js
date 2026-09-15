@@ -16,8 +16,8 @@ const GLOO_API_KEY = process.env.GLOO_API_KEY;
 const PUBLISHER_NAME = process.env.PUBLISHER_NAME || 'Bezalel';
 
 // API Endpoints
-const COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
-const GROUNDED_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions/grounded';
+const COMPLETIONS_URL = 'https://platform.ai.gloo.com/ai/v2/guarded/chat/completions';
+const GROUNDED_URL = 'https://platform.ai.gloo.com/ai/v2/grounded/chat/completions';
 
 /**
  * Make a standard V2 completion request WITHOUT grounding.

@@ -16,7 +16,7 @@ $dotenv->load();
 
 // Configuration
 $API_KEY = $_ENV['GLOO_API_KEY'] ?? '';
-$API_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+$API_URL = 'https://platform.ai.gloo.com/ai/v2/guarded/chat/completions';
 
 /**
  * Validate that the required API key is configured

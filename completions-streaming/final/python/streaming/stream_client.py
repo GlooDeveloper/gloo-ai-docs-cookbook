@@ -10,7 +10,7 @@ import time
 import requests
 
 # API Endpoint
-API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 
 
 def handle_stream_error(status_code: int, response_body: str = "") -> None:

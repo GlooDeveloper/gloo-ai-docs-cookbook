@@ -13,7 +13,7 @@ import (
 	"os"
 )
 
-const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+const apiURL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 
 // Handler returns an http.Handler that proxies SSE completion requests.
 func Handler() http.Handler {

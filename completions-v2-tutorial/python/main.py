@@ -17,7 +17,7 @@ load_dotenv()
 
 # Configuration
 API_KEY = os.getenv("GLOO_API_KEY", "YOUR_API_KEY")
-API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 
 
 def make_v2_auto_routing(message, tradition="evangelical"):

@@ -14,7 +14,7 @@ dotenv.config();
 
 // Configuration
 const API_KEY = process.env.GLOO_API_KEY || "";
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 // Type definitions
 interface ChatMessage {

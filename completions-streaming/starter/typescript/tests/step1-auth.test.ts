@@ -9,7 +9,7 @@
 
 import "dotenv/config";
 
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 async function testStep1(): Promise<void> {
   console.log("Testing: Environment Setup & Auth Verification\n");

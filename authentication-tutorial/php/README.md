@@ -88,7 +88,7 @@ require_once 'index.php';
 function example() {
     // Make authenticated API calls
     $result = makeAuthenticatedRequest(
-        "https://platform.ai.gloo.com/ai/v2/chat/completions",
+        "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions",
         [
             'auto_routing' => true,
             'messages' => [['role' => 'user', 'content' => 'Your message here']]

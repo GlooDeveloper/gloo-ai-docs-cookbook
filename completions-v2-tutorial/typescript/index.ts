@@ -31,7 +31,7 @@ interface V2CompletionResponse {
 
 // Configuration
 const API_KEY = process.env.GLOO_API_KEY || "YOUR_API_KEY";
-const API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+const API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
 /**
  * Example 1: Auto-routing - Let Gloo AI select the optimal model

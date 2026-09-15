@@ -25,7 +25,7 @@ API_KEY = os.getenv("GLOO_API_KEY", "")
 TENANT = os.getenv("GLOO_TENANT", "your-tenant-name")
 
 SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search"
-COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 
 PORT = _parse_env_int(os.getenv("PORT"), 3000)
 RAG_MAX_TOKENS = _parse_env_int(os.getenv("RAG_MAX_TOKENS"), 3000)

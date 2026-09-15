@@ -21,8 +21,8 @@ GLOO_API_KEY = os.getenv("GLOO_API_KEY")
 PUBLISHER_NAME = os.getenv("PUBLISHER_NAME", "Bezalel")
 
 # API Endpoints
-COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
-GROUNDED_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions/grounded"
+COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
+GROUNDED_URL = "https://platform.ai.gloo.com/ai/v2/grounded/chat/completions"
 
 
 def make_non_grounded_request(query):

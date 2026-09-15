@@ -103,7 +103,7 @@ async function example() {
     };
 
     const result = await makeAuthenticatedRequest<ChatCompletionResponse>(
-        "https://platform.ai.gloo.com/ai/v2/chat/completions",
+        "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions",
         request
     );
     

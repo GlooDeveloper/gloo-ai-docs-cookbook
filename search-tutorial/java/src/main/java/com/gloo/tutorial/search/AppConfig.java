@@ -9,7 +9,7 @@ final class AppConfig {
     static final String TENANT = dotenv.get("GLOO_TENANT", "your-tenant-name");
 
     static final String SEARCH_URL = "https://platform.ai.gloo.com/ai/data/v1/search";
-    static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    static final String COMPLETIONS_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
     static final int RAG_MAX_TOKENS = parseIntOrDefault(dotenv.get("RAG_MAX_TOKENS"), 3000);
     static final int RAG_CONTEXT_MAX_SNIPPETS = parseIntOrDefault(dotenv.get("RAG_CONTEXT_MAX_SNIPPETS"), 5);

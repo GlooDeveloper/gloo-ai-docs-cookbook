@@ -15,7 +15,7 @@ import (
 // Configuration
 var (
 	apiKey string
-	apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+	apiURL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 )
 
 // ChatMessage represents a chat message

@@ -31,7 +31,7 @@ function loadConfig(): array
         'API_KEY' => $_ENV['GLOO_API_KEY'] ?? '',
         'TENANT' => $_ENV['GLOO_TENANT'] ?? 'your-tenant-name',
         'SEARCH_URL' => 'https://platform.ai.gloo.com/ai/data/v1/search',
-        'COMPLETIONS_URL' => 'https://platform.ai.gloo.com/ai/v2/chat/completions',
+        'COMPLETIONS_URL' => 'https://platform.ai.gloo.com/ai/v2/guarded/chat/completions',
         'PORT' => parseEnvInt($_ENV['PORT'] ?? null, 3000),
         'RAG_MAX_TOKENS' => parseEnvInt($_ENV['RAG_MAX_TOKENS'] ?? null, 3000),
         'RAG_CONTEXT_MAX_SNIPPETS' => parseEnvInt($_ENV['RAG_CONTEXT_MAX_SNIPPETS'] ?? null, 5),

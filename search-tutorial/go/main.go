@@ -29,7 +29,7 @@ var (
 	ragMaxChars  int
 
 	searchURL      = "https://platform.ai.gloo.com/ai/data/v1/search"
-	completionsURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+	completionsURL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 )
 
 // --- Types ---

@@ -94,7 +94,7 @@ public class Example {
             );
 
             ChatCompletionResponse result = AuthTutorial.makeAuthenticatedRequest(
-                "https://platform.ai.gloo.com/ai/v2/chat/completions",
+                "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions",
                 request
             );
             

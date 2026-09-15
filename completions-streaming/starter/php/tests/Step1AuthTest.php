@@ -37,7 +37,7 @@ function testStep1(): void
         // Test 1: Verify streaming endpoint returns 200 + text/event-stream
         echo "Test 1: Verifying streaming endpoint with API key...\n";
 
-        $apiUrl  = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+        $apiUrl  = 'https://platform.ai.gloo.com/ai/v2/guarded/chat/completions';
         $payload = json_encode([
             'messages'     => [['role' => 'user', 'content' => 'Hi']],
             'auto_routing' => true,

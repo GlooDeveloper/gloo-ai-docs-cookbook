@@ -22,7 +22,7 @@ import java.util.Map;
 public class CompletionsV2Tutorial {
 
     // Configuration
-    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+    private static final String API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions";
 
     private final String apiKey;
     private final HttpClient httpClient = HttpClient.newHttpClient();

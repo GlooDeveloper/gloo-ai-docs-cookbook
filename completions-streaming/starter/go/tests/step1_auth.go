@@ -20,7 +20,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const apiURL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+const apiURL = "https://platform.ai.gloo.com/ai/v2/guarded/chat/completions"
 
 func main() {
 	fmt.Println("🧪 Testing: Environment Setup & Auth Verification")
