@@ -1,0 +1,23 @@
+{
+    "name": "gloo/responses-php",
+    "description": "Gloo AI Guarded Responses API recipe example in PHP",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "vlucas/phpdotenv": "^5.5",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-mbstring": "*"
+    },
+    "scripts": {
+        "start": "php index.php"
+    },
+    "keywords": ["gloo", "responses", "api", "streaming", "vision", "php"],
+    "authors": [
+        {
+            "name": "Gloo AI",
+            "email": "support@gloo.com"
+        }
+    ],
+    "license": "MIT"
+}

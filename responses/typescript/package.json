@@ -1,0 +1,21 @@
+{
+  "name": "gloo-guarded-responses-ts",
+  "version": "1.0.0",
+  "description": "Gloo AI Guarded Responses API recipe example in TypeScript",
+  "main": "index.ts",
+  "scripts": {
+    "start": "tsx index.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "keywords": ["gloo", "responses", "api", "guardrails", "streaming", "vision", "typescript"],
+  "author": "Gloo AI",
+  "license": "MIT"
+}
