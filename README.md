@@ -20,6 +20,20 @@ Learn how to authenticate with the Gloo AI API using your API key.
 
 ---
 
+### 🛡️ [Responses](./responses/)
+Build with the Guarded Responses API — the recommended surface for new integrations.
+
+**Topics Covered:**
+- Guarded endpoint (`POST /ai/v2/guarded/responses`)
+- Typed `output[]` parsing
+- Tradition values-alignment
+- SSE streaming
+- Vision (`input_image`)
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ### 💬 [Chat API](./chat-tutorial/)
 Build interactive chat applications using the Gloo AI Message API.
 
@@ -182,6 +196,8 @@ gloo-ai-docs-cookbook/
 ├── authentication-tutorial/
 │   └── [javascript, typescript, python, php, go, java]
 ├── chat-tutorial/
+│   └── [javascript, typescript, python, php, go, java]
+├── responses/
 │   └── [javascript, typescript, python, php, go, java]
 ├── completions-v1-tutorial/
 │   └── [javascript, typescript, python, php, go, java]
