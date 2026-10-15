@@ -149,6 +149,20 @@ Surface relevant resources using the Gloo AI Recommendations API.
 
 ---
 
+### 🧭 [Embeddings API](./embeddings/)
+Build semantic search over your own content: chunk a corpus, index it with the Gloo AI Embeddings API, rank chunks by cosine similarity, and generate a cited answer with Guarded Responses.
+
+**Topics Covered:**
+- Own-vector-store vs. Data Engine trade-off
+- Paragraph-boundary chunking with ~150-word targets
+- Batched embeddings (`POST /ai/v2/direct/embeddings`) for the whole corpus
+- Cosine similarity, top-k selection, and a relevance threshold
+- Labeled-chunk augmentation and grounded generation with Guarded Responses
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ### 🔗 [RAG Pipeline Part 1: Set Up the Pipeline](./rag-pipeline-part-1/)
 Part 1 of the Build an End-to-End RAG Pipeline series: ingest content and verify it's ready for retrieval.
 
@@ -215,6 +229,9 @@ gloo-ai-docs-cookbook/
 │   └── frontend-example/simple-html/
 ├── upload-files/
 │   └── [javascript, typescript, python, php, go, java]
+├── embeddings/
+│   ├── [javascript, typescript, python, php, go, java]
+│   └── content/
 ├── rag-pipeline-part-1/
 │   ├── [javascript, typescript, python, php, go, java]
 │   └── sample_files/
