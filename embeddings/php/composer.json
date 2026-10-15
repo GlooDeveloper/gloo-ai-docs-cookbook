@@ -1,0 +1,25 @@
+{
+    "name": "gloo/embeddings-recipe",
+    "description": "Embeddings API Recipe - PHP Implementation",
+    "type": "project",
+    "keywords": ["gloo", "ai", "embeddings", "semantic-search", "rag"],
+    "license": "MIT",
+    "require": {
+        "php": ">=8.1",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "vlucas/phpdotenv": "^5.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Gloo\\Embeddings\\": "src/"
+        }
+    },
+    "scripts": {
+        "start": "php index.php"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

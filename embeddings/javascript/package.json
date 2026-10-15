@@ -1,0 +1,25 @@
+{
+  "name": "gloo-embeddings-recipe",
+  "version": "1.0.0",
+  "description": "Embeddings API Recipe - JavaScript Implementation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "gloo",
+    "ai",
+    "embeddings",
+    "semantic-search",
+    "rag"
+  ],
+  "author": "Gloo AI",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.3.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
