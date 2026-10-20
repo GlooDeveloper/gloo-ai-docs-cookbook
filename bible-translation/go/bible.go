@@ -12,13 +12,21 @@ import (
 )
 
 const (
-	glooAPIURL          = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+	glooAPIURL = "https://platform.ai.gloo.com/ai/v2/guarded/responses"
+	// Responses takes a pinned model. Swap in any generation model ID from
+	// https://docs.gloo.com/api-guides/supported-models.
+	model               = "gloo-openai-gpt-6-luna"
 	bibleAPIURLTemplate = "https://bible.helloao.org/api/%s/%s/%d.json"
 	placeholderStart    = "{{SCRIPTURE:"
-	systemPrompt        = "Never quote Bible verses directly from memory. When you want to reference a passage of Scripture, use the placeholder format {{SCRIPTURE:reference}} (e.g., {{SCRIPTURE:John 3:16}}, {{SCRIPTURE:Romans 8:28-30}}). The system will replace these placeholders with the actual verse text from the specified Bible translation. You may still discuss, explain, and comment on Scripture, but the actual verse text must always come through the placeholder mechanism."
+	systemPrompt        = "Never quote Bible verses directly from memory. When you want to reference a passage of Scripture, use the placeholder format {{SCRIPTURE:reference}} (e.g., {{SCRIPTURE:John 3:16}}, {{SCRIPTURE:Romans 8:28-30}}). The system will replace these placeholders with the actual verse text from the specified Bible translation. You may still discuss, explain, and comment on Scripture, but the actual verse text must always come through the placeholder mechanism. Place each placeholder where the full verse can stand on its own, such as after a colon or on its own line. Don't use a placeholder as part of a sentence or inside parentheses."
 )
 
 var placeholderRe = regexp.MustCompile(`\{\{SCRIPTURE:([^}]+)\}\}`)
+
+// endsSentenceRe matches substituted text whose verse already ends a sentence,
+// e.g. "...through Him. (John 3:17, BSB)", so a period the model writes after
+// the placeholder can be dropped instead of doubling up as "...BSB).".
+var endsSentenceRe = regexp.MustCompile(`[.!?]["'”’)]*\s*\([^()]*\)$`)
 
 // BOOK_IDS maps common book names and variants to USFM identifiers.
 var BOOK_IDS = map[string]string{
@@ -403,7 +411,11 @@ func FindIncompletePrefix(buffer string) *int {
 	return nil
 }
 
-// StreamWithSubstitution streams response text, substituting scripture placeholders.
+// StreamWithSubstitution streams Guarded Responses text, substituting scripture
+// placeholders. Each SSE event arrives as an `event:` line followed by a
+// `data:` line. Text comes from `response.output_text.delta`; other
+// `response.*` events are lifecycle events and are ignored. Any other event
+// (such as `error`) ends the stream with an error, as does malformed JSON.
 func StreamWithSubstitution(
 	r io.Reader,
 	translation string,
@@ -412,35 +424,55 @@ func StreamWithSubstitution(
 	errWrite func(string),
 ) error {
 	buffer := ""
+	event := ""
+	// dropPeriod is true after a substituted verse that already ends a sentence,
+	// until we see the next character and know whether it is a redundant period.
+	dropPeriod := false
+	skipRedundantPeriod := func(text string) string {
+		if dropPeriod && text != "" {
+			dropPeriod = false
+			if strings.HasPrefix(text, ".") {
+				return text[1:]
+			}
+		}
+		return text
+	}
+
 	scanner := bufio.NewScanner(r)
 	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
 	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.TrimSpace(line) == "" || !strings.HasPrefix(line, "data: ") {
+		line := strings.TrimSuffix(scanner.Text(), "\r")
+		if strings.HasPrefix(line, "event:") {
+			event = strings.TrimSpace(line[len("event:"):])
+			continue
+		}
+		if !strings.HasPrefix(line, "data:") {
 			continue
 		}
 
-		payload := line[len("data: "):]
-		if payload == "[DONE]" {
-			break
+		payload := strings.TrimSpace(line[len("data:"):])
+		var data struct {
+			Delta string `json:"delta"`
 		}
-
-		var chunk struct {
-			Choices []struct {
-				Delta struct {
-					Content string `json:"content"`
-				} `json:"delta"`
-			} `json:"choices"`
-		}
-		if err := json.Unmarshal([]byte(payload), &chunk); err != nil {
+		if err := json.Unmarshal([]byte(payload), &data); err != nil {
 			return fmt.Errorf("received malformed JSON in an SSE data event: %w", err)
 		}
-		if len(chunk.Choices) == 0 || chunk.Choices[0].Delta.Content == "" {
+		current := event
+		event = ""
+		if current == "response.completed" {
+			break
+		}
+		if current != "response.output_text.delta" {
+			if !strings.HasPrefix(current, "response.") {
+				return fmt.Errorf("stream terminated by event '%s': %s", current, payload)
+			}
+			continue
+		}
+		if data.Delta == "" {
 			continue
 		}
 
-		delta := chunk.Choices[0].Delta.Content
-		buffer += delta
+		buffer = skipRedundantPeriod(buffer + data.Delta)
 		for {
 			match := placeholderRe.FindStringSubmatchIndex(buffer)
 			if match == nil {
@@ -449,12 +481,14 @@ func StreamWithSubstitution(
 			write(buffer[:match[0]])
 			reference := strings.TrimSpace(buffer[match[2]:match[3]])
 			verseText, err := fetchBibleVerse(reference, translation)
+			substituted := err == nil
 			if err != nil {
 				verseText = fmt.Sprintf("{{SCRIPTURE:%s}}", reference)
 				errWrite(fmt.Sprintf("\n[Bible API error for %s: %v]\n", reference, err))
 			}
 			write(verseText)
-			buffer = buffer[match[1]:]
+			dropPeriod = substituted && endsSentenceRe.MatchString(verseText)
+			buffer = skipRedundantPeriod(buffer[match[1]:])
 		}
 		prefixIdx := FindIncompletePrefix(buffer)
 		if prefixIdx != nil {
@@ -472,14 +506,12 @@ func StreamWithSubstitution(
 	return nil
 }
 
-// BuildRequestBody constructs the JSON body for the Gloo AI streaming completion request.
+// BuildRequestBody constructs the JSON body for the Guarded Responses streaming request.
 func BuildRequestBody(prompt, tradition string) ([]byte, error) {
 	body := map[string]interface{}{
-		"messages": []map[string]string{
-			{"role": "system", "content": systemPrompt},
-			{"role": "user", "content": prompt},
-		},
-		"auto_routing": true,
+		"model":        model,
+		"instructions": systemPrompt,
+		"input":        prompt,
 		"stream":       true,
 	}
 	if tradition != "" {

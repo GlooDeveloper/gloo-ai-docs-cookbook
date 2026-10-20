@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 
@@ -65,7 +67,18 @@ func main() {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		fmt.Fprintf(os.Stderr, "Error: Gloo AI API returned status %d\n", resp.StatusCode)
+		// Surface the API's own reason, e.g. "Unknown model ..." for a bad model.
+		raw, _ := io.ReadAll(resp.Body)
+		detail := string(raw)
+		var apiErr struct {
+			Detail struct {
+				Message string `json:"message"`
+			} `json:"detail"`
+		}
+		if json.Unmarshal(raw, &apiErr) == nil && apiErr.Detail.Message != "" {
+			detail = apiErr.Detail.Message
+		}
+		fmt.Fprintf(os.Stderr, "Error: Gloo AI API returned HTTP %d: %s\n", resp.StatusCode, detail)
 		os.Exit(1)
 	}
 

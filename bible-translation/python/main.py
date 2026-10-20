@@ -20,8 +20,12 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Gloo AI API endpoint for chat completions.
-GLOO_API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions"
+# Gloo AI Guarded Responses endpoint.
+GLOO_API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/responses"
+
+# Responses takes a pinned model. Swap in any generation model ID from
+# https://docs.gloo.com/api-guides/supported-models.
+MODEL = "gloo-openai-gpt-6-luna"
 
 # Bible API endpoint template: translation / USFM book ID / chapter.
 BIBLE_API_URL_TEMPLATE = "https://bible.helloao.org/api/{translation}/{book}/{chapter}.json"
@@ -34,12 +38,19 @@ SYSTEM_PROMPT = (
     "will replace these placeholders with the actual verse text from the "
     "specified Bible translation. You may still discuss, explain, and comment "
     "on Scripture, but the actual verse text must always come through the "
-    "placeholder mechanism."
+    "placeholder mechanism. Place each placeholder where the full verse can "
+    "stand on its own, such as after a colon or on its own line. Don't use a "
+    "placeholder as part of a sentence or inside parentheses."
 )
 
 # Marker and regex for placeholders emitted by the model.
 PLACEHOLDER_START = "{{SCRIPTURE:"
 PLACEHOLDER_RE = re.compile(r"\{\{SCRIPTURE:([^}]+)\}\}")
+
+# Matches substituted text whose verse already ends a sentence, e.g.
+# "...through Him. (John 3:17, BSB)", so a period the model writes after the
+# placeholder can be dropped instead of doubling up as "...BSB).".
+ENDS_SENTENCE_RE = re.compile(r"[.!?][\"'”’)]*\s*\([^()]*\)$")
 
 # Book name → USFM identifier mapping for all 66 Protestant canon books plus
 # common variations. The full USFM list is at
@@ -360,29 +371,38 @@ def fetch_bible_verse(reference: str, translation: str = "BSB") -> str:
 
 
 def extract_sse_content_lines(response: requests.Response) -> Iterable[str]:
-    """Yield content deltas from a Gloo AI streaming SSE response.
+    """Yield text deltas from a Guarded Responses streaming SSE response.
 
-    Handles the `data: ` prefix, the `[DONE]` sentinel, and JSON parsing of
-    each chunk. Malformed JSON raises an error instead of silently returning a
-    truncated response.
+    Each event arrives as an `event:` line followed by a `data:` line. Text
+    comes from `response.output_text.delta` events; other `response.*` events
+    are lifecycle events and are ignored. Any other event (such as `error`)
+    ends the stream with an error, as does malformed JSON, instead of silently
+    returning a truncated response.
     """
+    event = None
     for line in response.iter_lines():
         if not line:
             continue
         text = line.decode("utf-8")
-        if not text.startswith("data: "):
+        if text.startswith("event:"):
+            event = text[len("event:"):].strip()
             continue
-        payload = text[len("data: "):]
-        if payload == "[DONE]":
-            break
+        if not text.startswith("data:"):
+            continue
         try:
-            chunk = json.loads(payload)
+            data = json.loads(text[len("data:"):].strip())
         except json.JSONDecodeError as exc:
             raise ValueError("Received malformed JSON in an SSE data event") from exc
-        delta = chunk.get("choices", [{}])[0].get("delta", {})
-        content = delta.get("content")
-        if content:
-            yield content
+
+        if event == "response.output_text.delta":
+            delta = data.get("delta")
+            if delta:
+                yield delta
+        elif event == "response.completed":
+            break
+        elif event is None or not event.startswith("response."):
+            raise RuntimeError(f"Stream terminated by event '{event}': {data}")
+        event = None
 
 
 def find_incomplete_prefix(buffer: str) -> Optional[int]:
@@ -423,9 +443,20 @@ def stream_with_substitution(
     the placeholder.
     """
     buffer = ""
+    # True after a substituted verse that already ends a sentence, until we
+    # see the next character and know whether it is a redundant period.
+    drop_period = False
+
+    def skip_redundant_period(text: str) -> str:
+        nonlocal drop_period
+        if drop_period and text:
+            drop_period = False
+            if text.startswith("."):
+                return text[1:]
+        return text
 
     for delta in extract_sse_content_lines(response):
-        buffer += delta
+        buffer = skip_redundant_period(buffer + delta)
 
         # Process every complete placeholder currently in the buffer.
         while True:
@@ -439,16 +470,19 @@ def stream_with_substitution(
             reference = match.group(1).strip()
             try:
                 verse_text = fetch_bible_verse(reference, translation)
+                substituted = True
             except Exception as exc:  # pylint: disable=broad-except
                 # Graceful failure: leave the placeholder visible so the reader
                 # sees a reference rather than corrupted scripture text.
                 verse_text = f"{{{{SCRIPTURE:{reference}}}}}"
+                substituted = False
                 print(f"\n[Bible API error for {reference}: {exc}]\n", end="", flush=True)
 
             print(verse_text, end="", flush=True)
 
             # Drop the consumed portion and keep scanning the remainder.
-            buffer = buffer[match.end():]
+            drop_period = substituted and bool(ENDS_SENTENCE_RE.search(verse_text))
+            buffer = skip_redundant_period(buffer[match.end():])
 
         # Hold back a trailing placeholder prefix so we do not split a marker.
         prefix_idx = find_incomplete_prefix(buffer)
@@ -465,13 +499,11 @@ def stream_with_substitution(
 
 
 def build_request_body(prompt: str, tradition: Optional[str]) -> dict:
-    """Construct the JSON body for the Gloo AI streaming completion request."""
+    """Construct the JSON body for the Guarded Responses streaming request."""
     body: dict = {
-        "messages": [
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": prompt},
-        ],
-        "auto_routing": True,
+        "model": MODEL,
+        "instructions": SYSTEM_PROMPT,
+        "input": prompt,
         "stream": True,
     }
     if tradition is not None:
@@ -521,6 +553,17 @@ def main() -> None:
             timeout=60,
         )
         response.raise_for_status()
+    except requests.exceptions.HTTPError as exc:
+        # Surface the API's own reason, e.g. "Unknown model ..." for a bad MODEL.
+        try:
+            detail = exc.response.json()["detail"]["message"]
+        except (ValueError, KeyError, TypeError):
+            detail = exc.response.text
+        print(
+            f"Error: Gloo AI API returned HTTP {exc.response.status_code}: {detail}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
     except requests.exceptions.RequestException as exc:
         print(f"Error: failed to connect to Gloo AI API: {exc}", file=sys.stderr)
         sys.exit(1)

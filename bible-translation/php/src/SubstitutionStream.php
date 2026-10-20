@@ -8,6 +8,11 @@ class SubstitutionStream
 {
     public const PLACEHOLDER_START = '{{SCRIPTURE:';
 
+    // Matches substituted text whose verse already ends a sentence, e.g.
+    // "...through Him. (John 3:17, BSB)", so a period the model writes after
+    // the placeholder can be dropped instead of doubling up as "...BSB).".
+    public const ENDS_SENTENCE_RE = '/[.!?]["\'”’)]*\s*\([^()]*\)$/u';
+
     /**
      * Stream content to the writer, substituting complete {{SCRIPTURE:...}}
      * placeholders using the supplied fetcher.
@@ -38,13 +43,16 @@ class SubstitutionStream
      * @param callable(string, string): string $fetchBibleVerse
      * @param callable(string): void $write
      * @param callable(string, \Throwable): void|null $onError
+     * @param bool $dropPeriod Set when a substituted verse already ends a
+     *                         sentence; carried across calls by the caller.
      */
     public static function processCompletePlaceholders(
         string $buffer,
         callable $fetchBibleVerse,
         callable $write,
         ?callable $onError,
-        string $translation
+        string $translation,
+        bool &$dropPeriod = false
     ): string {
         while (true) {
             $match = self::findPlaceholder($buffer);
@@ -57,18 +65,36 @@ class SubstitutionStream
             $reference = trim($match['reference']);
             try {
                 $verseText = $fetchBibleVerse($reference, $translation);
+                $substituted = true;
             } catch (\Throwable $exc) {
                 $verseText = '{{SCRIPTURE:' . $reference . '}}';
+                $substituted = false;
                 if ($onError !== null) {
                     $onError($reference, $exc);
                 }
             }
 
             $write($verseText);
-            $buffer = substr($buffer, $match['end']);
+            $dropPeriod = $substituted && preg_match(self::ENDS_SENTENCE_RE, $verseText) === 1;
+            $buffer = self::skipRedundantPeriod(substr($buffer, $match['end']), $dropPeriod);
         }
 
         return $buffer;
+    }
+
+    /**
+     * Drop a single leading period when the previous substituted verse already
+     * ended a sentence. Clears $dropPeriod once there is text to inspect.
+     */
+    public static function skipRedundantPeriod(string $text, bool &$dropPeriod): string
+    {
+        if ($dropPeriod && $text !== '') {
+            $dropPeriod = false;
+            if (str_starts_with($text, '.')) {
+                return substr($text, 1);
+            }
+        }
+        return $text;
     }
 
     /**

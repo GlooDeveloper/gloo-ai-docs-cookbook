@@ -9,7 +9,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,7 +20,11 @@ public final class Main {
     private Main() {}
 
     public static final String GLOO_API_URL =
-        "https://platform.ai.gloo.com/ai/v2/chat/completions";
+        "https://platform.ai.gloo.com/ai/v2/guarded/responses";
+
+    // Responses takes a pinned model. Swap in any generation model ID from
+    // https://docs.gloo.com/api-guides/supported-models.
+    public static final String MODEL = "gloo-openai-gpt-6-luna";
 
     public static final String SYSTEM_PROMPT =
         "Never quote Bible verses directly from memory. When you want to reference "
@@ -30,7 +33,9 @@ public final class Main {
         + "will replace these placeholders with the actual verse text from the "
         + "specified Bible translation. You may still discuss, explain, and comment "
         + "on Scripture, but the actual verse text must always come through the "
-        + "placeholder mechanism.";
+        + "placeholder mechanism. Place each placeholder where the full verse can "
+        + "stand on its own, such as after a colon or on its own line. Don't use a "
+        + "placeholder as part of a sentence or inside parentheses.";
 
     private static final HttpClient HTTP_CLIENT = HttpClient.newHttpClient();
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -83,8 +88,18 @@ public final class Main {
             } catch (IOException exc) {
                 bodyText = "";
             }
+            // Surface the API's own reason, e.g. "Unknown model ..." for a bad MODEL.
+            String detail = bodyText;
+            try {
+                String message = MAPPER.readTree(bodyText).path("detail").path("message").asText("");
+                if (!message.isEmpty()) {
+                    detail = message;
+                }
+            } catch (IOException exc) {
+                // Not JSON; fall back to the raw body.
+            }
             System.err.println(
-                "Error: Gloo AI API returned HTTP " + response.statusCode() + ": " + bodyText
+                "Error: Gloo AI API returned HTTP " + response.statusCode() + ": " + detail
             );
             System.exit(1);
             return;
@@ -116,11 +131,9 @@ public final class Main {
 
     static Map<String, Object> buildRequestBody(String prompt, String tradition) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("messages", List.of(
-            Map.of("role", "system", "content", SYSTEM_PROMPT),
-            Map.of("role", "user", "content", prompt)
-        ));
-        body.put("auto_routing", true);
+        body.put("model", MODEL);
+        body.put("instructions", SYSTEM_PROMPT);
+        body.put("input", prompt);
         body.put("stream", true);
         if (tradition != null) {
             body.put("tradition", tradition);

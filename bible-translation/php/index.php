@@ -8,8 +8,12 @@ require __DIR__ . '/vendor/autoload.php';
 
 use Dotenv\Dotenv;
 
-// Gloo AI API endpoint for chat completions.
-const GLOO_API_URL = 'https://platform.ai.gloo.com/ai/v2/chat/completions';
+// Gloo AI Guarded Responses endpoint.
+const GLOO_API_URL = 'https://platform.ai.gloo.com/ai/v2/guarded/responses';
+
+// Responses takes a pinned model. Swap in any generation model ID from
+// https://docs.gloo.com/api-guides/supported-models.
+const MODEL = 'gloo-openai-gpt-6-luna';
 
 // System prompt that instructs the model to use placeholders instead of quoting.
 const SYSTEM_PROMPT =
@@ -19,7 +23,9 @@ const SYSTEM_PROMPT =
     . 'will replace these placeholders with the actual verse text from the '
     . 'specified Bible translation. You may still discuss, explain, and comment '
     . 'on Scripture, but the actual verse text must always come through the '
-    . 'placeholder mechanism.';
+    . 'placeholder mechanism. Place each placeholder where the full verse can '
+    . 'stand on its own, such as after a colon or on its own line. Don\'t use a '
+    . 'placeholder as part of a sentence or inside parentheses.';
 
 function parseArgs(array $argv): array
 {
@@ -73,11 +79,9 @@ function parseArgs(array $argv): array
 function buildRequestBody(string $prompt, ?string $tradition): array
 {
     $body = [
-        'messages' => [
-            ['role' => 'system', 'content' => SYSTEM_PROMPT],
-            ['role' => 'user', 'content' => $prompt],
-        ],
-        'auto_routing' => true,
+        'model' => MODEL,
+        'instructions' => SYSTEM_PROMPT,
+        'input' => $prompt,
         'stream' => true,
     ];
     if ($tradition !== null) {
@@ -134,6 +138,7 @@ function main(array $argv): int
     }
 
     $rawBuffer = '';
+    $errorBody = '';
     $streamError = null;
 
     curl_setopt_array($ch, [
@@ -141,7 +146,12 @@ function main(array $argv): int
         CURLOPT_HTTPHEADER => $headers,
         CURLOPT_POSTFIELDS => $body,
         CURLOPT_TIMEOUT => 60,
-        CURLOPT_WRITEFUNCTION => static function ($curl, $chunk) use ($processor, &$rawBuffer, &$streamError): int {
+        CURLOPT_WRITEFUNCTION => static function ($curl, $chunk) use ($processor, &$rawBuffer, &$errorBody, &$streamError): int {
+            // On an HTTP error, keep the body so we can report the API's reason.
+            if (curl_getinfo($curl, CURLINFO_HTTP_CODE) >= 300) {
+                $errorBody .= $chunk;
+                return strlen($chunk);
+            }
             try {
                 $rawBuffer .= $chunk;
                 while (($newlinePos = strpos($rawBuffer, "\n")) !== false) {
@@ -159,6 +169,7 @@ function main(array $argv): int
 
     $result = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
     curl_close($ch);
 
     if ($streamError !== null) {
@@ -167,12 +178,17 @@ function main(array $argv): int
     }
 
     if ($result === false) {
-        fwrite(STDERR, "Error: failed to connect to Gloo AI API: " . curl_error($ch) . "\n");
+        fwrite(STDERR, "Error: failed to connect to Gloo AI API: {$curlError}\n");
         return 1;
     }
 
     if ($httpCode < 200 || $httpCode >= 300) {
-        fwrite(STDERR, "Error: Gloo AI API returned HTTP {$httpCode}\n");
+        // Surface the API's own reason, e.g. "Unknown model ..." for a bad MODEL.
+        $decoded = json_decode($errorBody, true);
+        $detail = is_array($decoded) && isset($decoded['detail']['message'])
+            ? $decoded['detail']['message']
+            : $errorBody;
+        fwrite(STDERR, "Error: Gloo AI API returned HTTP {$httpCode}: {$detail}\n");
         return 1;
     }
 

@@ -21,7 +21,11 @@ class SubstitutionProcessor
     /** @var callable(string, \Throwable): void|null */
     private $onError;
 
-    private bool $done = false;
+    private SseStream $sse;
+
+    // True after a substituted verse that already ends a sentence, until we see
+    // the next character and know whether it is a redundant period.
+    private bool $dropPeriod = false;
 
     public function __construct(
         string $translation,
@@ -33,31 +37,24 @@ class SubstitutionProcessor
         $this->fetchBibleVerse = $fetchBibleVerse;
         $this->write = $write;
         $this->onError = $onError;
+        $this->sse = new SseStream();
     }
 
     public function processSseLine(string $line): void
     {
-        if ($this->done) {
-            return;
-        }
-
-        if ($line === 'data: [DONE]') {
-            $this->done = true;
-            return;
-        }
-
-        $delta = SseStream::parseLine($line);
+        $delta = $this->sse->parseLine($line);
         if ($delta === null) {
             return;
         }
 
-        $this->buffer .= $delta;
+        $this->buffer = SubstitutionStream::skipRedundantPeriod($this->buffer . $delta, $this->dropPeriod);
         $this->buffer = SubstitutionStream::processCompletePlaceholders(
             $this->buffer,
             $this->fetchBibleVerse,
             $this->write,
             $this->onError,
-            $this->translation
+            $this->translation,
+            $this->dropPeriod
         );
 
         $prefixIdx = SubstitutionStream::findIncompletePrefix($this->buffer);

@@ -7,41 +7,63 @@ namespace Gloo\BibleTranslation;
 use RuntimeException;
 
 /**
- * Parses Gloo AI SSE streaming responses into content deltas.
+ * Parses Gloo AI Guarded Responses SSE streams into text deltas.
+ *
+ * Each event arrives as an `event:` line followed by a `data:` line. Text
+ * comes from `response.output_text.delta`; other `response.*` events are
+ * lifecycle events and are ignored. Any other event (such as `error`) ends the
+ * stream with an error, as does malformed JSON.
  */
 class SseStream
 {
+    private ?string $event = null;
+    private bool $done = false;
+
     /**
-     * Parse a single SSE line and return its content delta, if any.
+     * Parse a single SSE line and return its text delta, if any.
      *
-     * Returns null for empty lines, non-data fields, and data: [DONE].
-     * Throws RuntimeException for malformed JSON in a data event.
+     * Returns null for empty lines, `event:` lines, and lifecycle events.
+     * Throws RuntimeException for malformed JSON or a non-`response.*` event.
      */
-    public static function parseLine(string $line): ?string
+    public function parseLine(string $line): ?string
     {
-        if ($line === '') {
+        if ($this->done || $line === '') {
             return null;
         }
-        if (!str_starts_with($line, 'data: ')) {
+        if (str_starts_with($line, 'event:')) {
+            $this->event = trim(substr($line, strlen('event:')));
+            return null;
+        }
+        if (!str_starts_with($line, 'data:')) {
             return null;
         }
 
-        $payload = substr($line, strlen('data: '));
-        if ($payload === '[DONE]') {
-            return null;
-        }
-
-        $chunk = json_decode($payload, true);
-        if (!is_array($chunk)) {
+        $payload = trim(substr($line, strlen('data:')));
+        $data = json_decode($payload, true);
+        if (!is_array($data)) {
             throw new RuntimeException('Received malformed JSON in an SSE data event');
         }
 
-        $content = $chunk['choices'][0]['delta']['content'] ?? null;
-        if (is_string($content) && $content !== '') {
-            return $content;
+        $event = $this->event;
+        $this->event = null;
+        if ($event === 'response.output_text.delta') {
+            $delta = $data['delta'] ?? null;
+            return is_string($delta) && $delta !== '' ? $delta : null;
         }
-
+        if ($event === 'response.completed') {
+            $this->done = true;
+            return null;
+        }
+        if ($event === null || !str_starts_with($event, 'response.')) {
+            throw new RuntimeException("Stream terminated by event '{$event}': {$payload}");
+        }
         return null;
+    }
+
+    /** True once `response.completed` has been seen. */
+    public function isDone(): bool
+    {
+        return $this->done;
     }
 
     /**
@@ -49,14 +71,14 @@ class SseStream
      */
     public static function parseStream(iterable $sseLines): \Generator
     {
+        $parser = new self();
         foreach ($sseLines as $line) {
-            $text = (string) $line;
-            if ($text === 'data: [DONE]') {
-                break;
-            }
-            $delta = self::parseLine($text);
+            $delta = $parser->parseLine((string) $line);
             if ($delta !== null) {
                 yield $delta;
+            }
+            if ($parser->isDone()) {
+                break;
             }
         }
     }

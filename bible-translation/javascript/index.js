@@ -1,7 +1,10 @@
 import "dotenv/config";
 import { fileURLToPath } from "node:url";
 
-export const GLOO_API_URL = "https://platform.ai.gloo.com/ai/v2/chat/completions";
+export const GLOO_API_URL = "https://platform.ai.gloo.com/ai/v2/guarded/responses";
+// Responses takes a pinned model. Swap in any generation model ID from
+// https://docs.gloo.com/api-guides/supported-models.
+export const MODEL = "gloo-openai-gpt-6-luna";
 export const BIBLE_API_URL_TEMPLATE =
   "https://bible.helloao.org/api/{translation}/{book}/{chapter}.json";
 
@@ -12,10 +15,17 @@ export const SYSTEM_PROMPT =
   "will replace these placeholders with the actual verse text from the " +
   "specified Bible translation. You may still discuss, explain, and comment " +
   "on Scripture, but the actual verse text must always come through the " +
-  "placeholder mechanism.";
+  "placeholder mechanism. Place each placeholder where the full verse can " +
+  "stand on its own, such as after a colon or on its own line. Don't use a " +
+  "placeholder as part of a sentence or inside parentheses.";
 
 export const PLACEHOLDER_START = "{{SCRIPTURE:";
 export const PLACEHOLDER_RE = /\{\{SCRIPTURE:([^}]+)\}\}/;
+
+// Matches substituted text whose verse already ends a sentence, e.g.
+// "...through Him. (John 3:17, BSB)", so a period the model writes after the
+// placeholder can be dropped instead of doubling up as "...BSB).".
+export const ENDS_SENTENCE_RE = /[.!?]["'”’)]*\s*\([^()]*\)$/;
 
 const CASEFOLDED_BOOK_IDS = Object.fromEntries(
   Object.entries({
@@ -323,10 +333,43 @@ export async function fetchBibleVerse(reference, translation = "BSB") {
   return `${selected} (${reference}, ${translation})`;
 }
 
+// Yields text deltas from a Guarded Responses SSE stream. Each event arrives as
+// an `event:` line followed by a `data:` line. Text comes from
+// `response.output_text.delta`; other `response.*` events are lifecycle events
+// and are ignored. Any other event (such as `error`) ends the stream with an
+// error, as does malformed JSON.
 export async function* extractSSEContentLines(response) {
   const decoder = new TextDecoder("utf-8");
   let pending = "";
+  let event = null;
   const reader = response.body.getReader();
+
+  // Returns { text } for a delta, { done: true } at the end, or null otherwise.
+  function handleLine(raw) {
+    if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+    if (raw.startsWith("event:")) {
+      event = raw.slice("event:".length).trim();
+      return null;
+    }
+    if (!raw.startsWith("data:")) return null;
+    let data;
+    try {
+      data = JSON.parse(raw.slice("data:".length).trim());
+    } catch (err) {
+      throw new Error(`Received malformed JSON in an SSE data event: ${err.message}`);
+    }
+    const current = event;
+    event = null;
+    if (current === "response.output_text.delta") {
+      return data.delta ? { text: data.delta } : null;
+    }
+    if (current === "response.completed") return { done: true };
+    if (current === null || !current.startsWith("response.")) {
+      throw new Error(`Stream terminated by event '${current}': ${JSON.stringify(data)}`);
+    }
+    return null;
+  }
+
   try {
     while (true) {
       const { done, value } = await reader.read();
@@ -334,41 +377,15 @@ export async function* extractSSEContentLines(response) {
       pending += decoder.decode(value, { stream: true });
       const lines = pending.split("\n");
       pending = lines.pop();
-      for (let raw of lines) {
-        if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-        if (!raw || !raw.startsWith("data: ")) continue;
-        const payload = raw.slice(6);
-        if (payload === "[DONE]") return;
-        let chunk;
-        try {
-          chunk = JSON.parse(payload);
-        } catch (err) {
-          throw new Error(
-            `Received malformed JSON in an SSE data event: ${err.message}`
-          );
-        }
-        const content = chunk?.choices?.[0]?.delta?.content;
-        if (content) yield content;
+      for (const raw of lines) {
+        const result = handleLine(raw);
+        if (result?.done) return;
+        if (result?.text) yield result.text;
       }
     }
     if (pending) {
-      let raw = pending;
-      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-      if (raw.startsWith("data: ")) {
-        const payload = raw.slice(6);
-        if (payload !== "[DONE]") {
-          let chunk;
-          try {
-            chunk = JSON.parse(payload);
-          } catch (err) {
-            throw new Error(
-              `Received malformed JSON in an SSE data event: ${err.message}`
-            );
-          }
-          const content = chunk?.choices?.[0]?.delta?.content;
-          if (content) yield content;
-        }
-      }
+      const result = handleLine(pending);
+      if (result?.text) yield result.text;
     }
   } finally {
     reader.releaseLock();
@@ -396,9 +413,20 @@ export function findIncompletePrefix(buffer) {
 
 export async function streamWithSubstitution(deltas, fetchBibleVerse, write) {
   let buffer = "";
+  // True after a substituted verse that already ends a sentence, until we see
+  // the next character and know whether it is a redundant period.
+  let dropPeriod = false;
+
+  const skipRedundantPeriod = (text) => {
+    if (dropPeriod && text) {
+      dropPeriod = false;
+      if (text.startsWith(".")) return text.slice(1);
+    }
+    return text;
+  };
 
   for await (const delta of deltas) {
-    buffer += delta;
+    buffer = skipRedundantPeriod(buffer + delta);
 
     // Process every complete placeholder currently in the buffer.
     while (true) {
@@ -409,16 +437,20 @@ export async function streamWithSubstitution(deltas, fetchBibleVerse, write) {
 
       const reference = match[1].trim();
       let verseText;
+      let substituted;
       try {
         verseText = await fetchBibleVerse(reference);
+        substituted = true;
       } catch (err) {
         // Graceful failure: leave the placeholder visible.
         verseText = `{{SCRIPTURE:${reference}}}`;
+        substituted = false;
         process.stderr.write(`\n[Bible API error for ${reference}: ${err.message}]\n`);
       }
 
       write(verseText);
-      buffer = buffer.slice(match.index + match[0].length);
+      dropPeriod = substituted && ENDS_SENTENCE_RE.test(verseText);
+      buffer = skipRedundantPeriod(buffer.slice(match.index + match[0].length));
     }
 
     // Hold back a trailing placeholder prefix.
@@ -438,11 +470,9 @@ export async function streamWithSubstitution(deltas, fetchBibleVerse, write) {
 
 export function buildRequestBody(prompt, tradition) {
   const body = {
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: prompt },
-    ],
-    auto_routing: true,
+    model: MODEL,
+    instructions: SYSTEM_PROMPT,
+    input: prompt,
     stream: true,
   };
   if (tradition !== undefined) {
@@ -521,8 +551,16 @@ export async function main() {
   }
 
   if (!response.ok) {
+    // Surface the API's own reason, e.g. "Unknown model ..." for a bad MODEL.
+    const raw = await response.text();
+    let detail;
+    try {
+      detail = JSON.parse(raw).detail.message;
+    } catch {
+      detail = raw;
+    }
     process.stderr.write(
-      `Error: Gloo AI API returned ${response.status} ${response.statusText}\n`
+      `Error: Gloo AI API returned HTTP ${response.status}: ${detail ?? raw}\n`
     );
     process.exit(1);
   }

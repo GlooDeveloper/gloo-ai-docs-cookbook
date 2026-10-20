@@ -2,7 +2,8 @@
 
 TypeScript implementation for the Gloo AI docs cookbook recipe.
 
-This CLI streams a response from the Gloo AI completions API and replaces every
+This CLI streams a response from the Gloo AI
+[Guarded Responses API](https://docs.gloo.com/api-guides/responses) and replaces every
 `{{SCRIPTURE:reference}}` placeholder with the actual verse text from
 [bible.helloao.org](https://bible.helloao.org). This is the **output transform**
 approach: every successfully substituted placeholder contains text returned by
@@ -37,7 +38,7 @@ cp .env.example .env
 Basic usage with default translation (BSB):
 
 ```bash
-npm start -- "Give me a short devotional reflection on John 3:16."
+npm start -- "Write a three-paragraph devotional reflection on John 3:16."
 ```
 
 Specify a translation:
@@ -52,11 +53,21 @@ Optionally specify a tradition (may conflict with the placeholder instructions):
 npm start -- "Did Jesus come to condemn the world?" --tradition mainline --translation BSB
 ```
 
+## Choosing a Model
+
+The Guarded Responses API takes a pinned model. This implementation uses
+`gloo-openai-gpt-6-luna`, set in the `MODEL` constant at the top of `index.ts`.
+To use a different model, change `MODEL` to any generation model ID from
+[Supported Models](https://docs.gloo.com/api-guides/supported-models), then
+re-run the examples: how reliably a model follows the placeholder instruction
+varies from model to model.
+
 ## How the Output Transform Works
 
 1. The system prompt instructs the model to emit placeholders such as
    `{{SCRIPTURE:John 3:16}}` instead of quoting directly.
-2. The CLI streams the Gloo AI response using Server-Sent Events (SSE).
+2. The CLI streams the Gloo AI response using Server-Sent Events (SSE), reading
+   text from `response.output_text.delta` events.
 3. A buffer accumulates the streaming text.
 4. Whenever a complete placeholder is found, the harness:
    - emits the text before the placeholder,
