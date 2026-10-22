@@ -90,6 +90,21 @@ Advanced completions with function calling and tool integration.
 
 ---
 
+### 📖 [Bible Translation](./bible-translation/)
+Replace Scripture references with verse text fetched reliably from a Bible API, using the output transform pattern instead of quoting from model memory.
+
+**Topics Covered:**
+- Output transform pattern (`{{SCRIPTURE:reference}}` placeholders substituted with real verse text)
+- Streaming the Guarded Responses API with a pinned model (`gloo-openai-gpt-6-luna`)
+- Buffer-based placeholder substitution across streaming SSE chunk boundaries
+- Bible API integration (bible.helloao.org, chapter-based lookup, book name normalization)
+- Translation control independent of Gloo's `tradition` parameter
+- Graceful failure handling (unreplaced placeholders instead of corrupted text)
+
+**Languages:** JavaScript, TypeScript, Python, PHP, Go, Java
+
+---
+
 ### 📥 [Realtime Ingestion](./realtime-ingestion/) *(Deprecated)*
 Ingest and manage content in real-time using the Gloo AI Data API.
 
@@ -218,6 +233,8 @@ gloo-ai-docs-cookbook/
 ├── completions-v2-tutorial/
 │   └── [javascript, typescript, python, php, go, java]
 ├── completions-tool-use/
+│   └── [javascript, typescript, python, php, go, java]
+├── bible-translation/
 │   └── [javascript, typescript, python, php, go, java]
 ├── realtime-ingestion/
 │   └── [javascript, typescript, python, php, go, java]
