@@ -34,8 +34,10 @@ const SEED_ITEMS = [
   ["learning-from-incidents.md", "rag-pipeline-part3-incident-reviews"],
 ];
 
-// Retry policy: only transient failures are retried. Client errors (400, 401,
-// 403, 404, 422) are bugs in the request, not blips, so they fail fast.
+// Retry policy: the API's own error.retryable flag is the primary signal, so a
+// 500 with retryable:false (e.g. 3001 INTERNAL_ERROR) is not retried. This set
+// is only a fallback for responses with no JSON error body (network failures and
+// unparseable bodies), where there is no flag to read.
 const RETRYABLE_STATUSES = new Set([500, 502, 503, 504]);
 const MAX_RETRIES = 4;
 const BASE_DELAY_MS = 1000;
@@ -57,16 +59,20 @@ for (const [name, value] of [
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** A normalized API error: HTTP status (null for network failures), a
- * machine-readable code, and a human-readable message. */
+ * machine-readable code, a human-readable message, and the body's
+ * error.retryable flag when the response carried one (null otherwise). */
 class ApiError extends Error {
-  constructor(status, code, message) {
+  constructor(status, code, message, retryable = null) {
     super(message);
     this.status = status;
     this.code = code;
+    this.retryable = retryable;
   }
 
   isRetryable() {
-    // Network failures (status null) and transient server statuses are retryable.
+    // error.retryable is authoritative; without one, fall back to network
+    // failures (status null) and the transient server statuses.
+    if (this.retryable !== null) return this.retryable;
     return this.status === null || RETRYABLE_STATUSES.has(this.status);
   }
 }
@@ -77,27 +83,40 @@ class ResilientClient {
     this.apiKey = apiKey;
   }
 
-  /** Extract [code, message] from the API's error shapes:
-   * {"detail": {"code", "message"}}, {"detail": "..."}, {"error", "message"}. */
+  /** Extract [code, message, retryable] from the API's error shapes:
+   * {"detail": {"code", "message"}}, {"detail": "..."}, {"error", "message"}.
+   * retryable is non-null only when the body carried error.retryable. */
   async parseError(response) {
     const text = await response.text();
     let body;
     try {
       body = JSON.parse(text);
     } catch {
-      return [null, text.slice(0, 200) || response.statusText];
+      return [null, text.slice(0, 200) || response.statusText, null];
     }
     if (body && typeof body === "object") {
       const detail = body.detail;
       if (detail && typeof detail === "object") {
-        return [detail.code ?? null, detail.message || response.statusText];
+        return [
+          detail.code ?? null,
+          detail.message || response.statusText,
+          typeof detail.retryable === "boolean" ? detail.retryable : null,
+        ];
       }
-      if (typeof detail === "string") return [null, detail];
+      if (typeof detail === "string") return [null, detail, null];
+      const error = body.error;
+      if (error && typeof error === "object") {
+        return [
+          error.code ?? null,
+          error.message || response.statusText,
+          typeof error.retryable === "boolean" ? error.retryable : null,
+        ];
+      }
       if ("error" in body || "message" in body) {
-        return [body.error ?? null, body.message || response.statusText];
+        return [error ?? null, body.message || response.statusText, null];
       }
     }
-    return [null, text.slice(0, 200)];
+    return [null, text.slice(0, 200), null];
   }
 
   async backoff(attempt, status, code) {
@@ -130,15 +149,16 @@ class ResilientClient {
         throw new ApiError(null, "network_error", String(e.message ?? e));
       }
 
-      if (RETRYABLE_STATUSES.has(response.status) && attempt < MAX_RETRIES) {
-        const [code] = await this.parseError(response);
-        await this.backoff(attempt, response.status, code);
-        continue;
-      }
-
       if (!response.ok) {
-        const [code, message] = await this.parseError(response);
-        throw new ApiError(response.status, code, message);
+        const [code, message, retryable] = await this.parseError(response);
+        // error.retryable is authoritative; the status set is only the fallback
+        // when the response carries no JSON error body.
+        const retry = retryable !== null ? retryable : RETRYABLE_STATUSES.has(response.status);
+        if (retry && attempt < MAX_RETRIES) {
+          await this.backoff(attempt, response.status, code);
+          continue;
+        }
+        throw new ApiError(response.status, code, message, retryable);
       }
 
       return parse ? response.json() : response;
@@ -174,8 +194,8 @@ class ResilientClient {
         { method: "POST", headers: { Authorization: `Bearer ${this.apiKey}` }, body: form }
       );
       if (!response.ok) {
-        const [code, message] = await this.parseError(response);
-        throw new ApiError(response.status, code, message);
+        const [code, message, retryable] = await this.parseError(response);
+        throw new ApiError(response.status, code, message, retryable);
       }
       return response.json();
     };

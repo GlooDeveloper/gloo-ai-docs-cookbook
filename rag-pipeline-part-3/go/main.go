@@ -44,8 +44,10 @@ const (
 	pollTimeout  = 600 * time.Second
 )
 
-// Retry policy: only transient failures are retried. Client errors (400, 401,
-// 403, 404, 422) are bugs in the request, not blips, so they fail fast.
+// Retry policy: the API's own error.retryable flag is the primary signal, so a
+// 500 with retryable:false (e.g. 3001 INTERNAL_ERROR) is not retried. This
+// status set is only a fallback for responses with no JSON error body (network
+// failures and unparseable bodies), where there is no flag to read.
 var retryableStatuses = []int{500, 502, 503, 504}
 
 var reasonPhrases = map[int]string{
@@ -68,19 +70,26 @@ var (
 )
 
 // ApiError is a normalized API error: HTTP status (0 for network failures), a
-// machine-readable code, and a human-readable message.
+// machine-readable code, a human-readable message, and Retryable copied from
+// the response body's error.retryable when the body carried it (nil otherwise).
 type ApiError struct {
-	Status  int
-	Code    string
-	Message string
+	Status    int
+	Code      string
+	Message   string
+	Retryable *bool
 }
 
 func (e *ApiError) Error() string {
 	return fmt.Sprintf("[%d %s] %s", e.Status, e.Code, e.Message)
 }
 
-// IsRetryable reports whether the error is a network failure or a transient status.
+// IsRetryable reports whether the request may succeed if retried. It prefers
+// the API's error.retryable flag; without one it treats network failures
+// (status 0) and the fallback transient statuses as retryable.
 func (e *ApiError) IsRetryable() bool {
+	if e.Retryable != nil {
+		return *e.Retryable
+	}
 	if e.Status == 0 {
 		return true
 	}
@@ -99,9 +108,10 @@ type ResilientClient struct {
 	apiKey string
 }
 
-// parseError extracts (code, message) from the API's error shapes:
+// parseError extracts (code, message, retryable) from the API's error shapes:
 // {"detail": {"code", "message"}}, {"detail": "..."}, {"error", "message"}.
-func (c *ResilientClient) parseError(status int, body []byte) (string, string) {
+// The retryable pointer is non-nil only when the body carried error.retryable.
+func (c *ResilientClient) parseError(status int, body []byte) (string, string, *bool) {
 	reason := reasonPhrases[status]
 	if reason == "" {
 		reason = fmt.Sprintf("HTTP %d", status)
@@ -110,26 +120,37 @@ func (c *ResilientClient) parseError(status int, body []byte) (string, string) {
 	if json.Unmarshal(body, &decoded) != nil {
 		text := strings.TrimSpace(string(body))
 		if text == "" {
-			return "", reason
+			return "", reason, nil
 		}
 		if len(text) > 200 {
 			text = text[:200]
 		}
-		return "", text
+		return "", text, nil
 	}
 	if detail, ok := decoded["detail"].(map[string]any); ok {
-		return str(detail["code"]), orReason(str(detail["message"]), reason)
+		return str(detail["code"]), orReason(str(detail["message"]), reason), retryableField(detail)
 	}
 	if detail, ok := decoded["detail"].(string); ok {
-		return "", detail
+		return "", detail, nil
+	}
+	if errObj, ok := decoded["error"].(map[string]any); ok {
+		return str(errObj["code"]), orReason(str(errObj["message"]), reason), retryableField(errObj)
 	}
 	if _, ok := decoded["error"]; ok {
-		return str(decoded["error"]), orReason(str(decoded["message"]), reason)
+		return str(decoded["error"]), orReason(str(decoded["message"]), reason), retryableField(decoded)
 	}
 	if _, ok := decoded["message"]; ok {
-		return str(decoded["error"]), orReason(str(decoded["message"]), reason)
+		return str(decoded["error"]), orReason(str(decoded["message"]), reason), retryableField(decoded)
 	}
-	return "", reason
+	return "", reason, nil
+}
+
+// retryableField reads the error object's retryable boolean, if present.
+func retryableField(obj map[string]any) *bool {
+	if v, ok := obj["retryable"].(bool); ok {
+		return &v
+	}
+	return nil
 }
 
 func (c *ResilientClient) backoff(attempt, status int, code string) {
@@ -177,20 +198,25 @@ func (c *ResilientClient) request(method, url string, opts requestOpts) (map[str
 				c.backoff(attempt, 0, "connection")
 				continue
 			}
-			return nil, &ApiError{0, "network_error", err.Error()}
+			return nil, &ApiError{0, "network_error", err.Error(), nil}
 		}
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		status := resp.StatusCode
 
-		if containsInt(retryableStatuses, status) && attempt < maxRetries {
-			code, _ := c.parseError(status, bodyBytes)
-			c.backoff(attempt, status, code)
-			continue
-		}
 		if status >= 400 {
-			code, message := c.parseError(status, bodyBytes)
-			return nil, &ApiError{status, code, message}
+			code, message, retryable := c.parseError(status, bodyBytes)
+			// error.retryable is authoritative; the status set is only the
+			// fallback when the response carries no JSON error body.
+			retry := containsInt(retryableStatuses, status)
+			if retryable != nil {
+				retry = *retryable
+			}
+			if retry && attempt < maxRetries {
+				c.backoff(attempt, status, code)
+				continue
+			}
+			return nil, &ApiError{status, code, message, retryable}
 		}
 		var result map[string]any
 		if len(bodyBytes) > 0 {
@@ -198,7 +224,7 @@ func (c *ResilientClient) request(method, url string, opts requestOpts) (map[str
 		}
 		return result, nil
 	}
-	return nil, &ApiError{0, "retries_exhausted", "Exhausted retries"}
+	return nil, &ApiError{0, "retries_exhausted", "Exhausted retries", nil}
 }
 
 // callWithRetry runs an operation, retrying it on retryable ApiError with backoff.
@@ -215,7 +241,7 @@ func (c *ResilientClient) callWithRetry(operation func() (map[string]any, error)
 		}
 		return nil, err
 	}
-	return nil, &ApiError{0, "retries_exhausted", "Exhausted retries for " + label}
+	return nil, &ApiError{0, "retries_exhausted", "Exhausted retries for " + label, nil}
 }
 
 // uploadFile uploads a single file, retrying transient failures (5xx or network blips).
@@ -240,13 +266,13 @@ func (c *ResilientClient) uploadFile(path, producerID string) (string, error) {
 
 		resp, err := httpClient.Do(req)
 		if err != nil {
-			return nil, &ApiError{0, "network_error", err.Error()}
+			return nil, &ApiError{0, "network_error", err.Error(), nil}
 		}
 		bodyBytes, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 		if resp.StatusCode >= 400 {
-			code, message := c.parseError(resp.StatusCode, bodyBytes)
-			return nil, &ApiError{resp.StatusCode, code, message}
+			code, message, retryable := c.parseError(resp.StatusCode, bodyBytes)
+			return nil, &ApiError{resp.StatusCode, code, message, retryable}
 		}
 		var result map[string]any
 		json.Unmarshal(bodyBytes, &result)
@@ -283,7 +309,7 @@ func (c *ResilientClient) waitUntilIndexed(itemIDs []string) error {
 			case "COMPLETED":
 				delete(pending, id)
 			case "FAILED", "ERROR":
-				return &ApiError{0, "ingestion_failed", id + ": " + str(item["status"])}
+				return &ApiError{0, "ingestion_failed", id + ": " + str(item["status"]), nil}
 			}
 		}
 		if len(pending) > 0 {
@@ -292,7 +318,7 @@ func (c *ResilientClient) waitUntilIndexed(itemIDs []string) error {
 		}
 	}
 	if len(pending) > 0 {
-		return &ApiError{0, "ingestion_timeout", "Not indexed within timeout"}
+		return &ApiError{0, "ingestion_timeout", "Not indexed within timeout", nil}
 	}
 	return nil
 }
@@ -332,7 +358,7 @@ func demoRetry(c *ResilientClient) error {
 	flaky := func() (map[string]any, error) {
 		calls++
 		if calls < 3 {
-			return nil, &ApiError{503, "service_unavailable", "Service temporarily unavailable"}
+			return nil, &ApiError{503, "service_unavailable", "Service temporarily unavailable", nil}
 		}
 		return map[string]any{"ok": true}, nil
 	}
