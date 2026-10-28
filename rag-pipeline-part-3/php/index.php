@@ -33,8 +33,10 @@ define('ITEMS_URL', API_ROOT . '/engine/v2/items');
 
 define('SAMPLE_DIR', __DIR__ . '/../sample_files');
 
-// Retry policy: only transient failures are retried. Client errors (400, 401,
-// 403, 404, 422) are bugs in the request, not blips, so they fail fast.
+// Retry policy: the API's own error.retryable flag is the primary signal, so a
+// 500 with retryable:false (e.g. 3001 INTERNAL_ERROR) is not retried. This set
+// is only a fallback for responses with no JSON error body (network failures and
+// unparseable bodies), where there is no flag to read.
 const RETRYABLE_STATUSES = [500, 502, 503, 504];
 const MAX_RETRIES = 4;
 const BASE_DELAY_SECONDS = 1;
@@ -68,18 +70,27 @@ foreach (['GLOO_API_KEY' => API_KEY, 'GLOO_PUBLISHER_ID' => PUBLISHER_ID] as $na
 
 /**
  * A normalized API error: HTTP status (null for network failures), a
- * machine-readable code, and a human-readable message.
+ * machine-readable code, a human-readable message, and the body's
+ * error.retryable flag when the response carried one (null otherwise).
  */
 class ApiError extends RuntimeException
 {
-    public function __construct(public readonly ?int $status, public readonly ?string $apiCode, string $message)
-    {
+    public function __construct(
+        public readonly ?int $status,
+        public readonly ?string $apiCode,
+        string $message,
+        public readonly ?bool $retryable = null,
+    ) {
         parent::__construct($message);
     }
 
     public function isRetryable(): bool
     {
-        // Network failures (status null) and transient server statuses are retryable.
+        // error.retryable is authoritative; without one, fall back to network
+        // failures (null status) and the transient server statuses.
+        if ($this->retryable !== null) {
+            return $this->retryable;
+        }
         return $this->status === null || in_array($this->status, RETRYABLE_STATUSES, true);
     }
 }
@@ -100,10 +111,11 @@ class ResilientClient
     }
 
     /**
-     * Extract [code, message] from the API's error shapes:
+     * Extract [code, message, retryable] from the API's error shapes:
      * {"detail": {"code", "message"}}, {"detail": "..."}, {"error", "message"}.
+     * retryable is non-null only when the body carried error.retryable.
      *
-     * @return array{0:?string,1:string}
+     * @return array{0:?string,1:string,2:?bool}
      */
     private function parseError(int $status, string $body): array
     {
@@ -112,16 +124,26 @@ class ResilientClient
         if (is_array($decoded)) {
             $detail = $decoded['detail'] ?? null;
             if (is_array($detail)) {
-                return [$detail['code'] ?? null, ($detail['message'] ?? '') ?: $reason];
+                return [$detail['code'] ?? null, ($detail['message'] ?? '') ?: $reason, self::retryable($detail)];
             }
             if (is_string($detail)) {
-                return [null, $detail];
+                return [null, $detail, null];
+            }
+            $error = $decoded['error'] ?? null;
+            if (is_array($error)) {
+                return [$error['code'] ?? null, ($error['message'] ?? '') ?: $reason, self::retryable($error)];
             }
             if (array_key_exists('error', $decoded) || array_key_exists('message', $decoded)) {
-                return [$decoded['error'] ?? null, ($decoded['message'] ?? '') ?: $reason];
+                return [$decoded['error'] ?? null, ($decoded['message'] ?? '') ?: $reason, null];
             }
         }
-        return [null, substr($body, 0, 200) ?: $reason];
+        return [null, substr($body, 0, 200) ?: $reason, null];
+    }
+
+    /** Read the error object's retryable boolean, if present. */
+    private static function retryable(array $obj): ?bool
+    {
+        return is_bool($obj['retryable'] ?? null) ? $obj['retryable'] : null;
     }
 
     private function backoff(int $attempt, ?int $status, ?string $code): void
@@ -180,15 +202,16 @@ class ResilientClient
                 throw new ApiError(null, 'network_error', "curl error {$errno}");
             }
 
-            if (in_array($status, RETRYABLE_STATUSES, true) && $attempt < MAX_RETRIES) {
-                [$code] = $this->parseError($status, $body);
-                $this->backoff($attempt, $status, $code);
-                continue;
-            }
-
             if ($status >= 400) {
-                [$code, $message] = $this->parseError($status, $body);
-                throw new ApiError($status, $code, $message);
+                [$code, $message, $retryable] = $this->parseError($status, $body);
+                // error.retryable is authoritative; the status set is only the
+                // fallback when the response carries no JSON error body.
+                $retry = $retryable ?? in_array($status, RETRYABLE_STATUSES, true);
+                if ($retry && $attempt < MAX_RETRIES) {
+                    $this->backoff($attempt, $status, $code);
+                    continue;
+                }
+                throw new ApiError($status, $code, $message, $retryable);
             }
 
             return json_decode($body, true);
@@ -230,8 +253,8 @@ class ResilientClient
                 throw new ApiError(null, 'network_error', "curl error {$errno}");
             }
             if ($status >= 400) {
-                [$code, $message] = $this->parseError($status, $body);
-                throw new ApiError($status, $code, $message);
+                [$code, $message, $retryable] = $this->parseError($status, $body);
+                throw new ApiError($status, $code, $message, $retryable);
             }
             return json_decode($body, true);
         };

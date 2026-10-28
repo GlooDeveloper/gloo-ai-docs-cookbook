@@ -39,8 +39,10 @@ SEED_ITEMS = [
     ("learning-from-incidents.md", "rag-pipeline-part3-incident-reviews"),
 ]
 
-# Retry policy: only transient failures are retried. Client errors (400, 401,
-# 403, 404, 422) are bugs in the request, not blips, so they fail fast.
+# Retry policy: the API's own error.retryable flag is the primary signal, so a
+# 500 with retryable:false (e.g. 3001 INTERNAL_ERROR) is not retried. This set
+# is only a fallback for responses with no JSON error body (network failures and
+# unparseable bodies), where there is no flag to read.
 RETRYABLE_STATUSES = {500, 502, 503, 504}
 MAX_RETRIES = 4
 BASE_DELAY_SECONDS = 1.0
@@ -58,17 +60,34 @@ for name, value in [("GLOO_API_KEY", API_KEY),
 
 class ApiError(Exception):
     """A normalized API error: HTTP status (None for network failures), a
-    machine-readable code, and a human-readable message."""
+    machine-readable code, a human-readable message, and the body's
+    error.retryable flag when the response carried one (None otherwise)."""
 
-    def __init__(self, status: Optional[int], code: Optional[str], message: str) -> None:
+    def __init__(
+        self,
+        status: Optional[int],
+        code: Optional[str],
+        message: str,
+        retryable: Optional[bool] = None,
+    ) -> None:
         super().__init__(f"[{status} {code}] {message}")
         self.status = status
         self.code = code
         self.message = message
+        self.retryable = retryable
 
     def is_retryable(self) -> bool:
-        # Network failures (status None) and transient server statuses are retryable.
+        # error.retryable is authoritative; without one, fall back to network
+        # failures (status None) and the transient server statuses.
+        if self.retryable is not None:
+            return self.retryable
         return self.status is None or self.status in RETRYABLE_STATUSES
+
+
+def _retryable_flag(obj: Dict[str, Any]) -> Optional[bool]:
+    """Read the error object's retryable boolean, if present."""
+    value = obj.get("retryable")
+    return value if isinstance(value, bool) else None
 
 
 class ResilientClient:
@@ -78,26 +97,31 @@ class ResilientClient:
         self.api_key = api_key
 
     @staticmethod
-    def _parse_error(response: requests.Response) -> Tuple[Optional[str], str]:
-        """Extract (code, message) from the API's error shapes.
-
-        The Data Engine uses a few shapes: {"detail": {"code", "message"}},
-        {"detail": "..."} , and {"error", "message"}. Normalize them all.
-        """
+    def _parse_error(
+        response: requests.Response,
+    ) -> Tuple[Optional[str], str, Optional[bool]]:
+        """Extract (code, message, retryable) from the API's error shapes:
+        {"detail": {"code", "message"}}, {"detail": "..."}, {"error", "message"}.
+        retryable is non-None only when the body carried error.retryable."""
         try:
             body = response.json()
         except ValueError:
-            return None, response.text[:200] or response.reason
+            return None, response.text[:200] or response.reason, None
 
         if isinstance(body, dict):
             detail = body.get("detail")
             if isinstance(detail, dict):
-                return detail.get("code"), detail.get("message") or response.reason
+                flag = _retryable_flag(detail)
+                return detail.get("code"), detail.get("message") or response.reason, flag
             if isinstance(detail, str):
-                return None, detail
+                return None, detail, None
+            error = body.get("error")
+            if isinstance(error, dict):
+                flag = _retryable_flag(error)
+                return error.get("code"), error.get("message") or response.reason, flag
             if "error" in body or "message" in body:
-                return body.get("error"), body.get("message") or response.reason
-        return None, str(body)[:200]
+                return error, body.get("message") or response.reason, _retryable_flag(body)
+        return None, str(body)[:200], None
 
     def _backoff(self, attempt: int, status: Any, code: Any) -> None:
         delay = BASE_DELAY_SECONDS * (2 ** attempt)
@@ -131,14 +155,19 @@ class ResilientClient:
                     continue
                 raise ApiError(None, "network_error", str(e))
 
-            if response.status_code in RETRYABLE_STATUSES and attempt < MAX_RETRIES:
-                code, _ = self._parse_error(response)
-                self._backoff(attempt, response.status_code, code)
-                continue
-
             if not response.ok:
-                code, message = self._parse_error(response)
-                raise ApiError(response.status_code, code, message)
+                code, message, retryable = self._parse_error(response)
+                # error.retryable is authoritative; the status set is only the
+                # fallback when the response carries no JSON error body.
+                retry = (
+                    retryable
+                    if retryable is not None
+                    else response.status_code in RETRYABLE_STATUSES
+                )
+                if retry and attempt < MAX_RETRIES:
+                    self._backoff(attempt, response.status_code, code)
+                    continue
+                raise ApiError(response.status_code, code, message, retryable)
 
             return response.json() if parse else response
 
@@ -174,8 +203,8 @@ class ResilientClient:
                 timeout=120,
             )
             if not response.ok:
-                code, message = self._parse_error(response)
-                raise ApiError(response.status_code, code, message)
+                code, message, retryable = self._parse_error(response)
+                raise ApiError(response.status_code, code, message, retryable)
             return response.json()
 
         result = self.call_with_retry(operation, "upload")

@@ -44,8 +44,9 @@ public class Main {
       new String[] {"strengthening-feedback-loops.md", "rag-pipeline-part3-feedback-loops"},
       new String[] {"learning-from-incidents.md", "rag-pipeline-part3-incident-reviews"});
 
-  // Retry policy: only transient failures are retried. Client errors (400, 401, 403, 404, 422) are
-  // bugs in the request, not blips, so they fail fast.
+  // Retry policy: the API's own error.retryable flag is the primary signal, so a 500 with
+  // retryable:false (e.g. 3001 INTERNAL_ERROR) is not retried. This set is only a fallback for
+  // responses with no JSON error body (network failures and unparseable bodies).
   private static final Set<Integer> RETRYABLE_STATUSES = Set.of(500, 502, 503, 504);
   private static final int MAX_RETRIES = 4;
   private static final long BASE_DELAY_SECONDS = 1;
@@ -64,18 +65,32 @@ public class Main {
   private static String apiKey;
   private static String publisherId;
 
-  /** A normalized API error: HTTP status (null for network failures), code, and message. */
+  /**
+   * A normalized API error: HTTP status (null for network failures), code, message, and the
+   * body's error.retryable flag when the response carried one (null otherwise).
+   */
   static class ApiError extends RuntimeException {
     final Integer status;
     final String code;
+    final Boolean retryable;
 
     ApiError(Integer status, String code, String message) {
+      this(status, code, message, null);
+    }
+
+    ApiError(Integer status, String code, String message, Boolean retryable) {
       super(message);
       this.status = status;
       this.code = code;
+      this.retryable = retryable;
     }
 
     boolean isRetryable() {
+      // error.retryable is authoritative; without one, fall back to network failures (null
+      // status) and the transient server statuses.
+      if (retryable != null) {
+        return retryable;
+      }
       return status == null || RETRYABLE_STATUSES.contains(status);
     }
   }
@@ -100,8 +115,19 @@ public class Main {
       this.apiKey = apiKey;
     }
 
-    /** Extract [code, message] from the API's error shapes. */
-    private String[] parseError(int status, String body) {
+    /** The parsed fields of an API error response; retryable is null unless the body carried it. */
+    record ParsedError(String code, String message, Boolean retryable) {}
+
+    /** Read the error object's retryable boolean, if present. */
+    private static Boolean retryable(JsonObject obj) {
+      JsonElement value = obj.get("retryable");
+      return value != null && value.isJsonPrimitive() && value.getAsJsonPrimitive().isBoolean()
+          ? value.getAsBoolean()
+          : null;
+    }
+
+    /** Extract the code, message, and retryable flag from the API's error shapes. */
+    private ParsedError parseError(int status, String body) {
       String reason = REASONS.getOrDefault(status, "HTTP " + status);
       JsonObject obj = null;
       try {
@@ -113,13 +139,21 @@ public class Main {
         JsonElement detail = obj.get("detail");
         if (detail != null && detail.isJsonObject()) {
           JsonObject d = detail.getAsJsonObject();
-          return new String[] {jsonString(d, "code"), orReason(jsonString(d, "message"), reason)};
+          return new ParsedError(
+              jsonString(d, "code"), orReason(jsonString(d, "message"), reason), retryable(d));
         }
         if (detail != null && detail.isJsonPrimitive()) {
-          return new String[] {null, detail.getAsString()};
+          return new ParsedError(null, detail.getAsString(), null);
+        }
+        JsonElement error = obj.get("error");
+        if (error != null && error.isJsonObject()) {
+          JsonObject e = error.getAsJsonObject();
+          return new ParsedError(
+              jsonString(e, "code"), orReason(jsonString(e, "message"), reason), retryable(e));
         }
         if (obj.has("error") || obj.has("message")) {
-          return new String[] {jsonString(obj, "error"), orReason(jsonString(obj, "message"), reason)};
+          return new ParsedError(
+              jsonString(obj, "error"), orReason(jsonString(obj, "message"), reason), null);
         }
       }
       String text = body == null ? "" : body.trim();
@@ -128,7 +162,7 @@ public class Main {
       } else if (text.length() > 200) {
         text = text.substring(0, 200);
       }
-      return new String[] {null, text};
+      return new ParsedError(null, text, null);
     }
 
     private void backoff(int attempt, Integer status, String code) throws InterruptedException {
@@ -166,14 +200,19 @@ public class Main {
         }
 
         int status = response.statusCode();
-        if (RETRYABLE_STATUSES.contains(status) && attempt < MAX_RETRIES) {
-          String[] parsed = parseError(status, response.body());
-          backoff(attempt, status, parsed[0]);
-          continue;
-        }
         if (status >= 400) {
-          String[] parsed = parseError(status, response.body());
-          throw new ApiError(status, parsed[0], parsed[1]);
+          ParsedError parsed = parseError(status, response.body());
+          // error.retryable is authoritative; the status set is only the fallback when the
+          // response carries no JSON error body.
+          boolean retry =
+              parsed.retryable() != null
+                  ? parsed.retryable()
+                  : RETRYABLE_STATUSES.contains(status);
+          if (retry && attempt < MAX_RETRIES) {
+            backoff(attempt, status, parsed.code());
+            continue;
+          }
+          throw new ApiError(status, parsed.code(), parsed.message(), parsed.retryable());
         }
         return response.body().isEmpty() ? new JsonObject() : GSON.fromJson(response.body(), JsonObject.class);
       }
@@ -223,8 +262,9 @@ public class Main {
                   .build();
           HttpResponse<String> response = HTTP.send(request, HttpResponse.BodyHandlers.ofString());
           if (response.statusCode() >= 400) {
-            String[] parsed = parseError(response.statusCode(), response.body());
-            throw new ApiError(response.statusCode(), parsed[0], parsed[1]);
+            ParsedError parsed = parseError(response.statusCode(), response.body());
+            throw new ApiError(
+                response.statusCode(), parsed.code(), parsed.message(), parsed.retryable());
           }
           return GSON.fromJson(response.body(), JsonObject.class);
         } catch (IOException e) {
